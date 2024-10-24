@@ -113,7 +113,13 @@
                         <a href="auth-lock-screen.html"> <i class="feather icon-lock"></i> Lock Screen </a>
                       </li>
                       <li>
-                        <a href="auth-normal-sign-in.html"> <i class="feather icon-log-out"></i> Logout </a>
+                      <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                          <i class="feather icon-log-out"></i> Logout
+                      </a>
+
+                      <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                          @csrf
+                      </form>
                       </li>
                     </ul>
                   </div>

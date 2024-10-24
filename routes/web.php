@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('pages/dashboard');
-});
 
-Route::get('/login', function () {
-    return view('pages/login');
-});
+Auth::routes();
+Auth::routes(['register' => false]);
+
+
+Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->middleware('auth');
+
