@@ -11,9 +11,7 @@
                     <div class="col-lg-8">
                         <div class="page-header-title">
                             <div class="d-inline">
-                                <h4>Basic Table Sizes</h4>
-                                <span>lorem ipsum dolor sit amet, consectetur adipisicing
-                                    elit</span>
+                                <h4>List Data User</h4>
                             </div>
                         </div>
                     </div>
@@ -21,14 +19,10 @@
                         <div class="page-header-breadcrumb">
                             <ul class="breadcrumb-title">
                                 <li class="breadcrumb-item" style="float: left;">
-                                    <a href="index.html"> <i class="feather icon-home"></i> </a>
+                                    <a href="<?= url('/') ?>"> <i class="feather icon-home"></i> </a>
                                 </li>
                                 <li class="breadcrumb-item" style="float: left;"><a
-                                        href="#!">Bootstrap Table</a>
-                                </li>
-                                <li class="breadcrumb-item" style="float: left;"><a
-                                        href="#!">Basic
-                                        Initialization</a>
+                                        href="#!">Data User</a>
                                 </li>
                             </ul>
                         </div>
@@ -43,14 +37,9 @@
                     <div class="col-sm-12">
                         <!-- Zero config.table start -->
                         <div class="card">
-                            <div class="card-header">
-                                <h5>Zero Configuration</h5>
-                                <span>DataTables has most features enabled by default, so all
-                                    you need to do to use it with your own ables is to call the
-                                    construction function: $().DataTable();.</span>
-
-                            </div>
                             <div class="card-block">
+                                <a href="{{ route('data-user.create') }}" class="btn btn-primary btn-round">Add User</a>
+                                <hr>
                                 <div class="dt-responsive table-responsive">
                                 <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                         <thead>
@@ -66,7 +55,7 @@
                                                 <td>{{ $user->name }}</td>
                                                 <td>{{ $user->email }}</td>
                                                 <td>
-                                                    <a href="{{ route('data-user.edit', $user->id) }}" class="btn btn-warning">Edit</a>
+                                                    <a href="{{ route('data-user.edit', $user->id) }}" class="btn btn-warning btn-round">Edit</a>
                                                 </td>
                                             </tr>
                                             @endforeach

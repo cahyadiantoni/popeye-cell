@@ -12,30 +12,34 @@
                         <!-- Basic Form Inputs card start -->
                         <div class="card">
                             <div class="card-header">
-                                <h3>Form Edit Data User</h3>
+                                <h3>Form Tambah Data User</h3>
                             </div>
                             <div class="card-block">
                                 <h4 class="sub-title">Data User</h4>
-                                <form method="POST" action="{{ route('data-user.update', $user->id) }}">
+                                <form method="POST" action="{{ route('data-user.store') }}">
                                     @csrf
-                                    @method('PUT')
-
                                     <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Name</label>
                                         <div class="col-sm-10">
-                                            <input type="text" name="name" class="form-control" value="{{ old('name', $user->name) }}" required>
+                                            <input type="text" name="name" class="form-control" placeholder="Ketik Nama User" required>
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Email</label>
                                         <div class="col-sm-10">
-                                            <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}" required>
+                                            <input type="email" name="email" class="form-control" placeholder="Ketik Email User" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Password</label>
+                                        <div class="col-sm-10">
+                                            <input type="password" name="password" class="form-control" placeholder="Ketik Password User" required>
                                         </div>
                                     </div>
                                     <!-- Tambahkan tombol submit di sini -->
                                     <div class="d-flex justify-content-between">
                                         <a href="{{ route('data-user.index') }}" class="btn btn-secondary btn-round">Kembali</a>
-                                        <button type="submit" class="btn btn-primary btn-round">Update User</button>
+                                        <button type="submit" class="btn btn-primary btn-round">Simpan Data User</button>
                                     </div>
                                 </form>
                             </div>

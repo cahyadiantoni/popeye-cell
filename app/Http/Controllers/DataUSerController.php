@@ -43,7 +43,7 @@ class DataUSerController extends Controller
     // Menampilkan form untuk menambah pengguna
     public function create()
     {
-        return view('data-user.create');
+        return view('pages.data-user.create');
     }
 
     // Menyimpan pengguna baru
@@ -53,11 +53,17 @@ class DataUSerController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8', // Validasi password
         ]);
 
-        // Menyimpan data pengguna baru
-        User::create($request->only('name', 'email'));
+        // Menyimpan data pengguna baru dengan password di-hash
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password), // Hash password
+        ]);
 
         return redirect()->route('data-user.index')->with('success', 'User added successfully!');
     }
+
 }
