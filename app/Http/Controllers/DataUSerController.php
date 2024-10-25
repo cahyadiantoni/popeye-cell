@@ -66,4 +66,14 @@ class DataUSerController extends Controller
         return redirect()->route('data-user.index')->with('success', 'User added successfully!');
     }
 
+
+    public function destroy($id)
+    {
+        // Cari user berdasarkan ID dan hapus
+        $user = User::findOrFail($id);
+        $user->delete();
+
+        // Redirect kembali ke halaman index dengan pesan sukses
+        return redirect()->route('data-user.index')->with('success', 'User deleted successfully!');
+    }
 }

@@ -37,6 +37,12 @@
                     <div class="col-sm-12">
                         <!-- Zero config.table start -->
                         <div class="card">
+                            @if(session('success'))
+                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                    {{ session('success') }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            @endif
                             <div class="card-block">
                                 <a href="{{ route('data-user.create') }}" class="btn btn-primary btn-round">Add User</a>
                                 <hr>
@@ -56,6 +62,13 @@
                                                 <td>{{ $user->email }}</td>
                                                 <td>
                                                     <a href="{{ route('data-user.edit', $user->id) }}" class="btn btn-warning btn-round">Edit</a>
+                                                    <!-- Tombol Delete -->
+                                                    <form action="{{ route('data-user.destroy', $user->id) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-round"
+                                                                onclick="return confirm('Are you sure you want to delete this user?')">Delete</button>
+                                                    </form>
                                                 </td>
                                             </tr>
                                             @endforeach

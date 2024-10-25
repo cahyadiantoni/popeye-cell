@@ -5,7 +5,7 @@
                 <i class="feather icon-menu"></i>
               </a>
               <a href="index.html">
-                <img class="img-fluid" src="{{ asset('files/assets/images/logo.png')}}" alt="Theme-Logo" />
+                <img class="img-fluid" src="{{ asset('files/assets/images/logo.png') }}" alt="Theme-Logo" style="width: 150px; height: auto;" />
               </a>
               <a class="mobile-options">
                 <i class="feather icon-more-horizontal"></i>
@@ -95,9 +95,9 @@
                 <li class="user-profile header-notification">
                   <div class="dropdown-primary dropdown">
                     <div class="dropdown-toggle" data-bs-toggle="dropdown">
-                      <img src="{{ asset('files/assets/images/avatar-4.jpg')}}" class="img-radius" alt="User-Profile-Image" />
-                      <span>John Doe</span>
-                      <i class="feather icon-chevron-down"></i>
+                        <img src="{{ asset('files/assets/images/avatar-4.jpg') }}" class="img-radius" alt="User-Profile-Image" />
+                        <span>{{ Auth::user()->name }}</span>
+                        <i class="feather icon-chevron-down"></i>
                     </div>
                     <ul class="show-notification profile-notification dropdown-menu" data-dropdown-in="fadeIn" data-dropdown-out="fadeOut">
                       <li>
