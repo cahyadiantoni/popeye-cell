@@ -95,23 +95,25 @@ class DataBarangController extends Controller
         $request->validate([
             'filedata' => 'required|file|mimes:xlsx,xls'
         ]);
-
-        // Inisialisasi array untuk pesan error
+    
+        // Inisialisasi array untuk pesan error dan baris yang berhasil disimpan
         $errors = [];
+        $successfulRows = [];
         
         // Membaca file Excel
         $file = $request->file('filedata');
         $data = Excel::toArray([], $file);
         $gudang = $request->input('gudang_id');
-
+    
         foreach ($data[0] as $index => $row) {
             // Lewati baris pertama jika merupakan header
             if ($index === 0) continue;
-
+    
+            // Ambil dan format tanggal
             $dt_beli = Carbon::createFromFormat('Y-m-d', '1900-01-01')->addDays($row[15] - 2)->format('Y-m-d');
             $dt_lelang = Carbon::createFromFormat('Y-m-d', '1900-01-01')->addDays($row[16] - 2)->format('Y-m-d');
             $dt_jatuh_tempo = Carbon::createFromFormat('Y-m-d', '1900-01-01')->addDays($row[17] - 2)->format('Y-m-d');
-
+    
             // Validasi tipe data tiap kolom
             if (
                 is_string($row[0]) && // lok_spk
@@ -128,6 +130,13 @@ class DataBarangController extends Controller
                 is_string($row[13]) && // keterangan3
                 is_string($row[14]) // nama_petugas
             ) {
+                // Cek apakah lok_spk sudah ada di database
+                if (Barang::where('lok_spk', $row[0])->exists()) {
+                    // Tambahkan error jika lok_spk sudah ada di database
+                    $errors[] = "Row " . ($index + 1) . " has a duplicate lok_spk in database: ";
+                    continue; // Lewati penyimpanan untuk row ini
+                }
+    
                 // Simpan data ke database jika valid
                 Barang::create([
                     'lok_spk' => $row[0],
@@ -152,19 +161,30 @@ class DataBarangController extends Controller
                     'user_id' => Auth::id(),
                     'gudang_id' => $gudang,
                 ]);
+                
+                // Tambahkan baris yang berhasil disimpan
+                $successfulRows[] = $index + 1; // Simpan nomor baris (index + 1 untuk tampilan)
             } else {
                 // Tambahkan error jika tidak valid
-                $errors[] = "Row " . ($index + 1) . " has invalid data: " . json_encode($row);
+                $errors[] = "Row " . ($index + 1) . " has invalid data: ";
             }
         }
-
+    
         // Kembalikan pesan berhasil atau error
-        if (count($errors) > 0) {
-            return redirect()->route('data-barang.index')->with('errors', $errors);
+        if (count($errors) > 0 || count($successfulRows) > 0) {
+            $successMessage = count($successfulRows) > 0 ? 
+                'Rows successfully saved: ' . implode(', ', $successfulRows) : 
+                '';
+    
+            return redirect()->route('data-barang.index')->with([
+                'errors' => $errors,
+                'success' => $successMessage
+            ]);
         }
-        return redirect()->route('data-barang.index')->with('success', 'File successfully uploaded and processed!');
-    }
-
+    
+        return redirect()->route('data-barang.index')->with('success', 'No rows were processed successfully.');
+    }    
+    
     private function validateDate($date)
     {
         // Cek berbagai format tanggal yang diinginkan
