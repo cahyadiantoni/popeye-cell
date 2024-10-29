@@ -10,7 +10,6 @@ use Carbon\Carbon;
 use Auth;
 use Illuminate\Support\Facades\DB;
 
-
 class DataBarangController extends Controller
 {
     public function index()

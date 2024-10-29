@@ -16,6 +16,11 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('files/bower_components/bootstrap/dist/css/bootstrap.min.css')}}" />
     <!-- feather Awesome -->
     <link rel="stylesheet" type="text/css" href="{{ asset('files/assets/icon/feather/css/feather.css')}}" />
+    <!-- Data Table Css -->
+    <!-- <link rel="stylesheet" type="text/css" href="../files/assets/pages/data-table/css/jquery.dataTables.min.css"> -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('files/bower_components/datatables.net-bs4/css/dataTables.bootstrap4.min.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('files/assets/pages/data-table/css/buttons.dataTables.min.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('files/bower_components/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css')}}">
     <!-- Style.css -->
     <link rel="stylesheet" type="text/css" href="{{ asset('files/assets/css/style.css')}}" />
     <link rel="stylesheet" type="text/css" href="{{ asset('files/assets/css/jquery.mCustomScrollbar.css')}}" />

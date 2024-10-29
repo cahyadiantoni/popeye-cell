@@ -9,7 +9,7 @@
                 </a>
             </li>
         </ul>
-        <div class="pcoded-navigatio-lavel">Data User</div>
+        <div class="pcoded-navigatio-lavel">Master Data</div>
         <ul class="pcoded-item pcoded-left-item">
             <li class="{{ Request::is('data-user*') ? 'active' : '' }}">
                 <a href="<?= url('/data-user') ?>">
@@ -17,13 +17,10 @@
                     <span class="pcoded-mtext">Data User</span>
                 </a>
             </li>
-        </ul>
-        <div class="pcoded-navigatio-lavel">Data Barang</div>
-        <ul class="pcoded-item pcoded-left-item">
             <li class="{{ Request::is('data-barang*') ? 'active' : '' }}">
                 <a href="<?= url('/data-barang') ?>">
                     <span class="pcoded-micon"><i class="feather icon-user"></i></span>
-                    <span class="pcoded-mtext">Input Barang</span>
+                    <span class="pcoded-mtext">Data Barang</span>
                 </a>
             </li>
         </ul>
