@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Barang;
 use App\Http\Controllers\Controller;
+use App\Models\Gudang;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
@@ -14,8 +15,8 @@ class DataBarangController extends Controller
 {
     public function index()
     {
-        // Mengambil semua pengguna dari database
-        $barangs = Barang::all(); // Ganti dengan metode sesuai kebutuhan
+        // Mengambil semua data barang beserta data gudang terkait
+        $barangs = Barang::with('gudang')->get();
         return view('pages.data-barang.index', compact('barangs'));
     }
 
@@ -87,7 +88,9 @@ class DataBarangController extends Controller
 
     public function create()
     {
-        return view('pages.data-barang.create');
+        // Mengambil semua data gudang dari database
+        $gudangs = Gudang::all();
+        return view('pages.data-barang.create', compact('gudangs'));
     }
 
     public function store(Request $request)

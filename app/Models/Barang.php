@@ -31,4 +31,10 @@ class Barang extends Model
         'keterangan1', 'keterangan2', 'keterangan3', 'nama_petugas',
         'dt_beli', 'dt_lelang', 'dt_jatuh_tempo', 'dt_input', 'user_id','gudang_id'
     ];
+
+    // Relasi ke Gudang
+    public function gudang()
+    {
+        return $this->belongsTo(Gudang::class, 'gudang_id');
+    }
 }

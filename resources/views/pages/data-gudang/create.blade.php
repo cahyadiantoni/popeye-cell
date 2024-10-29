@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Tambah Data User')
+@section('title', 'Tambah Data Gudang')
 @section('content')
     <!-- Main-body start -->
     <div class="main-body">
@@ -12,33 +12,33 @@
                         <!-- Basic Form Inputs card start -->
                         <div class="card">
                             <div class="card-header">
-                                <h3>Form Tambah Data Barang</h3>
+                                <h3>Form Tambah Data Gudang</h3>
                             </div>
                             <div class="card-block">
-                                <h4 class="sub-title">Upload Data Barang</h4>
-                                <form method="POST" action="{{ route('data-barang.store') }}" enctype="multipart/form-data">
+                                <h4 class="sub-title">Data Gudang</h4>
+                                <form method="POST" action="{{ route('data-gudang.store') }}">
                                     @csrf
-                                    <a href="{{ asset('files/template.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
-                                    <hr>
                                     <div class="mb-3 row">
-                                        <div class="sub-title">Masukan file excel di bawah!</div>
-                                        <input type="file" name="filedata">
+                                        <label class="form-label col-sm-2 col-form-label">Name</label>
+                                        <div class="col-sm-10">
+                                            <input type="text" name="nama_gudang" class="form-control" placeholder="Ketik Nama Gudang" required>
+                                        </div>
                                     </div>
                                     <div class="mb-3 row">
-                                        <label class="form-label col-sm-2 col-form-label">Select Gudang</label>
+                                        <label class="form-label col-sm-2 col-form-label">Pilih Penanggung Jawab</label>
                                         <div class="col-sm-10">
-                                            <select name="gudang_id" class="form-select form-control" required>
-                                                <option value="">-- Pilih Gudang --</option>
-                                                @foreach($gudangs as $gudang)
-                                                    <option value="{{ $gudang->id }}">{{ $gudang->nama_gudang }}</option>
+                                            <select name="pj_gudang" class="form-select form-control" required>
+                                                <option value="" readonly>-- Pilih Pengguna --</option>
+                                                @foreach($users as $user)
+                                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
                                     </div>
                                     <!-- Tambahkan tombol submit di sini -->
                                     <div class="d-flex justify-content-between">
-                                        <a href="{{ route('data-barang.index') }}" class="btn btn-secondary btn-round">Kembali</a>
-                                        <button type="submit" class="btn btn-primary btn-round">Upload Data Barang</button>
+                                        <a href="{{ route('data-gudang.index') }}" class="btn btn-secondary btn-round">Kembali</a>
+                                        <button type="submit" class="btn btn-primary btn-round">Simpan Data Gudang</button>
                                     </div>
                                 </form>
                             </div>

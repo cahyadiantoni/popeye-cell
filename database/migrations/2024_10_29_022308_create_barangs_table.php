@@ -23,8 +23,8 @@ return new class extends Migration
             $table->string('gudang_id', 255);
             $table->integer('status_barang')->length(10);
             $table->string('qt_bunga', 255);
-            $table->double('harga_jual', 15, 2);
-            $table->double('harga_beli', 15, 2);
+            $table->double('harga_jual');
+            $table->double('harga_beli');
             $table->string('keterangan1', 255)->nullable();
             $table->string('keterangan2', 255)->nullable();
             $table->string('keterangan3', 255)->nullable();

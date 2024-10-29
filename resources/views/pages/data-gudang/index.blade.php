@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Data Barang')
+@section('title', 'Data Gudang')
 @section('content')
     <!-- Main-body start -->
     <div class="main-body">
@@ -11,7 +11,7 @@
                     <div class="col-lg-8">
                         <div class="page-header-title">
                             <div class="d-inline">
-                                <h4>List Data Barang</h4>
+                                <h4>List Data Gudang</h4>
                             </div>
                         </div>
                     </div>
@@ -22,7 +22,7 @@
                                     <a href="<?= url('/') ?>"> <i class="feather icon-home"></i> </a>
                                 </li>
                                 <li class="breadcrumb-item" style="float: left;"><a
-                                        href="#!">Data Barang</a>
+                                        href="#!">Data Gudang</a>
                                 </li>
                             </ul>
                         </div>
@@ -43,48 +43,31 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             @endif
-
-                            @if(session('errors'))
-                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                    <ul>
-                                        @foreach (session('errors') as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                </div>
-                            @endif
                             <div class="card-block">
-                                <a href="{{ route('data-barang.create') }}" class="btn btn-primary btn-round">Upload Excel Barang</a>
+                                <a href="{{ route('data-gudang.create') }}" class="btn btn-primary btn-round">Add Gudang</a>
                                 <hr>
                                 <div class="dt-responsive table-responsive">
                                 <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th>LOK_SPK</th>
-                                                <th>Jenis</th>
-                                                <th>Tipe</th>
-                                                <th>Grade</th>
-                                                <th>Gudang</th>
+                                                <th>Nama Gudang</th>
+                                                <th>Penanggung Jawab</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($barangs as $barang)
+                                            @foreach($gudangs as $gudang)
                                             <tr>
-                                                <td>{{ $barang->lok_spk }}</td>
-                                                <td>{{ $barang->jenis }}</td>
-                                                <td>{{ $barang->tipe }}</td>
-                                                <td>{{ $barang->grade }}</td>
-                                                <td>{{ $barang->gudang->nama_gudang ?? 'N/A' }}</td>
+                                                <td>{{ $gudang->nama_gudang }}</td>
+                                                <td>{{ $gudang->penanggungJawab->name }}</td>
                                                 <td>
-                                                    <a href="{{ route('data-barang.edit', urlencode($barang->lok_spk)) }}" class="btn btn-warning btn-round">Edit</a>
+                                                    <a href="{{ route('data-gudang.edit', $gudang->id) }}" class="btn btn-warning btn-round">Edit</a>
                                                     <!-- Tombol Delete -->
-                                                    <form action="{{ route('data-barang.destroy', urlencode($barang->lok_spk)) }}" method="POST" style="display:inline;">
+                                                    <form action="{{ route('data-gudang.destroy', $gudang->id) }}" method="POST" style="display:inline;">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-danger btn-round"
-                                                                onclick="return confirm('Are you sure you want to delete this barang?')">Delete</button>
+                                                                onclick="return confirm('Are you sure you want to delete this gudang?')">Delete</button>
                                                     </form>
                                                 </td>
                                             </tr>
@@ -92,11 +75,8 @@
                                         </tbody>
                                         <tfoot>
                                             <tr>
-                                                <th>LOK_SPK</th>
-                                                <th>Jenis</th>
-                                                <th>Tipe</th>
-                                                <th>Grade</th>
-                                                <th>Gudang</th>
+                                                <th>Nama Gudang</th>
+                                                <th>Penanggung Jawab</th>
                                                 <th>Action</th>
                                             </tr>
                                         </tfoot>

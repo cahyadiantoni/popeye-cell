@@ -19,5 +19,11 @@ class Gudang extends Model
         'nama_gudang',
         'pj_gudang',
     ];
+
+    // Relasi ke User
+    public function penanggungJawab()
+    {
+        return $this->belongsTo(User::class, 'pj_gudang');
+    }
 }
 
