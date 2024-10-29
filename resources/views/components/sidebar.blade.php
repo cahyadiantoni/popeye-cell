@@ -17,6 +17,12 @@
                     <span class="pcoded-mtext">Data User</span>
                 </a>
             </li>
+            <li class="{{ Request::is('data-gudang*') ? 'active' : '' }}">
+                <a href="<?= url('/data-gudang') ?>">
+                    <span class="pcoded-micon"><i class="feather icon-user"></i></span>
+                    <span class="pcoded-mtext">Data Gudang</span>
+                </a>
+            </li>
             <li class="{{ Request::is('data-barang*') ? 'active' : '' }}">
                 <a href="<?= url('/data-barang') ?>">
                     <span class="pcoded-micon"><i class="feather icon-user"></i></span>
