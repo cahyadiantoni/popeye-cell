@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 use Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class DataBarangController extends Controller
 {
@@ -17,6 +17,72 @@ class DataBarangController extends Controller
         // Mengambil semua pengguna dari database
         $barangs = Barang::all(); // Ganti dengan metode sesuai kebutuhan
         return view('pages.data-barang.index', compact('barangs'));
+    }
+
+    public function edit($lok_spk)
+    {
+        // Mencari barang berdasarkan lok_spk
+        $barang = Barang::findOrFail($lok_spk);
+        return view('pages.data-barang.edit', compact('barang'));
+    }
+
+    public function update(Request $request, $lok_spk)
+    {
+        // Mencari barang berdasarkan primary key lok_spk
+        $barang = Barang::findOrFail($lok_spk);
+
+        // Validasi input
+        $validator = Validator::make($request->all(), [
+            'jenis' => 'required|string',
+            'merek' => 'required|string',
+            'tipe' => 'required|string',
+            'imei' => 'required|string',
+            'kelengkapan' => 'required|string',
+            'kerusakan' => 'required|string',
+            'grade' => 'required|string',
+            'gudang_id' => 'required|string',
+            'status_barang' => 'required|integer',
+            'qt_bunga' => 'required|string',
+            'harga_jual' => 'required|numeric',
+            'harga_beli' => 'required|numeric',
+            'keterangan1' => 'nullable|string',
+            'keterangan2' => 'nullable|string',
+            'keterangan3' => 'nullable|string',
+            'nama_petugas' => 'required|string',
+            'dt_beli' => 'required|date',
+            'dt_lelang' => 'required|date',
+            'dt_jatuh_tempo' => 'required|date',
+        ]);
+
+        // Jika validasi gagal
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Update data barang
+        $barang->update([
+            'jenis' => $request->input('jenis'),
+            'merek' => $request->input('merek'),
+            'tipe' => $request->input('tipe'),
+            'imei' => $request->input('imei'),
+            'kelengkapan' => $request->input('kelengkapan'),
+            'kerusakan' => $request->input('kerusakan'),
+            'grade' => $request->input('grade'),
+            'gudang_id' => $request->input('gudang_id'),
+            'status_barang' => $request->input('status_barang'),
+            'qt_bunga' => $request->input('qt_bunga'),
+            'harga_jual' => $request->input('harga_jual'),
+            'harga_beli' => $request->input('harga_beli'),
+            'keterangan1' => $request->input('keterangan1'),
+            'keterangan2' => $request->input('keterangan2'),
+            'keterangan3' => $request->input('keterangan3'),
+            'nama_petugas' => $request->input('nama_petugas'),
+            'dt_beli' => $request->input('dt_beli'),
+            'dt_lelang' => $request->input('dt_lelang'),
+            'dt_jatuh_tempo' => $request->input('dt_jatuh_tempo'),
+        ]);
+
+        return redirect()->route('data-barang.index')->with('success', 'Barang updated successfully!');
     }
 
     public function create()
@@ -116,16 +182,11 @@ class DataBarangController extends Controller
 
     public function destroy($lokSpk)
     {
-        // Menghapus barang berdasarkan `lok_spk`
-        $deletedRows = DB::table('t_barang')->where('lok_spk', $lokSpk)->delete();
+        // Cari barang berdasarkan lok_spk dan hapus
+        $barang = Barang::findOrFail($lokSpk);
+        $barang->delete();
 
-        if ($deletedRows > 0) {
-            // Jika barang berhasil dihapus
-            return back()->with('success', 'Data barang dengan lok_spk ' . $lokSpk . ' berhasil dihapus!');
-        } else {
-            // Jika tidak ada barang yang dihapus
-            return back()->with('error', 'Data barang dengan lok_spk ' . $lokSpk . ' tidak ditemukan.');
-        }
+        return redirect()->route('data-barang.index')->with('success', 'Barang deleted successfully!');
     }
 
 }

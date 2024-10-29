@@ -15,6 +15,9 @@ class Barang extends Model
      * @var string
      */
     protected $table = 't_barang';
+    protected $primaryKey = 'lok_spk';
+    public $incrementing = false;
+    protected $keyType = 'string';
     
 
     /**
