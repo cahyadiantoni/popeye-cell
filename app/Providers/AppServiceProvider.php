@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
+use App\Models\Kirim;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        View::composer('*', function ($view) {
+            $authId = Auth::id();
+            $requestCount = Kirim::where('penerima_user_id', $authId)
+                                ->where('status', 0)
+                                ->count();
+            $view->with('requestCount', $requestCount);
+        });
     }
 }

@@ -36,11 +36,11 @@
               <ul class="nav-right">
                 <li class="header-notification">
                   <div class="dropdown-primary dropdown">
-                    <div class="dropdown-toggle" data-bs-toggle="dropdown">
+                  <div class="dropdown-toggle" data-bs-toggle="dropdown" onclick="window.location='{{ url('/request-masuk-gudang') }}'">
                       <i class="feather icon-bell"></i>
-                      <span class="badge bg-c-pink">5</span>
-                    </div>
-                    <ul class="show-notification notification-view dropdown-menu" data-dropdown-in="fadeIn" data-dropdown-out="fadeOut">
+                      <span class="badge bg-c-pink">{{ $requestCount }}</span>
+                  </div>
+                    <!-- <ul class="show-notification notification-view dropdown-menu" data-dropdown-in="fadeIn" data-dropdown-out="fadeOut">
                       <li>
                         <h6>Notifications</h6>
                         <label class="form-label label label-danger">New</label>
@@ -81,17 +81,17 @@
                           </div>
                         </div>
                       </li>
-                    </ul>
+                    </ul> -->
                   </div>
                 </li>
-                <li class="header-notification">
+                <!-- <li class="header-notification">
                   <div class="dropdown-primary dropdown">
                     <div class="displayChatbox dropdown-toggle" data-bs-toggle="dropdown">
                       <i class="feather icon-message-square"></i>
                       <span class="badge bg-c-green">3</span>
                     </div>
                   </div>
-                </li>
+                </li> -->
                 <li class="user-profile header-notification">
                   <div class="dropdown-primary dropdown">
                     <div class="dropdown-toggle" data-bs-toggle="dropdown">
