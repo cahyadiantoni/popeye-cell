@@ -58,7 +58,7 @@
                                 <a href="{{ route('data-barang.create') }}" class="btn btn-primary btn-round">Upload Excel Barang</a>
                                 <hr>
                                 <div class="dt-responsive table-responsive">
-                                <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
+                                    <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                         <thead>
                                             <tr>
                                                 <th>LOK_SPK</th>

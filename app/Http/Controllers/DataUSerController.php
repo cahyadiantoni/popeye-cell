@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User; // Pastikan model User sudah ada
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class DataUSerController extends Controller

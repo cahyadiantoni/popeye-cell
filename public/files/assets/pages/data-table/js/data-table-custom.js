@@ -503,7 +503,9 @@ $(document).ready(function() {
     // Styling js end
 
 
-    $('#simpletable').DataTable();
+    $('#simpletable').DataTable({
+        order: [] // Tidak ada pengurutan otomatis
+    });
 
     $('#order-table').DataTable({
         "order": [
@@ -686,4 +688,36 @@ $(document).ready(function() {
         }
     });
 
+    var table = $('#checkbox-select').DataTable({
+        columnDefs: [{
+            orderable: false,
+            targets: 0
+        }],
+        select: {
+            style: 'multi',
+            selector: 'td:first-child'
+        },
+        order: [[1, 'asc']]
+    });
+
+    // Handle click on checkbox
+    $('#select-all').on('click', function () {
+        var rows = table.rows({ 'search': 'applied' }).nodes(); // Ambil baris yang terlihat
+        $('input[type="checkbox"]', rows).prop('checked', this.checked); // Set checkbox sesuai status Select All
+        if (this.checked) {
+            table.rows({ 'search': 'applied' }).select(); // Pilih semua baris
+        } else {
+            table.rows({ 'search': 'applied' }).deselect(); // Deselect semua baris
+        }
+    });
+
+    // Update Select All checkbox status based on individual checkbox
+    $('#checkbox-select tbody').on('change', 'input[type="checkbox"]', function () {
+        if (!this.checked) {
+            $('#select-all').prop('checked', false); // Jika salah satu tidak dicentang, hilangkan centang di Select All
+        }
+        if ($('input[type="checkbox"]:checked').length === $('#checkbox-select tbody input[type="checkbox"]').length) {
+            $('#select-all').prop('checked', true); // Jika semua tercentang, centang Select All
+        }
+    });
 });

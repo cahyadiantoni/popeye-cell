@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
+use App\Models\Kirim;
 use App\Http\Controllers\Controller;
 use App\Models\Gudang;
 use Illuminate\Http\Request;
@@ -106,7 +107,10 @@ class DataBarangController extends Controller
         // Membaca file Excel
         $file = $request->file('filedata');
         $data = Excel::toArray([], $file);
-        $gudang = $request->input('gudang_id');
+        $gudang_id = $request->input('gudang_id');
+
+        $gudang = Gudang::find($gudang_id);
+        $pj_gudang = $gudang->pj_gudang;
     
         foreach ($data[0] as $index => $row) {
             // Lewati baris pertama jika merupakan header
@@ -121,16 +125,7 @@ class DataBarangController extends Controller
             if (
                 is_string($row[0]) && // lok_spk
                 is_string($row[1]) && // jenis
-                is_string($row[2]) && // merek
                 is_string($row[3]) && // tipe
-                is_string($row[5]) && // kelengkapan
-                is_string($row[6]) && // kerusakan
-                is_string($row[7]) && // grade
-                is_numeric($row[9]) && // harga_jual
-                is_numeric($row[10]) && // harga_beli
-                is_string($row[11]) && // keterangan1
-                is_string($row[12]) && // keterangan2
-                is_string($row[13]) && // keterangan3
                 is_string($row[14]) // nama_petugas
             ) {
                 // Cek apakah lok_spk sudah ada di database
@@ -162,7 +157,17 @@ class DataBarangController extends Controller
                     'dt_jatuh_tempo' => $dt_jatuh_tempo,
                     'dt_input' => Carbon::now(),
                     'user_id' => Auth::id(),
-                    'gudang_id' => $gudang,
+                    'gudang_id' => 0,
+                ]);
+
+                Kirim::create([
+                    'lok_spk' => $row[0],
+                    'pengirim_gudang_id' => 0,
+                    'penerima_gudang_id' => $gudang_id,
+                    'pengirim_user_id' => Auth::id(),
+                    'penerima_user_id' => $pj_gudang,
+                    'status' => 0,
+                    'dt_kirim' => Carbon::now(),
                 ]);
                 
                 // Tambahkan baris yang berhasil disimpan

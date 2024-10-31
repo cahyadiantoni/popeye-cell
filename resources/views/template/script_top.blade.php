@@ -21,6 +21,8 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('files/bower_components/datatables.net-bs4/css/dataTables.bootstrap4.min.css')}}">
     <link rel="stylesheet" type="text/css" href="{{ asset('files/assets/pages/data-table/css/buttons.dataTables.min.css')}}">
     <link rel="stylesheet" type="text/css" href="{{ asset('files/bower_components/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('files/assets/pages/data-table/extensions/select/css/select.dataTables.min.css')}}">
+    <script src="{{ asset('files/assets/pages/data-table/extensions/select/js/select-custom.js')}}"></script>
     <!-- Style.css -->
     <link rel="stylesheet" type="text/css" href="{{ asset('files/assets/css/style.css')}}" />
     <link rel="stylesheet" type="text/css" href="{{ asset('files/assets/css/jquery.mCustomScrollbar.css')}}" />
