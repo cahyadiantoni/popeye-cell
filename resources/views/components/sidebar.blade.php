@@ -51,5 +51,26 @@
                 </a>
             </li>
         </ul>
+        <div class="pcoded-navigatio-lavel">Transaksi</div>
+        <ul class="pcoded-item pcoded-left-item">
+            <li class="{{ Request::is('transaksi-jual*') ? 'active' : '' }}">
+                <a href="<?= url('/transaksi-jual') ?>">
+                    <span class="pcoded-micon"><i class="feather icon-user"></i></span>
+                    <span class="pcoded-mtext">Transaksi Jual</span>
+                </a>
+            </li>
+            <li class="{{ Request::is('transaksi-faktur*') ? 'active' : '' }}">
+                <a href="<?= url('/transaksi-faktur') ?>">
+                    <span class="pcoded-micon"><i class="feather icon-user"></i></span>
+                    <span class="pcoded-mtext">Transaksi Faktur</span>
+                </a>
+            </li>
+            <li class="{{ Request::is('transaksi-return*') ? 'active' : '' }}">
+                <a href="<?= url('/transaksi-return') ?>">
+                    <span class="pcoded-micon"><i class="feather icon-user"></i></span>
+                    <span class="pcoded-mtext">Transaksi Return</span>
+                </a>
+            </li>
+        </ul>
     </div>
 </nav>
