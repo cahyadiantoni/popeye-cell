@@ -4,29 +4,25 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddNoFakturToTBarangTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
-     *
-     * @return void
      */
-    public function up()
+    public function up(): void
     {
         Schema::table('t_barang', function (Blueprint $table) {
-            $table->string('no_faktur')->nullable()->after('user_id');;
+            $table->datetime('dt_return')->nullable()->after('dt_jatuh_tempo');
         });
     }
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
-    public function down()
+    public function down(): void
     {
         Schema::table('t_barang', function (Blueprint $table) {
-            $table->dropColumn('no_faktur');
+            $table->dropColumn('dt_return');
         });
     }
-}
+};

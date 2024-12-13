@@ -19,5 +19,12 @@ class Faktur extends Model
         'tgl_jual',
         'petugas',
         'total',
+        'keterangan',
     ];
+
+    public function barangs()
+    {
+        return $this->hasMany(Barang::class, 'no_faktur', 'nomor_faktur');
+    }
+
 }

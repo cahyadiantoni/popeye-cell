@@ -37,4 +37,15 @@ class Barang extends Model
     {
         return $this->belongsTo(Gudang::class, 'gudang_id');
     }
+
+    public function faktur()
+    {
+        return $this->belongsTo(Faktur::class, 'no_faktur', 'nomor_faktur');
+    }
+
+
+    public function barangs()
+    {
+        return $this->hasMany(Barang::class, 'no_faktur', 'nomor_faktur');
+    }
 }

@@ -42,10 +42,13 @@
                                 </div>
                             @endif
                             <div class="card-block">
+                                <div class="mb-3">
+                                    <a href="{{ route('export.barang') }}" class="btn btn-primary">Download Excel</a>
+                                </div>
                                 <div class="dt-responsive table-responsive">
                                     <form id="request-form" method="POST" action="{{ route('kirimBarang') }}">
                                         @csrf
-                                        <table id="checkbox-select" class="table table-striped table-bordered nowrap" style="width: 100%;">
+                                        <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                             <thead>
                                                 <tr>
                                                     <th><input type="checkbox" id="select-all"></th>

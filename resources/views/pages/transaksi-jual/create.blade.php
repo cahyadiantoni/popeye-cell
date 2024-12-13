@@ -48,6 +48,12 @@
                                             <input type="text" name="petugas" class="form-control" placeholder="Ketik Nama Petugas" required>
                                         </div>
                                     </div>
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Keterangan</label>
+                                        <div class="col-sm-10">
+                                            <textarea name="keterangan" class="form-control" placeholder="Tambahkan keterangan jika diperlukan" rows="4"></textarea>
+                                        </div>
+                                    </div>
                                     <!-- Tambahkan tombol submit di sini -->
                                     <div class="d-flex justify-content-between">
                                         <a href="{{ route('transaksi-jual.index') }}" class="btn btn-secondary btn-round">Kembali</a>

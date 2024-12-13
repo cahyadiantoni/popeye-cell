@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Kirim;
 use App\Models\Faktur;
+use App\Models\TransaksiJual;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -26,9 +27,13 @@ class TransaksiController extends Controller
             't_barang.status_barang',
             't_faktur.*'
         )
-        ->get();    
+        ->where('t_barang.status_barang', 2)
+        ->get();   
 
-        return view('pages.transaksi-jual.index', compact('barangs'));
+        $allgudangs = Gudang::all();
+
+
+        return view('pages.transaksi-jual.index', compact('barangs', 'allgudangs'));
     }
 
     public function create()
@@ -96,6 +101,7 @@ class TransaksiController extends Controller
                 'pembeli' => $request->input('pembeli'),
                 'tgl_jual' => $request->input('tgl_jual'),
                 'petugas' => $request->input('petugas'),
+                'keterangan' => $request->input('keterangan'),
                 'total' => $totalHargaJual,
             ]);
     
@@ -105,6 +111,12 @@ class TransaksiController extends Controller
                     'status_barang' => 2,
                     'no_faktur' => $request->input('nomor_faktur'),
                     'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
+                ]);
+
+                TransaksiJual::create([
+                    'lok_spk' => $item['lok_spk'],
+                    'nomor_faktur' => $request->input('nomor_faktur'),
+                    'harga' => $item['harga_jual'],
                 ]);
             }
     
