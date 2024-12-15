@@ -67,7 +67,7 @@ class TransaksiController extends Controller
             // Validasi kolom di Excel
             if (isset($row[0]) && isset($row[1])) {
                 $lokSpk = $row[0]; // Lok SPK
-                $hargaJual = $row[1]; // Harga Jual
+                $hargaJual = $row[1]*1000; // Harga Jual
     
                 // Cari barang berdasarkan lok_spk
                 $barang = Barang::where('lok_spk', $lokSpk)->first();
@@ -130,6 +130,62 @@ class TransaksiController extends Controller
         return redirect()->route('transaksi-jual.index')
             ->with('errors', $errors);
     }
+    
+
+    public function destroy($lok_spk)
+    {
+        try {
+            $transaksi = TransaksiJual::where('lok_spk', $lok_spk)->firstOrFail();
+
+            // Update status_barang dan no_faktur pada model Barang
+            $barang = $transaksi->barang;
+            $barang->update([
+                'status_barang' => 1,
+                'no_faktur' => null,
+            ]);
+
+            // Hapus Transaksi
+            $nomorFaktur = $transaksi->nomor_faktur;
+            $transaksi->delete();
+
+            // Hitung ulang total pada Faktur
+            $totalBaru = TransaksiJual::where('nomor_faktur', $nomorFaktur)->sum('harga');
+            Faktur::where('nomor_faktur', $nomorFaktur)->update(['total' => $totalBaru]);
+
+            return redirect()->back()->with('success', 'Barang berhasil dihapus');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+
+    public function update(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'lok_spk' => 'required|exists:t_jual,lok_spk',
+                'harga' => 'required|numeric|min:0',
+            ]);
+    
+            // Gunakan firstOrFail() untuk pencarian berdasarkan 'lok_spk'
+            $transaksi = TransaksiJual::where('lok_spk', $validated['lok_spk'])->firstOrFail();
+            $transaksi->update(['harga' => $validated['harga']]);
+    
+            // Update harga_jual pada model Barang
+            $barang = $transaksi->barang;
+            $barang->update(['harga_jual' => $validated['harga']]);
+    
+            // Hitung ulang total pada Faktur
+            $nomorFaktur = $transaksi->nomor_faktur;
+            $totalBaru = TransaksiJual::where('nomor_faktur', $nomorFaktur)->sum('harga');
+            Faktur::where('nomor_faktur', $nomorFaktur)->update(['total' => $totalBaru]);
+    
+            return redirect()->back()->with('success', 'Harga berhasil diupdate');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+    
     
 
 }

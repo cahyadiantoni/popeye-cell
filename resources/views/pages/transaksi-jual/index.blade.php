@@ -84,7 +84,7 @@
                                                     <td>{{ $barang->no_faktur }}</td>
                                                     <td>{{ $barang->pembeli }}</td>
                                                     <td>{{ $barang->tgl_jual }}</td>
-                                                    <td>{{ 'Rp. ' . number_format($barang->harga_jual * 1000, 0, ',', '.') }}</td>
+                                                    <td>{{ 'Rp. ' . number_format($barang->harga_jual, 0, ',', '.') }}</td>
                                                     <td>{{ $barang->petugas }}</td>
                                                 </tr>
                                                 @endforeach

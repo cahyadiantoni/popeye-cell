@@ -35,4 +35,13 @@ Route::get('/export-barang', function () {
     return Excel::download(new BarangExport, 'stok_barang.xlsx');
 })->name('export.barang');
 
+Route::get('/transaksi-faktur/{nomor_faktur}/print', [TransaksiFakturController::class, 'printPdf'])->name('transaksi-faktur.print');
+
+Route::delete('/transaksi-jual/{lok_spk}', [TransaksiController::class, 'destroy'])->name('transaksi-jual.delete');
+Route::put('/transaksi-jual/update', [TransaksiController::class, 'update'])->name('transaksi-jual.update');
+
+Route::put('/transaksi-faktur/update/{nomor_faktur}', [TransaksiFakturController::class, 'update'])->name('transaksi-faktur.update');
+
+
+
 

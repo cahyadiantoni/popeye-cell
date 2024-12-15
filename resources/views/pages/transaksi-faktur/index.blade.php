@@ -33,6 +33,21 @@
 
             <!-- Page-body start -->
             <div class="page-body">
+                {{-- Pesan Berhasil --}}
+                @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
+                {{-- Pesan Gagal --}}
+                @if(session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
                 <div class="row">
                     <div class="col-sm-12">
                         <!-- Zero config.table start -->
@@ -63,12 +78,15 @@
                                                 <td>{{ $faktur->pembeli }}</td>
                                                 <td>{{ $faktur->tgl_jual }}</td>
                                                 <td>{{ $faktur->total_barang }}</td>
-                                                <td>{{ 'Rp. ' . number_format($faktur->total*1000, 0, ',', '.') }}</td>
+                                                <td>{{ 'Rp. ' . number_format($faktur->total, 0, ',', '.') }}</td>
                                                 <td>{{ $faktur->petugas }}</td>
                                                 <td>{{ $faktur->keterangan }}</td>
-                                                <!-- <td> -->
-                                                    <!-- <a href="{{ route('transaksi-jual.edit', urlencode($faktur->lok_spk)) }}" class="btn btn-warning btn-round">Edit</a> -->
-                                                <!-- </td> -->
+                                                <td>
+                                                    <!-- Tombol View -->
+                                                    <a href="{{ route('transaksi-faktur.show', $faktur->nomor_faktur) }}" class="btn btn-info btn-sm">View</a>
+                                                    <!-- Tombol Edit -->
+                                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $faktur->nomor_faktur }}" data-pembeli="{{ $faktur->pembeli }}" data-tgl-jual="{{ $faktur->tgl_jual }}" data-petugas="{{ $faktur->petugas }}" data-keterangan="{{ $faktur->keterangan }}">Edit</button>
+                                                </td>
                                             </tr>
                                             @endforeach
                                         </tbody>
@@ -95,4 +113,78 @@
         </div>
     </div>
     <!-- Main-body end -->
+
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editForm" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editModalLabel">Edit Faktur</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="editNomorFaktur" name="nomor_faktur">
+                        <div class="mb-3">
+                            <label for="editPembeli" class="form-label">Pembeli</label>
+                            <input type="text" class="form-control" id="editPembeli" name="pembeli" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editTglJual" class="form-label">Tgl Faktur</label>
+                            <input type="date" class="form-control" id="editTglJual" name="tgl_jual" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPetugas" class="form-label">Petugas</label>
+                            <input type="text" class="form-control" id="editPetugas" name="petugas" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editKeterangan" class="form-label">Keterangan</label>
+                            <textarea class="form-control" id="editKeterangan" name="keterangan" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const editButtons = document.querySelectorAll('.edit-btn');
+            const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+            const editForm = document.getElementById('editForm');
+            const editNomorFaktur = document.getElementById('editNomorFaktur');
+            const editPembeli = document.getElementById('editPembeli');
+            const editTglJual = document.getElementById('editTglJual');
+            const editPetugas = document.getElementById('editPetugas');
+            const editKeterangan = document.getElementById('editKeterangan');
+
+            editButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Ambil data dari button
+                    const nomorFaktur = button.dataset.id;
+                    const pembeli = button.dataset.pembeli;
+                    const tglJual = button.dataset.tglJual;
+                    const petugas = button.dataset.petugas;
+                    const keterangan = button.dataset.keterangan;
+
+                    // Isi form modal dengan data
+                    editNomorFaktur.value = nomorFaktur;
+                    editPembeli.value = pembeli;
+                    editTglJual.value = tglJual;
+                    editPetugas.value = petugas;
+                    editKeterangan.value = keterangan;
+
+                    // Update action form dan tampilkan modal
+                    editForm.action = `/transaksi-faktur/update/${nomorFaktur}`;
+                    editModal.show();
+                });
+            });
+        });
+    </script>
+
 @endsection()
