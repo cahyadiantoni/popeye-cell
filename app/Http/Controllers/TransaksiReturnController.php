@@ -17,7 +17,7 @@ class TransaksiReturnController extends Controller
     public function index()
     {
         
-        $returns = ReturnBarang::with(['user', 'barang.faktur'])->get();
+        $returns = ReturnBarang::with(['user', 'barang.faktur'])->get()->sortByDesc('tgl_return');;
           
 
         return view('pages.transaksi-return.index', compact('returns'));

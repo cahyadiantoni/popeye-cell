@@ -64,7 +64,7 @@
                                                 <th>Total Harga</th>
                                                 <th>Petugas</th>
                                                 <th>Keterangan</th>
-                                                <!-- <th>Action</th> -->
+                                                <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -98,7 +98,7 @@
                                                 <th>jumlah Barang</th>
                                                 <th>Total Harga</th>
                                                 <th>Petugas</th>
-                                                <!-- <th>Action</th> -->
+                                                <th>Action</th>
                                             </tr>
                                         </tfoot>
                                     </table>

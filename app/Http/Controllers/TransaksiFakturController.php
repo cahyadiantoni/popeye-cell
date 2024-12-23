@@ -17,7 +17,9 @@ class TransaksiFakturController extends Controller
 {
     public function index()
     {
-        $fakturs = Faktur::withCount(['barangs as total_barang'])->get();
+        $fakturs = Faktur::withCount(['barangs as total_barang'])
+                     ->orderBy('tgl_jual', 'desc')
+                     ->get();
 
         return view('pages.transaksi-faktur.index', compact('fakturs')); 
     }

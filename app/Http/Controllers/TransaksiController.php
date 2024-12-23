@@ -28,6 +28,7 @@ class TransaksiController extends Controller
             't_faktur.*'
         )
         ->where('t_barang.status_barang', 2)
+        ->orderBy('t_faktur.tgl_jual', 'desc')
         ->get();   
 
         $allgudangs = Gudang::all();
