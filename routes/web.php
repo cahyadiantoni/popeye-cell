@@ -22,7 +22,8 @@ Route::resource('/data-gudang', DataGudangController::class)->middleware('auth')
 Route::resource('/data-barang', DataBarangController::class)->middleware('auth');
 Route::get('/request-masuk-gudang', [StokGudangController::class, 'request_masuk'])->middleware('auth');
 Route::post('/handle-request', [StokGudangController::class, 'handleRequest'])->middleware('auth')->name('handleRequest');
-Route::get('/stok-opname', [StokGudangController::class, 'stok_opname'])->middleware('auth');
+Route::get('/stok-opname', [StokGudangController::class, 'stok_opname'])->middleware('auth')->name('stokOpname');
+Route::get('/choice-gudang', [StokGudangController::class, 'choice_gudang'])->middleware('auth')->name('choiceGudang');
 Route::post('/kirim-barang', [StokGudangController::class, 'kirimBarang'])->middleware('auth')->name('kirimBarang');
 Route::get('/history-kirim', [StokGudangController::class, 'history_kirim'])->middleware('auth')->name('historyKirim');
 Route::resource('/transaksi-jual', TransaksiController::class)->middleware('auth');

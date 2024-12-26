@@ -38,8 +38,8 @@
                     <span class="pcoded-mtext">Request Barang Masuk</span>
                 </a>
             </li>
-            <li class="{{ Request::is('stok-opname*') ? 'active' : '' }}">
-                <a href="<?= url('/stok-opname') ?>">
+            <li class="{{ Request::is('choice-gudang*') ? 'active' : '' }}">
+                <a href="<?= url('/choice-gudang') ?>">
                     <span class="pcoded-micon"><i class="feather icon-user"></i></span>
                     <span class="pcoded-mtext">Stok Opname Gudang</span>
                 </a>

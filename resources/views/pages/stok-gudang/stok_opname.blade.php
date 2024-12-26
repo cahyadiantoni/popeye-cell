@@ -11,7 +11,7 @@
                     <div class="col-lg-8">
                         <div class="page-header-title">
                             <div class="d-inline">
-                                <h4>Stok Opname Gudang: {{ $gudangs->first()->nama_gudang }}</h4>
+                                <h4>Stok Opname Gudang: {{ $selectedGudang->nama_gudang }}</h4>
                             </div>
                         </div>
                     </div>
@@ -22,7 +22,7 @@
                                     <a href="<?= url('/') ?>"> <i class="feather icon-home"></i> </a>
                                 </li>
                                 <li class="breadcrumb-item" style="float: left;"><a
-                                        href="#!">Data Barang Gudang {{ $gudangs->first()->nama_gudang }}</a>
+                                        href="#!">Data Barang Gudang {{ $selectedGudang->nama_gudang }}</a>
                                 </li>
                             </ul>
                         </div>
@@ -42,6 +42,9 @@
                                 </div>
                             @endif
                             <div class="card-block">
+                                <div class="mb-3">
+                                    <a href="{{ route('choiceGudang') }}" class="btn btn-secondary">Kembali Pilih Gudang</a>
+                                </div>
                                 <div class="mb-3">
                                     <a href="{{ route('export.barang') }}" class="btn btn-primary">Download Excel</a>
                                 </div>

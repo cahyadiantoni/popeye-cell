@@ -52,27 +52,42 @@ class StokGudangController extends Controller
         return view('pages.stok-gudang.history_kirim', compact('requests'));
     }
 
-    public function stok_opname()
+    public function choice_gudang()
     {
-        // Mendapatkan auth id pengguna yang sedang login
-        $authId = Auth::id();
-
         $allgudangs = Gudang::all();
 
-        $gudangs = Gudang::where('pj_gudang', $authId)->select('id', 'nama_gudang')->get();
-
-        // Mengambil id dari setiap gudang yang sesuai dengan auth_id
-        $gudangIds = $gudangs->pluck('id');
-
-        // Mengambil data dari model Barang yang memiliki gudang_id sesuai dengan id gudangs
-        $barangs = Barang::with('gudang')
-                     ->whereIn('gudang_id', $gudangIds)
-                     ->where('status_barang', 1) // Menambahkan kondisi untuk status
-                     ->get();
-
         // Mengirim data gudangs dan barangs ke view
-        return view('pages.stok-gudang.stok_opname', compact('allgudangs', 'gudangs', 'barangs'));
+        return view('pages.stok-gudang.choice_gudang', compact('allgudangs'));
     }
+
+    public function stok_opname(Request $request)
+    {
+        // Ambil ID gudang dari query string, default 'all' jika tidak ada
+        $gudangId = $request->query('gudang_id', 'all');
+    
+        // Ambil semua gudang
+        $allgudangs = Gudang::all();
+    
+        if ($gudangId === 'all') {
+            $selectedGudang = (object) ['nama_gudang' => 'Semua Gudang'];
+            $barangs = Barang::with('gudang')
+                ->where('status_barang', 1) // Menambahkan kondisi untuk status
+                ->get();
+        } else {
+            // Validasi dan ambil data gudang yang dipilih
+            $selectedGudang = Gudang::findOrFail($gudangId);
+    
+            // Ambil data barang terkait gudang
+            $barangs = Barang::with('gudang')
+                ->where('gudang_id', $gudangId)
+                ->where('status_barang', 1)
+                ->get();
+        }
+    
+        // Kirim data ke view
+        return view('pages.stok-gudang.stok_opname', compact('selectedGudang', 'barangs', 'allgudangs'));
+    }    
+    
 
     public function handleRequest(Request $request)
     {
