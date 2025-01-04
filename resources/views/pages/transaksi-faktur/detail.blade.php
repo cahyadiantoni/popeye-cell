@@ -15,7 +15,7 @@
                     </div>
                 </div>
                 <div class="col-lg-4">
-                    <a href="{{ route('transaksi-faktur.print', $faktur->nomor_faktur) }}" class="btn btn-primary">Print PDF</a>
+                    <a href="{{ route('transaksi-faktur.print', $faktur->nomor_faktur) }}" class="btn btn-primary" target="_blank">Print PDF</a>
                     <a href="{{ route('transaksi-faktur.index') }}" class="btn btn-secondary">Kembali</a>
                 </div>
             </div>
