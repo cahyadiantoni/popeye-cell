@@ -138,11 +138,10 @@ class TransaksiController extends Controller
         try {
             $transaksi = TransaksiJual::where('lok_spk', $lok_spk)->firstOrFail();
 
-            // Update status_barang dan no_faktur pada model Barang
-            $barang = $transaksi->barang;
-            $barang->update([
+            Barang::where('lok_spk', $lok_spk)->update([
                 'status_barang' => 1,
                 'no_faktur' => null,
+                'harga_jual' => 0, 
             ]);
 
             // Hapus Transaksi
