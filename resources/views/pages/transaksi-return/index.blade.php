@@ -33,11 +33,39 @@
 
             <!-- Page-body start -->
             <div class="page-body">
+                <!-- Pesan Success atau Error -->
+                @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
+                @if(session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
+                @if(session('errors'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <ul>
+                            @foreach (session('errors') as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
                 <div class="row">
                     <div class="col-sm-12">
                         <!-- Zero config.table start -->
                         <div class="card">
                             <div class="card-block">
+                                <button type="button" class="btn btn-primary btn-round" id="returnBarangBtn">Return Barang</button>
+                                <hr>
                                 <div class="dt-responsive table-responsive">
                                     <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                         <thead>
@@ -50,7 +78,7 @@
                                                 <th>Tgl Return</th>
                                                 <th>Harga Jual</th>
                                                 <th>Petugas</th>
-                                                <!-- <th>Action</th> -->
+                                                <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -64,6 +92,13 @@
                                                 <td>{{ $return->tgl_return }}</td>
                                                 <td>{{ 'Rp. ' . number_format($return->barang->harga_jual, 0, ',', '.') }}</td>
                                                 <td>{{ $return->user->name }}</td>
+                                                <td>
+                                                    <form action="{{ route('transaksi-return.delete', $return->lok_spk) }}" method="POST" class="d-inline delete-form">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
+                                                    </form>
+                                                </td>
                                             </tr>
                                             @endforeach
                                         </tbody>
@@ -77,7 +112,7 @@
                                                 <th>Tgl Return</th>
                                                 <th>Harga Jual</th>
                                                 <th>Petugas</th>
-                                                <!-- <th>Action</th> -->
+                                                <th>Action</th>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -92,4 +127,53 @@
         </div>
     </div>
     <!-- Main-body end -->
-@endsection()
+
+    <!-- Modal Return Barang -->
+    <div class="modal fade" id="returnBarangModal" tabindex="-1" aria-labelledby="returnBarangModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ route('transaksi-return.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="returnBarangModalLabel">Return Barang</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                    <div class="mb-3">
+                        <a href="{{ asset('files/template return barang.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
+                    </div>
+                        <div class="mb-3">
+                            <label for="fileBarang" class="form-label">Upload File Return</label>
+                            <input type="file" class="form-control" id="fileBarang" name="filedata" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const returnBarangBtn = document.getElementById('returnBarangBtn');
+            const returnBarangModal = new bootstrap.Modal(document.getElementById('returnBarangModal'));
+
+            returnBarangBtn.addEventListener('click', () => {
+                returnBarangModal.show();
+            });
+
+            const deleteForms = document.querySelectorAll('.delete-form');
+            deleteForms.forEach(form => {
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault(); // Mencegah submit form langsung
+                    if (confirm('Yakin ingin menghapus data ini?')) {
+                        form.submit(); // Submit form jika konfirmasi "OK"
+                    }
+                });
+            });
+        });
+    </script>
+@endsection
