@@ -56,7 +56,7 @@
                                     </div>
                                     <!-- Tambahkan tombol submit di sini -->
                                     <div class="d-flex justify-content-between">
-                                        <a href="{{ route('transaksi-jual.index') }}" class="btn btn-secondary btn-round">Kembali</a>
+                                        <a href="{{ route('transaksi-jual.index') }}" class="btn btn-secondary btn-round">List All Transaksi</a>
                                         <button type="submit" class="btn btn-primary btn-round">Submit Jual Barang</button>
                                     </div>
                                 </form>

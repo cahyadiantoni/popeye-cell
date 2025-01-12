@@ -122,13 +122,13 @@ class TransaksiController extends Controller
             }
     
             // Tampilkan pesan sukses dan error
-            return redirect()->route('transaksi-jual.index')
-                ->with('success', 'Faktur berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.')
-                ->with('errors', $errors);
+            return redirect()->route('transaksi-faktur.show', ['nomor_faktur' => $request->input('nomor_faktur')])
+            ->with('success', 'Faktur berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.')
+            ->with('errors', $errors);        
         }
     
         // Jika tidak ada data valid, hanya tampilkan error
-        return redirect()->route('transaksi-jual.index')
+        return redirect()->route('transaksi-faktur.show', ['nomor_faktur' => $request->input('nomor_faktur')])
             ->with('errors', $errors);
     }
     

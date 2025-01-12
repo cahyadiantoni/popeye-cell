@@ -57,13 +57,13 @@
                             <div class="card-block">
                                 <a href="{{ route('transaksi-jual.create') }}" class="btn btn-primary btn-round">Jual Barang</a>
                                 <hr>
-                                <form id="return-form" method="POST" action="{{ route('returnBarang') }}">
-                                    @csrf
+                                <!-- <form id="return-form" method="POST" action="{{ route('returnBarang') }}">
+                                    @csrf -->
                                     <div class="dt-responsive table-responsive">
                                         <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                             <thead>
                                                 <tr>
-                                                    <th><input type="checkbox" id="select-all"></th>
+                                                    <!-- <th><input type="checkbox" id="select-all"></th> -->
                                                     <th>LOK_SPK</th>
                                                     <th>Tipe</th>
                                                     <th>No Faktur</th>
@@ -76,9 +76,9 @@
                                             <tbody>
                                                 @foreach($barangs as $barang)
                                                 <tr>
-                                                    <td>
+                                                    <!-- <td>
                                                         <input type="checkbox" class="select-checkbox" name="lok_spk[]" value="{{ $barang->lok_spk }}">
-                                                    </td>
+                                                    </td> -->
                                                     <td>{{ $barang->lok_spk }}</td>
                                                     <td>{{ $barang->tipe }}</td>
                                                     <td>{{ $barang->no_faktur }}</td>
@@ -91,7 +91,7 @@
                                             </tbody>
                                             <tfoot>
                                                 <tr>
-                                                    <th></th>
+                                                    <!-- <th></th> -->
                                                     <th>LOK_SPK</th>
                                                     <th>Tipe</th>
                                                     <th>No Faktur</th>
@@ -105,7 +105,7 @@
                                     </div>
 
                                     <!-- Input Select Gudang -->
-                                    <div class="mb-3 row">
+                                    <!-- <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Select Gudang</label>
                                         <div class="col-sm-10">
                                             <select name="gudang_id" class="form-select form-control" required>
@@ -115,19 +115,19 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                    </div>
+                                    </div> -->
 
                                     <!-- Input Tanggal Return -->
-                                    <div class="mb-3 row">
+                                    <!-- <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Tanggal Return</label>
                                         <div class="col-sm-10">
                                             <input type="date" name="tgl_return" class="form-control" required>
                                         </div>
-                                    </div>
+                                    </div> -->
 
                                     <!-- Tombol Submit -->
-                                    <button type="submit" name="action" value="return" class="btn btn-danger">Return</button>
-                                </form>
+                                    <!-- <button type="submit" name="action" value="return" class="btn btn-danger">Return</button> -->
+                                <!-- </form> -->
                             </div>
                         </div>
                         <!-- Zero config.table end -->
@@ -139,11 +139,11 @@
     </div>
     <!-- Main-body end -->
 
-    <script>
+    <!-- <script>
         // Script untuk memilih semua checkbox
         document.getElementById('select-all').addEventListener('change', function() {
             let checkboxes = document.querySelectorAll('.select-checkbox');
             checkboxes.forEach(checkbox => checkbox.checked = this.checked);
         });
-    </script>
+    </script> -->
 @endsection

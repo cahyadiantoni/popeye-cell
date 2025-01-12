@@ -54,7 +54,7 @@
         <div class="pcoded-navigatio-lavel">Transaksi</div>
         <ul class="pcoded-item pcoded-left-item">
             <li class="{{ Request::is('transaksi-jual*') ? 'active' : '' }}">
-                <a href="<?= url('/transaksi-jual') ?>">
+                <a href="<?= url('/transaksi-jual/create') ?>">
                     <span class="pcoded-micon"><i class="feather icon-user"></i></span>
                     <span class="pcoded-mtext">Transaksi Jual</span>
                 </a>
