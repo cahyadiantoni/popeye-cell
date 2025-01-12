@@ -157,17 +157,8 @@ class DataBarangController extends Controller
                     'dt_jatuh_tempo' => $dt_jatuh_tempo,
                     'dt_input' => Carbon::now(),
                     'user_id' => Auth::id(),
-                    'gudang_id' => 0,
-                ]);
-
-                Kirim::create([
-                    'lok_spk' => $row[0],
-                    'pengirim_gudang_id' => 0,
-                    'penerima_gudang_id' => $gudang_id,
-                    'pengirim_user_id' => Auth::id(),
-                    'penerima_user_id' => $pj_gudang,
-                    'status' => 0,
-                    'dt_kirim' => Carbon::now(),
+                    'gudang_id' => $gudang_id,
+                    'status_barang' => 1,
                 ]);
                 
                 // Tambahkan baris yang berhasil disimpan
