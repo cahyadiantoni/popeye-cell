@@ -49,8 +49,6 @@
                                     <a href="{{ route('export.barang') }}" class="btn btn-primary">Download Excel</a>
                                 </div>
                                 <div class="dt-responsive table-responsive">
-                                    <!-- <form id="request-form" method="POST" action="{{ route('kirimBarang') }}">
-                                        @csrf -->
                                         <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                             <thead>
                                                 <tr>
@@ -87,20 +85,6 @@
                                                 </tr>
                                             </tfoot>
                                         </table>
-                                        <!-- <div class="mb-3 row">
-                                            <label class="form-label col-sm-2 col-form-label">Select Gudang</label>
-                                            <div class="col-sm-10">
-                                                <select name="gudang_id" class="form-select form-control" required>
-                                                    <option value="">-- Pilih Gudang --</option>
-                                                    @foreach($allgudangs as $gudang)
-                                                        <option value="{{ $gudang->id }}">{{ $gudang->nama_gudang }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div> -->
-                                        <!-- Tombol aksi -->
-                                        <!-- <button type="submit" name="action" value="kirim" class="btn btn-success">Kirim</button>
-                                    </form> -->
                                 </div>
                             </div>
                         </div>
@@ -109,12 +93,4 @@
             </div>
         </div>
     </div>
-    <!-- <script>
-    // Script untuk memilih semua checkbox
-    document.getElementById('select-all').addEventListener('change', function() {
-        let checkboxes = document.querySelectorAll('.select-checkbox');
-        checkboxes.forEach(checkbox => checkbox.checked = this.checked);
-    });
-    </script> -->
-    <!-- Main-body end -->
 @endsection()

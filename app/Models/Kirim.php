@@ -12,7 +12,6 @@ class Kirim extends Model
     protected $table = 't_kirim';
 
     protected $fillable = [
-        'lok_spk',
         'pengirim_gudang_id',
         'penerima_gudang_id',
         'pengirim_user_id',
@@ -43,8 +42,8 @@ class Kirim extends Model
         return $this->belongsTo(User::class, 'penerima_user_id');
     }
 
-    public function barang()
-    {
-        return $this->belongsTo(Barang::class, 'lok_spk', 'lok_spk');
-    }
+    // public function barang()
+    // {
+    //     return $this->belongsTo(Barang::class, 'lok_spk', 'lok_spk');
+    // }
 }

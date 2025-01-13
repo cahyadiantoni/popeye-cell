@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\KirimBarangController;
+use App\Http\Controllers\TerimaBarangController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DataUserController;
 use App\Http\Controllers\DataGudangController;
@@ -24,8 +26,17 @@ Route::get('/request-masuk-gudang', [StokGudangController::class, 'request_masuk
 Route::post('/handle-request', [StokGudangController::class, 'handleRequest'])->middleware('auth')->name('handleRequest');
 Route::get('/stok-opname', [StokGudangController::class, 'stok_opname'])->middleware('auth')->name('stokOpname');
 Route::get('/choice-gudang', [StokGudangController::class, 'choice_gudang'])->middleware('auth')->name('choiceGudang');
-Route::post('/kirim-barang', [StokGudangController::class, 'kirimBarang'])->middleware('auth')->name('kirimBarang');
-Route::get('/history-kirim', [StokGudangController::class, 'history_kirim'])->middleware('auth')->name('historyKirim');
+// Route::post('/kirim-barang', [StokGudangController::class, 'kirimBarang'])->middleware('auth')->name('kirimBarang');
+Route::delete('/kirim-barang/{id}', [KirimBarangController::class, 'destroy'])->name('kirim-barang.delete');
+Route::delete('/kirim-barang/deletebarang/{id}', [KirimBarangController::class, 'destroybarang'])->name('kirim-barang.deletebarang');
+// Route::get('/history-kirim', [StokGudangController::class, 'history_kirim'])->middleware('auth')->name('historyKirim');
+Route::resource('/kirim-barang', KirimBarangController::class)->middleware('auth');
+Route::post('/kirim-barang/addbarang', [KirimBarangController::class, 'addbarang'])->name('kirim-barang.addbarang');
+
+Route::resource('/terima-barang', TerimaBarangController::class)->middleware('auth');
+Route::post('/terima-barang/terima', [TerimaBarangController::class, 'terima'])->name('terima-barang.terima');
+Route::post('/terima-barang/tolak', [TerimaBarangController::class, 'tolak'])->name('terima-barang.tolak');
+
 Route::resource('/transaksi-jual', TransaksiController::class)->middleware('auth');
 Route::resource('/transaksi-faktur', TransaksiFakturController::class)->middleware('auth');
 Route::get('/transaksi-faktur/{nomor_faktur}', [TransaksiFakturController::class, 'show'])->name('transaksi-faktur.show');

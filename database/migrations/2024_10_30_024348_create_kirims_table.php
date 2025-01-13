@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('t_kirim', function (Blueprint $table) {
             $table->id();
-            $table->string('lok_spk', 255);
             $table->string('pengirim_gudang_id', 255);
             $table->string('penerima_gudang_id', 255);
             $table->string('pengirim_user_id', 255);

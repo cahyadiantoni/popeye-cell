@@ -32,22 +32,22 @@
         </ul>
         <div class="pcoded-navigatio-lavel">Stok Gudang</div>
         <ul class="pcoded-item pcoded-left-item">
-            <li class="{{ Request::is('request-masuk-gudang*') ? 'active' : '' }}">
-                <a href="<?= url('/request-masuk-gudang') ?>">
-                    <span class="pcoded-micon"><i class="feather icon-user"></i></span>
-                    <span class="pcoded-mtext">Request Barang Masuk</span>
-                </a>
-            </li>
             <li class="{{ Request::is('choice-gudang*') ? 'active' : '' }}">
                 <a href="<?= url('/choice-gudang') ?>">
                     <span class="pcoded-micon"><i class="feather icon-user"></i></span>
                     <span class="pcoded-mtext">Stok Opname Gudang</span>
                 </a>
             </li>
-            <li class="{{ Request::is('history-kirim*') ? 'active' : '' }}">
-                <a href="<?= url('/history-kirim') ?>">
+            <li class="{{ Request::is('kirim-barang*') ? 'active' : '' }}">
+                <a href="<?= url('/kirim-barang') ?>">
                     <span class="pcoded-micon"><i class="feather icon-user"></i></span>
-                    <span class="pcoded-mtext">History Kirim</span>
+                    <span class="pcoded-mtext">Kirim Barang</span>
+                </a>
+            </li>
+            <li class="{{ Request::is('terima-barang*') ? 'active' : '' }}">
+                <a href="<?= url('/terima-barang') ?>">
+                    <span class="pcoded-micon"><i class="feather icon-user"></i></span>
+                    <span class="pcoded-mtext">Request Barang Masuk</span>
                 </a>
             </li>
         </ul>
