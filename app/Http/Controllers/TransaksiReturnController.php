@@ -120,7 +120,7 @@ class TransaksiReturnController extends Controller
 
                 Barang::where('lok_spk', $item['lok_spk'])->update([
                     'status_barang' => 1,
-                    'gudang_id' => 6, // Update harga_jual dari Excel
+                    'gudang_id' => "6", // Update harga_jual dari Excel
                 ]);
 
             }

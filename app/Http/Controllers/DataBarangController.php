@@ -11,14 +11,35 @@ use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 use Auth;
 use Illuminate\Support\Facades\Validator;
+use Yajra\DataTables\Facades\DataTables;
 
 class DataBarangController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Mengambil semua data barang beserta data gudang terkait
-        $barangs = Barang::with('gudang')->get();
-        return view('pages.data-barang.index', compact('barangs'));
+        if ($request->ajax()) {
+            $query = Barang::with('gudang');
+            return DataTables::of($query)
+                ->addColumn('action', function ($barang) {
+                    $editUrl = route('data-barang.edit', urlencode($barang->lok_spk));
+                    $deleteUrl = route('data-barang.destroy', urlencode($barang->lok_spk));
+                    return '
+                        <a href="' . $editUrl . '" class="btn btn-warning btn-round">Edit</a>
+                        <form action="' . $deleteUrl . '" method="POST" style="display:inline;">
+                            ' . csrf_field() . '
+                            ' . method_field('DELETE') . '
+                            <button type="submit" class="btn btn-danger btn-round" onclick="return confirm(\'Are you sure you want to delete this barang?\')">Delete</button>
+                        </form>
+                    ';
+                })
+                ->editColumn('gudang.nama_gudang', function ($barang) {
+                    return $barang->gudang->nama_gudang ?? 'N/A';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+    
+        return view('pages.data-barang.index');
     }
 
     public function edit($lok_spk)

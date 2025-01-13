@@ -2,6 +2,9 @@
 
 @section('title', 'Data Barang')
 @section('content')
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <!-- Main-body start -->
     <div class="main-body">
         <div class="page-wrapper">
@@ -58,49 +61,28 @@
                                 <a href="{{ route('data-barang.create') }}" class="btn btn-primary btn-round">Upload Excel Barang</a>
                                 <hr>
                                 <div class="dt-responsive table-responsive">
-                                    <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
-                                        <thead>
-                                            <tr>
-                                                <th>LOK_SPK</th>
-                                                <th>Jenis</th>
-                                                <th>Tipe</th>
-                                                <th>Grade</th>
-                                                <th>Gudang</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($barangs as $barang)
-                                            <tr>
-                                                <td>{{ $barang->lok_spk }}</td>
-                                                <td>{{ $barang->jenis }}</td>
-                                                <td>{{ $barang->tipe }}</td>
-                                                <td>{{ $barang->grade }}</td>
-                                                <td>{{ $barang->gudang->nama_gudang ?? 'N/A' }}</td>
-                                                <td>
-                                                    <a href="{{ route('data-barang.edit', urlencode($barang->lok_spk)) }}" class="btn btn-warning btn-round">Edit</a>
-                                                    <!-- Tombol Delete -->
-                                                    <form action="{{ route('data-barang.destroy', urlencode($barang->lok_spk)) }}" method="POST" style="display:inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-round"
-                                                                onclick="return confirm('Are you sure you want to delete this barang?')">Delete</button>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                            @endforeach
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <th>LOK_SPK</th>
-                                                <th>Jenis</th>
-                                                <th>Tipe</th>
-                                                <th>Grade</th>
-                                                <th>Gudang</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
+                                <table id="tablebarang" class="table table-striped table-bordered nowrap" style="width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>LOK_SPK</th>
+                                            <th>Jenis</th>
+                                            <th>Tipe</th>
+                                            <th>Grade</th>
+                                            <th>Gudang</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tfoot>
+                                        <tr>
+                                            <th>LOK_SPK</th>
+                                            <th>Jenis</th>
+                                            <th>Tipe</th>
+                                            <th>Grade</th>
+                                            <th>Gudang</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
                                 </div>
                             </div>
                         </div>
@@ -112,4 +94,29 @@
         </div>
     </div>
     <!-- Main-body end -->
+
+<script>
+    $(document).ready(function () {
+        $('#tablebarang').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: "{{ route('data-barang.index') }}", // Pastikan rute ini mengarah ke metode `index` di controller
+            columns: [
+                { data: 'lok_spk', name: 'lok_spk' },
+                { data: 'jenis', name: 'jenis' },
+                { data: 'tipe', name: 'tipe' },
+                { data: 'grade', name: 'grade' },
+                { data: 'gudang.nama_gudang', name: 'gudang.nama_gudang' },
+                { 
+                    data: 'action', 
+                    name: 'action', 
+                    orderable: false, 
+                    searchable: false 
+                },
+            ]
+        });
+    });
+</script>
+
+
 @endsection()

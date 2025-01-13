@@ -29,7 +29,7 @@ class Barang extends Model
         'lok_spk', 'jenis', 'merek', 'tipe', 'imei', 'kelengkapan',
         'kerusakan', 'grade', 'qt_bunga', 'harga_jual', 'harga_beli',
         'keterangan1', 'keterangan2', 'keterangan3', 'nama_petugas',
-        'dt_beli', 'dt_lelang', 'dt_jatuh_tempo', 'dt_input', 'user_id','gudang_id','no_faktur','status_barang'
+        'dt_beli', 'dt_lelang', 'dt_jatuh_tempo', 'dt_input', 'user_id','gudang_id','no_faktur','status_barang','updated_at'
     ];
 
     // Relasi ke Gudang
