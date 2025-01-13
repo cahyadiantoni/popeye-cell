@@ -10,6 +10,7 @@
     <meta name="author" content="#" />
     <!-- Favicon icon -->
     <link rel="icon" href="{{ asset('files/assets/images/favicon.ico')}}" type="image/x-icon" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <!-- Google font-->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600" rel="stylesheet" />
     <!-- Required Fremwork -->

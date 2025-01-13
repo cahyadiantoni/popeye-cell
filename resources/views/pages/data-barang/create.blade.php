@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Tambah Data User')
+@section('title', 'Tambah Data Barang')
 @section('content')
     <!-- Main-body start -->
     <div class="main-body">
