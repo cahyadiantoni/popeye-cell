@@ -61,25 +61,25 @@
         <ul class="pcoded-item pcoded-left-item">
             <li class="{{ Request::is('transaksi-jual/create') ? 'active' : '' }}">
                 <a href="{{ url('/transaksi-jual/create') }}">
-                    <span class="pcoded-micon"><i class="fas fa-shopping-cart"></i></span>
-                    <span class="pcoded-mtext">Transaksi Jual</span>
+                    <span class="pcoded-micon"><i class="fas fa-store"></i></span>
+                    <span class="pcoded-mtext">Transaksi Jual (Offline)</span>
                 </a>
             </li>
             <li class="{{ Request::is('transaksi-faktur') ? 'active' : '' }}">
                 <a href="{{ url('/transaksi-faktur') }}">
-                    <span class="pcoded-micon"><i class="fas fa-file-invoice"></i></span>
-                    <span class="pcoded-mtext">Transaksi Faktur</span>
+                    <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                    <span class="pcoded-mtext">Transaksi Faktur (Offline)</span>
                 </a>
             </li>
             <li class="{{ Request::is('transaksi-jual-online*') ? 'active' : '' }}">
                 <a href="{{ url('/transaksi-jual-online/create') }}">
-                    <span class="pcoded-micon"><i class="fas fa-shopping-cart"></i></span>
+                    <span class="pcoded-micon"><i class="fas fa-globe"></i></span>
                     <span class="pcoded-mtext">Transaksi Jual Online</span>
                 </a>
             </li>
             <li class="{{ Request::is('transaksi-faktur-online*') ? 'active' : '' }}">
                 <a href="{{ url('/transaksi-faktur-online') }}">
-                    <span class="pcoded-micon"><i class="fas fa-file-invoice"></i></span>
+                    <span class="pcoded-micon"><i class="fas fa-file-alt"></i></span>
                     <span class="pcoded-mtext">Transaksi Faktur Online</span>
                 </a>
             </li>
