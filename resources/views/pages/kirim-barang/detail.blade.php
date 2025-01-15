@@ -83,8 +83,10 @@
 
             <!-- Tabel Barang -->
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5>Daftar Barang</h5>
+                    <!-- Tombol Download Excel -->
+                    <a href="{{ route('terima-barang.export', ['id' => $kirim->id]) }}" class="btn btn-success btn-sm">Download Excel</a>
                 </div>
                 <div class="card-block table-responsive">
                     <table class="table table-striped table-bordered">

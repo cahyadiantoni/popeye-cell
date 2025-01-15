@@ -39,6 +39,7 @@ Route::post('/kirim-barang/addbarang', [KirimBarangController::class, 'addbarang
 Route::resource('/terima-barang', TerimaBarangController::class)->middleware('auth');
 Route::post('/terima-barang/terima', [TerimaBarangController::class, 'terima'])->name('terima-barang.terima');
 Route::post('/terima-barang/tolak', [TerimaBarangController::class, 'tolak'])->name('terima-barang.tolak');
+Route::get('/terima-barang/export/{id}', [TerimaBarangController::class, 'export'])->name('terima-barang.export');
 
 Route::resource('/transaksi-return', TransaksiReturnController::class)->middleware('auth');
 Route::post('/return-barang', [TransaksiReturnController::class, 'returnBarang'])->name('returnBarang');

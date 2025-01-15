@@ -11,6 +11,7 @@ use App\Models\Kirim;
 use App\Models\KirimBarang;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\TerimaBarangExport;
 
 class TerimaBarangController extends Controller
 {
@@ -62,6 +63,15 @@ class TerimaBarangController extends Controller
         Kirim::where('id', $request->kirim_id)->update(['status' => 2, 'dt_terima' => now()]);
 
         return redirect()->back()->with('success', 'Barang berhasil ditolak.');
+    }
+
+    public function export(Request $request, $id)
+    {
+        $today = now()->format('Y-m-d'); // Format tanggal menjadi 'YYYY-MM-DD'
+        $fileName = "request-barang-masuk-{$today}.xlsx";
+
+        // Pass $id ke KirimBarangExport
+        return Excel::download(new TerimaBarangExport($id), $fileName);
     }
 
 }
