@@ -51,37 +51,47 @@ class TransaksiOnlineController extends Controller
             'toko' => 'required|string',
             'petugas' => 'required|string',
         ]);
-    
+
         // Inisialisasi variabel
         $errors = [];
         $totalHargaJual = 0;
         $validLokSpk = [];
         $fakturOnlineId = 0;
-    
+        $processedLokSpk = []; // Untuk memeriksa duplikat di dalam Excel
+
         // Membaca file Excel
         $file = $request->file('filedata');
         $data = Excel::toArray([], $file);
-    
+
         foreach ($data[0] as $index => $row) {
             // Lewati baris pertama jika merupakan header
             if ($index === 0) continue;
-    
+
             // Validasi kolom di Excel
             if (isset($row[0]) && isset($row[1]) && isset($row[2]) && isset($row[3])) {
-                $invoice = $row[0]; // Lok SPK
+                $invoice = $row[0]; // Invoice
                 $lokSpk = $row[1]; // Lok SPK
-                $hargaJual = $row[2]*1000; // Harga Jual
-                $pj = $row[3]*1000; // Harga Jual
-    
+                $hargaJual = $row[2] * 1000; // Harga Jual
+                $pj = $row[3] * 1000; // Harga PJ
+
+                // Cek duplikat lok_spk di dalam Excel
+                if (in_array($lokSpk, $processedLokSpk)) {
+                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
+                    continue;
+                }
+
+                // Tambahkan lok_spk ke daftar yang sudah diproses
+                $processedLokSpk[] = $lokSpk;
+
                 // Cari barang berdasarkan lok_spk
                 $barang = Barang::where('lok_spk', $lokSpk)->first();
-    
+
                 if ($barang) {
                     // Cek apakah status_barang adalah 0 atau 1
                     if (in_array($barang->status_barang, [0, 1])) {
                         // Tambahkan harga_jual ke total
                         $totalHargaJual += $hargaJual;
-    
+
                         // Simpan lok_spk untuk update nanti
                         $validLokSpk[] = [
                             'invoice' => $invoice,
@@ -99,7 +109,7 @@ class TransaksiOnlineController extends Controller
                 $errors[] = "Row " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
             }
         }
-    
+
         // Simpan data Faktur jika ada data valid
         if (!empty($validLokSpk)) {
             $fakturOnline = FakturOnline::create([
@@ -113,7 +123,7 @@ class TransaksiOnlineController extends Controller
 
             // Ambil ID dari data yang baru saja dibuat
             $fakturOnlineId = $fakturOnline->id;
-    
+
             // Update Barang untuk lok_spk yang valid
             foreach ($validLokSpk as $item) {
                 Barang::where('lok_spk', $item['lok_spk'])->update([
@@ -130,16 +140,15 @@ class TransaksiOnlineController extends Controller
                     'pj' => $item['pj'],
                 ]);
             }
-    
+
             // Tampilkan pesan sukses dan error
             return redirect()->route('transaksi-faktur-online.show', ['nomor_faktur' => $fakturOnlineId])
-            ->with('success', 'Faktur berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.')
-            ->with('errors', $errors);        
+                ->with('success', 'Faktur berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.')
+                ->with('errors', $errors);
         }
-    
+
         // Jika tidak ada data valid, hanya tampilkan error
-        return redirect()->route('transaksi-faktur-online.show', ['nomor_faktur' => $fakturOnlineId])
-            ->with('errors', $errors);
+        return redirect()->back()->with('errors', $errors);
     }
     
 

@@ -116,6 +116,7 @@ class TransaksiFakturOnlineController extends Controller
         $errors = [];
         $totalHargaJual = $request->input('total');
         $validLokSpk = [];
+        $processedLokSpk = []; // Untuk memeriksa duplikat di dalam Excel
     
         // Membaca file Excel
         $file = $request->file('filedata');
@@ -129,8 +130,27 @@ class TransaksiFakturOnlineController extends Controller
             if (isset($row[0]) && isset($row[1]) && isset($row[2]) && isset($row[3])) {
                 $invoice = $row[0];
                 $lokSpk = $row[1]; // Lok SPK
-                $hargaJual = $row[2]*1000; // Harga Jual
-                $pj = $row[3]*1000;
+                $hargaJual = $row[2] * 1000; // Harga Jual
+                $pj = $row[3] * 1000;
+    
+                // Cek duplikat `lok_spk` di dalam file Excel
+                if (in_array($lokSpk, $processedLokSpk)) {
+                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
+                    continue;
+                }
+    
+                // Tambahkan `lok_spk` ke daftar yang sudah diproses
+                $processedLokSpk[] = $lokSpk;
+    
+                // Cek apakah `lok_spk` dan `faktur_online_id` sudah ada di database
+                $exists = TransaksiJualOnline::where('lok_spk', $lokSpk)
+                    ->where('faktur_online_id', $request->input('faktur_online_id'))
+                    ->exists();
+    
+                if ($exists) {
+                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' dengan Faktur ID '{$request->input('faktur_online_id')}' sudah ada di database.";
+                    continue;
+                }
     
                 // Cari barang berdasarkan lok_spk
                 $barang = Barang::where('lok_spk', $lokSpk)->first();
@@ -162,9 +182,9 @@ class TransaksiFakturOnlineController extends Controller
         // Simpan data Faktur jika ada data valid
         if (!empty($validLokSpk)) {
             FakturOnline::where('id', $request->input('faktur_online_id'))
-            ->update([
-                'total' => $totalHargaJual,
-            ]);
+                ->update([
+                    'total' => $totalHargaJual,
+                ]);
     
             // Update Barang untuk lok_spk yang valid
             foreach ($validLokSpk as $item) {
@@ -173,7 +193,7 @@ class TransaksiFakturOnlineController extends Controller
                     'no_faktur' => $request->input('faktur_online_id'),
                     'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
                 ]);
-
+    
                 TransaksiJualOnline::create([
                     'lok_spk' => $item['lok_spk'],
                     'faktur_online_id' => $request->input('faktur_online_id'),
@@ -192,5 +212,5 @@ class TransaksiFakturOnlineController extends Controller
         // Jika tidak ada data valid, hanya tampilkan error
         return redirect()->back()
             ->with('errors', $errors);
-    }
+    }    
 }
