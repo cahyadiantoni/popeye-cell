@@ -46,7 +46,7 @@
                                     <a href="{{ route('choiceGudang') }}" class="btn btn-secondary">Kembali Pilih Gudang</a>
                                 </div>
                                 <div class="mb-3">
-                                    <a href="{{ route('export.barang') }}" class="btn btn-primary">Download Excel</a>
+                                    <a href="{{ route('export.barang', ['id' => $selectedGudang->id]) }}" class="btn btn-primary">Download Excel</a>
                                 </div>
                                 <div class="dt-responsive table-responsive">
                                         <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">

@@ -45,8 +45,8 @@ Route::resource('/transaksi-return', TransaksiReturnController::class)->middlewa
 Route::post('/return-barang', [TransaksiReturnController::class, 'returnBarang'])->name('returnBarang');
 Route::delete('/transaksi-return/{lok_spk}', [TransaksiReturnController::class, 'destroy'])->name('transaksi-return.delete');
 
-Route::get('/export-barang', function () {
-    return Excel::download(new BarangExport, 'stok_barang.xlsx');
+Route::get('/export-barang/{id}', function ($id) {
+    return Excel::download(new BarangExport($id), 'stok_barang_' . $id . '.xlsx');
 })->name('export.barang');
 
 Route::resource('/transaksi-faktur', TransaksiFakturController::class)->middleware('auth');

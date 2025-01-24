@@ -24,7 +24,7 @@ class Faktur extends Model
 
     public function barangs()
     {
-        return $this->hasMany(Barang::class, 'no_faktur', 'nomor_faktur');
+        return $this->hasMany(TransaksiJual::class, 'nomor_faktur', 'nomor_faktur');
     }
 
 }

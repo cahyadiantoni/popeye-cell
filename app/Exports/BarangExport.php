@@ -13,17 +13,18 @@ class BarangExport implements FromCollection, WithHeadings
     /**
      * Return collection of data to be exported.
      */
+
+    protected $id;
+
+    // Constructor to accept the id
+    public function __construct($id)
+    {
+        $this->id = $id;
+    }
+
     public function collection()
     {
-        // Mendapatkan auth id pengguna yang sedang login
-        $authId = Auth::id();
-
-        $gudangs = Gudang::where('pj_gudang', $authId)->select('id', 'nama_gudang')->get();
-
-        // Mengambil id dari setiap gudang yang sesuai dengan auth_id
-        $gudangIds = $gudangs->pluck('id');
-
-        return Barang::with('gudang')->where('gudang_id', $gudangIds)->where('status_barang', 1)->get()->map(function ($barang) {
+        return Barang::with('gudang')->where('gudang_id', $this->id)->where('status_barang', 1)->get()->map(function ($barang) {
             return [
                 'lok_spk' => $barang->lok_spk,
                 'jenis' => $barang->jenis,
