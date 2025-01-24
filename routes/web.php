@@ -24,6 +24,7 @@ Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->middlewa
 Route::resource('/data-user', DataUSerController::class)->middleware('auth');
 Route::resource('/data-gudang', DataGudangController::class)->middleware('auth');
 Route::resource('/data-barang', DataBarangController::class)->middleware('auth');
+Route::put('/update-data-barang/{lok_spk}', [DataBarangController::class, 'updateDataBarang'])->middleware('auth');
 Route::get('/request-masuk-gudang', [StokGudangController::class, 'request_masuk'])->middleware('auth');
 Route::post('/handle-request', [StokGudangController::class, 'handleRequest'])->middleware('auth')->name('handleRequest');
 Route::get('/stok-opname', [StokGudangController::class, 'stok_opname'])->middleware('auth')->name('stokOpname');

@@ -47,6 +47,13 @@
                                 </div>
                             @endif
 
+                            @if(session('error'))
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    {{ session('error') }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            @endif
+
                             @if(session('errors'))
                                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                     <ul>
@@ -95,6 +102,46 @@
     </div>
     <!-- Main-body end -->
 
+    <!-- Modal Edit Barang -->
+    <div class="modal fade" id="editBarangModal" tabindex="-1" aria-labelledby="editBarangLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editBarangForm" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editBarangLabel">Edit Data Barang</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="lok_spk_original" name="lok_spk_original">
+                        <div class="mb-3">
+                            <label for="lok_spk" class="form-label">Lok SPK</label>
+                            <input type="text" class="form-control" id="lok_spk" name="lok_spk" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jenis" class="form-label">Jenis</label>
+                            <input type="text" class="form-control" id="jenis" name="jenis" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tipe" class="form-label">Tipe</label>
+                            <input type="text" class="form-control" id="tipe" name="tipe" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="grade" class="form-label">Grade</label>
+                            <input type="text" class="form-control" id="grade" name="grade">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
 <script>
     $(document).ready(function () {
         $('#tablebarang').DataTable({
@@ -115,6 +162,27 @@
                 },
             ]
         });
+    });
+
+    $(document).on('click', '.edit-barang-btn', function () {
+        // Ambil data dari tombol
+        const lok_spk = $(this).data('lok_spk');
+        const jenis = $(this).data('jenis');
+        const tipe = $(this).data('tipe');
+        const grade = $(this).data('grade');
+
+        // Isi data ke dalam modal
+        $('#lok_spk_original').val(lok_spk); // Lok SPK original
+        $('#lok_spk').val(lok_spk);
+        $('#jenis').val(jenis);
+        $('#tipe').val(tipe);
+        $('#grade').val(grade);
+
+        // Atur action form modal edit
+        $('#editBarangForm').attr('action', `/update-data-barang/${lok_spk}`);
+
+        // Tampilkan modal
+        $('#editBarangModal').modal('show');
     });
 </script>
 

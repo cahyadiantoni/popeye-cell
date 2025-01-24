@@ -21,14 +21,24 @@ class DataBarangController extends Controller
             $query = Barang::with('gudang');
             return DataTables::of($query)
                 ->addColumn('action', function ($barang) {
-                    $editUrl = route('data-barang.edit', urlencode($barang->lok_spk));
-                    $deleteUrl = route('data-barang.destroy', urlencode($barang->lok_spk));
                     return '
-                        <a href="' . $editUrl . '" class="btn btn-warning btn-round">Edit</a>
-                        <form action="' . $deleteUrl . '" method="POST" style="display:inline;">
+                        <!-- Tombol Edit -->
+                        <button type="button" class="btn btn-warning btn-round edit-barang-btn" 
+                            data-lok_spk="' . htmlspecialchars($barang->lok_spk) . '" 
+                            data-jenis="' . htmlspecialchars($barang->jenis) . '" 
+                            data-tipe="' . htmlspecialchars($barang->tipe) . '" 
+                            data-grade="' . htmlspecialchars($barang->grade) . '">
+                            Edit
+                        </button>
+                        
+                        <!-- Tombol Delete -->
+                        <form action="' . route('data-barang.destroy', urlencode($barang->lok_spk)) . '" method="POST" style="display:inline;">
                             ' . csrf_field() . '
                             ' . method_field('DELETE') . '
-                            <button type="submit" class="btn btn-danger btn-round" onclick="return confirm(\'Are you sure you want to delete this barang?\')">Delete</button>
+                            <button type="submit" class="btn btn-danger btn-round" 
+                                onclick="return confirm(\'Are you sure you want to delete this barang?\')">
+                                Delete
+                            </button>
                         </form>
                     ';
                 })
@@ -41,6 +51,7 @@ class DataBarangController extends Controller
     
         return view('pages.data-barang.index');
     }
+    
 
     public function edit($lok_spk)
     {
@@ -228,5 +239,38 @@ class DataBarangController extends Controller
 
         return redirect()->route('data-barang.index')->with('success', 'Barang deleted successfully!');
     }
+
+    public function updateDataBarang(Request $request, $lok_spk)
+    {
+        $validator = Validator::make($request->all(), [
+            'lok_spk' => 'required|string|max:255',
+            'jenis' => 'required|string|max:255',
+            'tipe' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->with('error', 'Gagal Validasi Error!');
+        }
+
+        // Cek apakah `lok_spk` baru sudah ada di database, selain data yang sedang diupdate
+        $existingBarang = Barang::where('lok_spk', $request->input('lok_spk'))
+            ->where('lok_spk', '!=', $lok_spk)
+            ->exists();
+
+        if ($existingBarang) {
+            return redirect()->back()->with('error', 'Gagal Lok SPK sudah digunakan!');
+        }
+        
+        // Update data barang
+        $barang = Barang::findOrFail($lok_spk);
+        $barang->lok_spk = $request->input('lok_spk');
+        $barang->jenis = $request->input('jenis');
+        $barang->tipe = $request->input('tipe');
+        $barang->grade = $request->input('grade');
+        $barang->save();
+        
+        return redirect()->back()->with('success', 'Data barang berhasil diperbarui.');
+    }
+
 
 }
