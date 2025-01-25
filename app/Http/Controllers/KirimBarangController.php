@@ -87,6 +87,7 @@ class KirimBarangController extends Controller
                 'pengirim_user_id' => Auth::id(),
                 'penerima_user_id' => $pj_gudang,
                 'status' => 0,
+                'keterangan' => $request->input('keterangan'),
                 'dt_kirim' => Carbon::now(),
             ]);
 

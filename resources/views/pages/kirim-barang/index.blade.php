@@ -67,6 +67,7 @@
                                                 <th>Status</th>
                                                 <th>Tgl Kirim</th>
                                                 <th>Tgl Terima</th>
+                                                <th>Keterangan</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
@@ -99,6 +100,7 @@
                                                 </td>
                                                 <td>{{ $kirim->dt_kirim }}</td>
                                                 <td>{{ $kirim->dt_terima }}</td>
+                                                <td>{{ $kirim->keterangan }}</td>
                                                 <td>
                                                     <!-- Tombol View -->
                                                     <a href="{{ route('kirim-barang.show', $kirim->id) }}" class="btn btn-info btn-sm">View</a>
@@ -124,6 +126,7 @@
                                                 <th>Status</th>
                                                 <th>Tgl Kirim</th>
                                                 <th>Tgl Terima</th>
+                                                <th>Keterangan</th>
                                                 <th>Action</th>
                                             </tr>
                                         </tfoot>
@@ -168,6 +171,10 @@
                                     @endforeach
                                 </select>
                             </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="keterangan" class="form-label">Keterangan</label>
+                            <input type="text" class="form-control" id="keterangan" name="keterangan" placeholder="Tambahkan keterangan (opsional)" required>
                         </div>
                     </div>
                     <div class="modal-footer">

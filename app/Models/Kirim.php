@@ -17,6 +17,7 @@ class Kirim extends Model
         'pengirim_user_id',
         'penerima_user_id',
         'status',
+        'keterangan',
         'dt_kirim',
         'dt_terima',
     ];
