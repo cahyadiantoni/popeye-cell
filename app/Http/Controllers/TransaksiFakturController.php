@@ -205,4 +205,33 @@ class TransaksiFakturController extends Controller
         return redirect()->back()
             ->with('errors', $errors);
     }
+
+    public function destroy($nomor_faktur)
+    {
+        try {
+            // Cari faktur berdasarkan nomor_faktur
+            $faktur = Faktur::where('nomor_faktur', $nomor_faktur)->firstOrFail();
+    
+            // Ambil data lok_spk dari TransaksiJual berdasarkan nomor_faktur
+            $lokSpkList = TransaksiJual::where('nomor_faktur', $nomor_faktur)->pluck('lok_spk');
+    
+            // Hapus semua baris di TransaksiJual yang memiliki nomor_faktur tersebut
+            TransaksiJual::where('nomor_faktur', $nomor_faktur)->delete();
+    
+            // Update data pada tabel Barang
+            Barang::whereIn('lok_spk', $lokSpkList)
+                ->update([
+                    'status_barang' => 1,
+                    'no_faktur' => null,
+                    'harga_jual' => 0,
+                ]);
+    
+            // Hapus Faktur
+            $faktur->delete();
+    
+            return redirect()->back()->with('success', 'Faktur dan data terkait berhasil dihapus');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
 }

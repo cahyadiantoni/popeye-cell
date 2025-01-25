@@ -86,6 +86,11 @@
                                                     <a href="{{ route('transaksi-faktur.show', $faktur->nomor_faktur) }}" class="btn btn-info btn-sm">View</a>
                                                     <!-- Tombol Edit -->
                                                     <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $faktur->nomor_faktur }}" data-pembeli="{{ $faktur->pembeli }}" data-tgl-jual="{{ $faktur->tgl_jual }}" data-petugas="{{ $faktur->petugas }}" data-keterangan="{{ $faktur->keterangan }}">Edit</button>
+                                                    <form action="{{ route('transaksi-faktur.delete', $faktur->nomor_faktur) }}" method="POST" class="d-inline delete-form">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
+                                                    </form>
                                                 </td>
                                             </tr>
                                             @endforeach
@@ -182,6 +187,16 @@
                     // Update action form dan tampilkan modal
                     editForm.action = `/transaksi-faktur/update/${nomorFaktur}`;
                     editModal.show();
+                });
+            });
+
+            const deleteForms = document.querySelectorAll('.delete-form');
+            deleteForms.forEach(form => {
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault(); // Mencegah submit form langsung
+                    if (confirm('Yakin ingin menghapus data ini?')) {
+                        form.submit(); // Submit form jika konfirmasi "OK"
+                    }
                 });
             });
         });
