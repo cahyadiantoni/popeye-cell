@@ -79,13 +79,32 @@
             </div>
         </div>
 
-        <div class="col-xl-12 col-md-6">
+        <div class="col-xl-6 col-md-6">
             <div class="card bg-c-orenge update-card">
                 <div class="card-block">
                     <div class="row align-items-end">
                         <div class="col-8">
                             <h4 class="text-white">Stok : {{ $stokGudangs[6]->total ?? 0 }} Barang</h4>
                             <h6 class="text-white m-b-0">Gudang Return</h6>
+                        </div>
+                        <div class="col-4 text-end">
+                            <canvas id="update-chart-4" height="50"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-md-6">
+            <div class="card bg-c-orenge update-card">
+                <div class="card-block">
+                    <div class="row align-items-end">
+                        <div class="col-8">
+                            <h4 class="text-white">Stok : {{ $stokGudangs[7]->total ?? 0 }} Barang</h4>
+                            <h6 class="text-white m-b-0">Gudang Lain Lain</h6>
                         </div>
                         <div class="col-4 text-end">
                             <canvas id="update-chart-4" height="50"></canvas>

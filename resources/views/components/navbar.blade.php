@@ -36,7 +36,7 @@
               <ul class="nav-right">
                 <li class="header-notification">
                   <div class="dropdown-primary dropdown">
-                  <div class="dropdown-toggle" data-bs-toggle="dropdown" onclick="window.location='{{ url('/request-masuk-gudang') }}'">
+                  <div class="dropdown-toggle" data-bs-toggle="dropdown" onclick="window.location='{{ url('/terima-barang') }}'">
                       <i class="feather icon-bell"></i>
                       <span class="badge bg-c-pink">{{ $requestCount }}</span>
                   </div>
