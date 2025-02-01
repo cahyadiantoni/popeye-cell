@@ -160,6 +160,27 @@ class KirimBarangController extends Controller
         return view('pages.kirim-barang.detail', compact('kirim', 'kirimBarangs', 'jumlahBarang'));
     }  
 
+    public function printPdf($id)
+    {
+        // Ambil data faktur berdasarkan nomor faktur
+        $kirim = Kirim::where('id', $id)
+            ->firstOrFail();
+
+        // Ambil data barang yang berhubungan dengan transaksi jual
+        $kirimBarangs = KirimBarang::with('barang')
+            ->where('kirim_id', $id)
+            ->get();
+
+        // Hitung jumlah barang
+        $jumlahBarang = $kirimBarangs->count();
+
+        // Kirim data ke template PDF
+        $pdf = \PDF::loadView('pages.kirim-barang.print', compact('kirim', 'kirimBarangs', 'jumlahBarang'));
+
+        // Unduh atau tampilkan PDF
+        return $pdf->stream('Bukti_Kirim_Barang_' . $kirim->id . '.pdf');
+    }
+
     public function addbarang(Request $request)
     {
         $request->validate([

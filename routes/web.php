@@ -37,6 +37,7 @@ Route::delete('/kirim-barang/{id}', [KirimBarangController::class, 'destroy'])->
 Route::delete('/kirim-barang/deletebarang/{id}', [KirimBarangController::class, 'destroybarang'])->name('kirim-barang.deletebarang');
 // Route::get('/history-kirim', [StokGudangController::class, 'history_kirim'])->middleware('auth')->name('historyKirim');
 Route::resource('/kirim-barang', KirimBarangController::class)->middleware('auth');
+Route::get('/kirim-barang/{id}/print', [KirimBarangController::class, 'printPdf'])->name('kirim-barang.print');
 Route::post('/kirim-barang/addbarang', [KirimBarangController::class, 'addbarang'])->name('kirim-barang.addbarang');
 
 Route::resource('/terima-barang', TerimaBarangController::class)->middleware('auth');

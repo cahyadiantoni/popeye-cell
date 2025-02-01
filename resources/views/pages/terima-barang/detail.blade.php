@@ -15,6 +15,7 @@
                     </div>
                 </div>
                 <div class="col-lg-4">
+                    <a href="{{ route('kirim-barang.print', $kirim->id) }}" class="btn btn-primary" target="_blank">Print PDF</a>
                     <a href="{{ route('terima-barang.index') }}" class="btn btn-secondary">Kembali</a>
                     @if($kirim->status == 0)
                         <button class="btn btn-success" id="addBarangBtn">Add Barang</button>
