@@ -17,12 +17,18 @@ class KirimBarangController extends Controller
     public function index()
     {
         $kirims = Kirim::orderBy('status')
-        ->orderBy('dt_kirim', 'desc')
-        ->get();
+            ->orderBy('dt_kirim', 'desc')
+            ->get();
+
         // Ambil semua gudang
         $allgudangs = Gudang::all();
 
-        return view('pages.kirim-barang.index', compact('kirims', 'allgudangs')); 
+        // Hitung jumlah barang berdasarkan kirim_id
+        $jumlahBarang = KirimBarang::selectRaw('kirim_id, COUNT(*) as jumlah')
+            ->groupBy('kirim_id')
+            ->pluck('jumlah', 'kirim_id');
+
+        return view('pages.kirim-barang.index', compact('kirims', 'allgudangs', 'jumlahBarang')); 
     }
 
     public function store(Request $request)
@@ -148,7 +154,10 @@ class KirimBarangController extends Controller
             ->where('kirim_id', $id)
             ->get();
 
-        return view('pages.kirim-barang.detail', compact('kirim', 'kirimBarangs'));
+        // Hitung jumlah barang
+        $jumlahBarang = $kirimBarangs->count();
+
+        return view('pages.kirim-barang.detail', compact('kirim', 'kirimBarangs', 'jumlahBarang'));
     }  
 
     public function addbarang(Request $request)

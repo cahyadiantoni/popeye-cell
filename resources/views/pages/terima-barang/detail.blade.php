@@ -15,7 +15,7 @@
                     </div>
                 </div>
                 <div class="col-lg-4">
-                    <a href="{{ route('kirim-barang.index') }}" class="btn btn-secondary">Kembali</a>
+                    <a href="{{ route('terima-barang.index') }}" class="btn btn-secondary">Kembali</a>
                     @if($kirim->status == 0)
                         <button class="btn btn-success" id="addBarangBtn">Add Barang</button>
                         <!-- Tombol Terima -->
@@ -79,6 +79,7 @@
                     <p><strong>Gudang Penerima:</strong> {{ $kirim->penerimaGudang->nama_gudang }}</p>
                     <p><strong>Tgl Kirim:</strong> {{ $kirim->dt_kirim }}</p>
                     <p><strong>Tgl Terima:</strong> {{ $kirim->dt_terima }}</p>
+                    <p><strong>Jumlah Barang:</strong> {{ $jumlahBarang }}</p>
                     <p><strong>Status:</strong> 
                     @switch($kirim->status)
                         @case(0)

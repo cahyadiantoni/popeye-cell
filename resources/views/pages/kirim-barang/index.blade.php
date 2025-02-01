@@ -64,6 +64,7 @@
                                                 <th>Gudang Tujuan</th>
                                                 <th>Pengirim</th>
                                                 <th>Penerima</th>
+                                                <th>Jumlah Barang</th>
                                                 <th>Status</th>
                                                 <th>Tgl Kirim</th>
                                                 <th>Tgl Terima</th>
@@ -83,6 +84,7 @@
                                                 <td>{{ $kirim->penerimaGudang->nama_gudang }}</td>
                                                 <td>{{ $kirim->pengirimUser->name }}</td>
                                                 <td>{{ $kirim->penerimaUser->name }}</td>
+                                                <td>{{ $jumlahBarang[$kirim->id] ?? 0 }}</td>
                                                 <td>
                                                     @switch($kirim->status)
                                                         @case(0)
@@ -123,6 +125,7 @@
                                                 <th>Gudang Tujuan</th>
                                                 <th>Pengirim</th>
                                                 <th>Penerima</th>
+                                                <th>Jumlah Barang</th>
                                                 <th>Status</th>
                                                 <th>Tgl Kirim</th>
                                                 <th>Tgl Terima</th>

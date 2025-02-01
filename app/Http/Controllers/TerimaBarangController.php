@@ -22,11 +22,15 @@ class TerimaBarangController extends Controller
 
         // Mengambil data dari model 
         $requests = Kirim::where('penerima_user_id', $authId)
-        ->orderBy('status')
-        ->orderBy('dt_kirim')
-        ->get();
+            ->orderBy('status')
+            ->orderBy('dt_kirim')
+            ->get();
 
-        return view('pages.terima-barang.index', compact('requests', )); 
+        $jumlahBarang = KirimBarang::selectRaw('kirim_id, COUNT(*) as jumlah')
+            ->groupBy('kirim_id')
+            ->pluck('jumlah', 'kirim_id');
+
+        return view('pages.terima-barang.index', compact('requests', 'jumlahBarang' )); 
     }
 
     public function show($id)
@@ -40,7 +44,9 @@ class TerimaBarangController extends Controller
             ->where('kirim_id', $id)
             ->get();
 
-        return view('pages.terima-barang.detail', compact('kirim', 'kirimBarangs'));
+        $jumlahBarang = $kirimBarangs->count();
+
+        return view('pages.terima-barang.detail', compact('kirim', 'kirimBarangs', 'jumlahBarang'));
     }  
 
     public function terima(Request $request)

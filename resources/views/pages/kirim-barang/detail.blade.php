@@ -63,6 +63,7 @@
                     <p><strong>Gudang Penerima:</strong> {{ $kirim->penerimaGudang->nama_gudang }}</p>
                     <p><strong>Tgl Kirim:</strong> {{ $kirim->dt_kirim }}</p>
                     <p><strong>Tgl Terima:</strong> {{ $kirim->dt_terima }}</p>
+                    <p><strong>Jumlah Barang:</strong> {{ $jumlahBarang }}</p>
                     <p><strong>Status:</strong> 
                     @switch($kirim->status)
                         @case(0)
