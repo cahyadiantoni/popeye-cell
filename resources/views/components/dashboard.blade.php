@@ -8,8 +8,11 @@
                 <div class="card-block">
                     <div class="row align-items-end">
                         <div class="col-8">
-                            <h4 class="text-white">Stok : {{ $stokGudangs[1]->total ?? 0 }} Barang</h4>
-                            <h6 class="text-white m-b-0">Gudang Bawah</h6>
+                            <h4 class="text-white">Gudang Bawah</h4>
+                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[1]->total ?? 0 }} </h5>
+                            <h6 class="text-white m-b-0">Box : {{ $stokBox[1]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[1]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[1]->total ?? 0 }} </h6>
                         </div>
                         <div class="col-4 text-end">
                             <canvas id="update-chart-1" height="50"></canvas>
@@ -27,8 +30,11 @@
                 <div class="card-block">
                     <div class="row align-items-end">
                         <div class="col-8">
-                            <h4 class="text-white">Stok : {{ $stokGudangs[2]->total ?? 0 }} Barang</h4>
-                            <h6 class="text-white m-b-0">Gudang Zilfa</h6>
+                            <h4 class="text-white">Gudang Zilfa</h4>
+                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[2]->total ?? 0 }} </h5>
+                            <h6 class="text-white m-b-0">Box : {{ $stokBox[2]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[2]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[2]->total ?? 0 }} </h6>
                         </div>
                         <div class="col-4 text-end">
                             <canvas id="update-chart-2" height="50"></canvas>
@@ -46,8 +52,11 @@
                 <div class="card-block">
                     <div class="row align-items-end">
                         <div class="col-8">
-                            <h4 class="text-white">Stok : {{ $stokGudangs[3]->total ?? 0 }} Barang</h4>
-                            <h6 class="text-white m-b-0">Gudang Tokopedia</h6>
+                            <h4 class="text-white">Gudang Tokopedia</h4>
+                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[3]->total ?? 0 }} </h5>
+                            <h6 class="text-white m-b-0">Box : {{ $stokBox[3]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[3]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[3]->total ?? 0 }} </h6>
                         </div>
                         <div class="col-4 text-end">
                             <canvas id="update-chart-3" height="50"></canvas>
@@ -65,8 +74,11 @@
                 <div class="card-block">
                     <div class="row align-items-end">
                         <div class="col-8">
-                            <h4 class="text-white">Stok : {{ $stokGudangs[5]->total ?? 0 }} Barang</h4>
-                            <h6 class="text-white m-b-0">Gudang Laptop / DSLR</h6>
+                            <h4 class="text-white">Gudang Laptop / DSLR</h4>
+                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[5]->total ?? 0 }} </h5>
+                            <h6 class="text-white m-b-0">Box : {{ $stokBox[5]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[5]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[5]->total ?? 0 }} </h6>
                         </div>
                         <div class="col-4 text-end">
                             <canvas id="update-chart-4" height="50"></canvas>
@@ -84,8 +96,11 @@
                 <div class="card-block">
                     <div class="row align-items-end">
                         <div class="col-8">
-                            <h4 class="text-white">Stok : {{ $stokGudangs[6]->total ?? 0 }} Barang</h4>
-                            <h6 class="text-white m-b-0">Gudang Return</h6>
+                            <h4 class="text-white">Gudang Return</h4>
+                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[6]->total ?? 0 }} </h5>
+                            <h6 class="text-white m-b-0">Box : {{ $stokBox[6]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[6]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[6]->total ?? 0 }} </h6>
                         </div>
                         <div class="col-4 text-end">
                             <canvas id="update-chart-4" height="50"></canvas>
@@ -103,8 +118,11 @@
                 <div class="card-block">
                     <div class="row align-items-end">
                         <div class="col-8">
-                            <h4 class="text-white">Stok : {{ $stokGudangs[7]->total ?? 0 }} Barang</h4>
-                            <h6 class="text-white m-b-0">Gudang Lain Lain</h6>
+                            <h4 class="text-white">Gudang Lain Lain</h4>
+                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[7]->total ?? 0 }} </h5>
+                            <h6 class="text-white m-b-0">Box : {{ $stokBox[7]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[7]->total ?? 0 }} </h6>
+                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[7]->total ?? 0 }} </h6>
                         </div>
                         <div class="col-4 text-end">
                             <canvas id="update-chart-4" height="50"></canvas>
@@ -120,7 +138,7 @@
         <!-- task, page, download counter  end -->
 
         <!--  sale analytics start -->
-        <div class="col-xl-9 col-md-12">
+        <!-- <div class="col-xl-9 col-md-12">
             <div class="card">
             <div class="card-header">
                 <h5>Sales Analytics</h5>
@@ -162,7 +180,7 @@
                 <button class="btn btn-warning p-t-15 p-b-15">Download Overall Report</button>
             </div>
             </div>
-        </div>
+        </div> -->
         <!--  sale analytics end -->
 
         <!-- <div class="col-xl-8 col-md-12">
