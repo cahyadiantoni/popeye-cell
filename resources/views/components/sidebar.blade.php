@@ -11,19 +11,19 @@
         </ul>
         <div class="pcoded-navigatio-lavel">Master Data</div>
         <ul class="pcoded-item pcoded-left-item">
-            <li class="{{ Request::is('data-user*') ? 'active' : '' }}">
+            <!-- <li class="{{ Request::is('data-user*') ? 'active' : '' }}">
                 <a href="{{ url('/data-user') }}">
                     <span class="pcoded-micon"><i class="fas fa-users"></i></span>
                     <span class="pcoded-mtext">Data User</span>
                 </a>
-            </li>
-            <li class="{{ Request::is('data-gudang*') ? 'active' : '' }}">
+            </li> -->
+            <!-- <li class="{{ Request::is('data-gudang*') ? 'active' : '' }}">
                 <a href="{{ url('/data-gudang') }}">
                     <span class="pcoded-micon"><i class="fas fa-warehouse"></i></span>
                     <span class="pcoded-mtext">Data Gudang</span>
                 </a>
-            </li>
-            <li class="{{ Request::is('data-barang*') ? 'active' : '' }}">
+            </li> -->
+            <li class="{{ Request::is('data-barang') ? 'active' : '' }}">
                 <a href="{{ url('/data-barang') }}">
                     <span class="pcoded-micon"><i class="fas fa-box"></i></span>
                     <span class="pcoded-mtext">Data Barang</span>
@@ -33,6 +33,12 @@
                 <a href="{{ url('/data-barang/create') }}">
                     <span class="pcoded-micon"><i class="fas fa-upload"></i></span>
                     <span class="pcoded-mtext">Upload Barang</span>
+                </a>
+            </li>
+            <li class="{{ Request::is('mass-edit-barang*') ? 'active' : '' }}">
+                <a href="{{ url('/mass-edit-barang') }}">
+                    <span class="pcoded-micon"><i class="fas fa-edit"></i></span>
+                    <span class="pcoded-mtext">Mass Edit Barang</span>
                 </a>
             </li>
         </ul>

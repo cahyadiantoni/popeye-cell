@@ -56,6 +56,7 @@
                                                     <th>LOK_SPK</th>
                                                     <th>Jenis</th>
                                                     <th>Tipe</th>
+                                                    <th>Kel</th>
                                                     <th>Grade</th>
                                                     <th>Gudang</th>
                                                 </tr>
@@ -69,6 +70,7 @@
                                                     <td>{{ $barang->lok_spk }}</td>
                                                     <td>{{ $barang->jenis }}</td>
                                                     <td>{{ $barang->tipe }}</td>
+                                                    <td>{{ $barang->kelengkapan }}</td>
                                                     <td>{{ $barang->grade }}</td>
                                                     <td>{{ $barang->gudang->nama_gudang ?? 'N/A' }}</td>
                                                 </tr>
@@ -80,6 +82,7 @@
                                                     <th>LOK_SPK</th>
                                                     <th>Jenis</th>
                                                     <th>Tipe</th>
+                                                    <th>Kel</th>
                                                     <th>Grade</th>
                                                     <th>Gudang</th>
                                                 </tr>

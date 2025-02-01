@@ -65,7 +65,8 @@
                                 </div>
                             @endif
                             <div class="card-block">
-                                <a href="{{ route('data-barang.create') }}" class="btn btn-primary btn-round">Upload Excel Barang</a>
+                            <a href="{{ route('data-barang.create') }}" class="btn btn-primary btn-round mx-2">Upload Excel Barang</a>
+                            <a href="{{ url('/mass-edit-barang') }}" class="btn btn-info btn-round mx-2">Mass Edit Barang</a>
                                 <hr>
                                 <div class="dt-responsive table-responsive">
                                 <table id="tablebarang" class="table table-striped table-bordered nowrap" style="width: 100%;">
@@ -75,6 +76,7 @@
                                             <th>Jenis</th>
                                             <th>Tipe</th>
                                             <th>Grade</th>
+                                            <th>Kel</th>
                                             <th>Gudang</th>
                                             <th>Action</th>
                                         </tr>
@@ -85,6 +87,7 @@
                                             <th>Jenis</th>
                                             <th>Tipe</th>
                                             <th>Grade</th>
+                                            <th>Kel</th>
                                             <th>Gudang</th>
                                             <th>Action</th>
                                         </tr>
@@ -131,6 +134,10 @@
                             <label for="grade" class="form-label">Grade</label>
                             <input type="text" class="form-control" id="grade" name="grade">
                         </div>
+                        <div class="mb-3">
+                            <label for="kelengkapan" class="form-label">Kelengkapan</label>
+                            <input type="text" class="form-control" id="kelengkapan" name="kelengkapan">
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -153,6 +160,7 @@
                 { data: 'jenis', name: 'jenis' },
                 { data: 'tipe', name: 'tipe' },
                 { data: 'grade', name: 'grade' },
+                { data: 'kelengkapan', name: 'kelengkapan' },
                 { data: 'gudang.nama_gudang', name: 'gudang.nama_gudang' },
                 { 
                     data: 'action', 
@@ -170,6 +178,7 @@
         const jenis = $(this).data('jenis');
         const tipe = $(this).data('tipe');
         const grade = $(this).data('grade');
+        const kelengkapan = $(this).data('kelengkapan');
 
         // Isi data ke dalam modal
         $('#lok_spk_original').val(lok_spk); // Lok SPK original
@@ -177,6 +186,7 @@
         $('#jenis').val(jenis);
         $('#tipe').val(tipe);
         $('#grade').val(grade);
+        $('#kelengkapan').val(kelengkapan);
 
         // Atur action form modal edit
         $('#editBarangForm').attr('action', `/update-data-barang/${lok_spk}`);

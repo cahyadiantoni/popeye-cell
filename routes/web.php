@@ -24,6 +24,8 @@ Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->middlewa
 Route::resource('/data-user', DataUSerController::class)->middleware('auth');
 Route::resource('/data-gudang', DataGudangController::class)->middleware('auth');
 Route::resource('/data-barang', DataBarangController::class)->middleware('auth');
+Route::get('/mass-edit-barang', [DataBarangController::class, 'massedit'])->middleware('auth');
+Route::post('/mass-update-data-barang', [DataBarangController::class, 'massUpdateDataBarang'])->middleware('auth')->name('mass-update.dataBarang');
 Route::put('/update-data-barang/{lok_spk}', [DataBarangController::class, 'updateDataBarang'])->middleware('auth');
 Route::get('/request-masuk-gudang', [StokGudangController::class, 'request_masuk'])->middleware('auth');
 Route::post('/handle-request', [StokGudangController::class, 'handleRequest'])->middleware('auth')->name('handleRequest');

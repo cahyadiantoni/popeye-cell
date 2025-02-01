@@ -174,7 +174,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="keterangan" class="form-label">Keterangan</label>
-                            <input type="text" class="form-control" id="keterangan" name="keterangan" placeholder="Tambahkan keterangan (opsional)" required>
+                            <input type="text" class="form-control" id="keterangan" name="keterangan" placeholder="Tambahkan keterangan (opsional)">
                         </div>
                     </div>
                     <div class="modal-footer">
