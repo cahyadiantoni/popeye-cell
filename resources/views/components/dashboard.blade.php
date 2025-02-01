@@ -4,135 +4,147 @@
         <div class="row">
         <!-- task, page, download counter  start -->
         <div class="col-xl-3 col-md-6">
-            <div class="card bg-c-yellow update-card">
-                <div class="card-block">
-                    <div class="row align-items-end">
-                        <div class="col-8">
-                            <h4 class="text-white">Gudang Bawah</h4>
-                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[1]->total ?? 0 }} </h5>
-                            <h6 class="text-white m-b-0">Box : {{ $stokBox[1]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[1]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[1]->total ?? 0 }} </h6>
-                        </div>
-                        <div class="col-4 text-end">
-                            <canvas id="update-chart-1" height="50"></canvas>
+            <a href="{{ url('/stok-opname?gudang_id=1') }}">
+                <div class="card bg-c-yellow update-card">
+                    <div class="card-block">
+                        <div class="row align-items-end">
+                            <div class="col-8">
+                                <h4 class="text-white">Gudang Bawah</h4>
+                                <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[1]->total ?? 0 }} </h5>
+                                <h6 class="text-white m-b-0">Box : {{ $stokBox[1]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[1]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">N/A : {{ $stokNa[1]->total ?? 0 }} </h6>
+                            </div>
+                            <div class="col-4 text-end">
+                                <canvas id="update-chart-1" height="50"></canvas>
+                            </div>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
+                    </div>
                 </div>
-                <div class="card-footer">
-                    <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
-                </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <div class="card bg-c-green update-card">
-                <div class="card-block">
-                    <div class="row align-items-end">
-                        <div class="col-8">
-                            <h4 class="text-white">Gudang Zilfa</h4>
-                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[2]->total ?? 0 }} </h5>
-                            <h6 class="text-white m-b-0">Box : {{ $stokBox[2]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[2]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[2]->total ?? 0 }} </h6>
-                        </div>
-                        <div class="col-4 text-end">
-                            <canvas id="update-chart-2" height="50"></canvas>
+            <a href="{{ url('/stok-opname?gudang_id=2') }}">
+                <div class="card bg-c-green update-card">
+                    <div class="card-block">
+                        <div class="row align-items-end">
+                            <div class="col-8">
+                                <h4 class="text-white">Gudang Zilfa</h4>
+                                <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[2]->total ?? 0 }} </h5>
+                                <h6 class="text-white m-b-0">Box : {{ $stokBox[2]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[2]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">N/A : {{ $stokNa[2]->total ?? 0 }} </h6>
+                            </div>
+                            <div class="col-4 text-end">
+                                <canvas id="update-chart-2" height="50"></canvas>
+                            </div>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
+                    </div>
                 </div>
-                <div class="card-footer">
-                    <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
-                </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <div class="card bg-c-pink update-card">
-                <div class="card-block">
-                    <div class="row align-items-end">
-                        <div class="col-8">
-                            <h4 class="text-white">Gudang Tokopedia</h4>
-                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[3]->total ?? 0 }} </h5>
-                            <h6 class="text-white m-b-0">Box : {{ $stokBox[3]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[3]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[3]->total ?? 0 }} </h6>
-                        </div>
-                        <div class="col-4 text-end">
-                            <canvas id="update-chart-3" height="50"></canvas>
+            <a href="{{ url('/stok-opname?gudang_id=3') }}">
+                <div class="card bg-c-pink update-card">
+                    <div class="card-block">
+                        <div class="row align-items-end">
+                            <div class="col-8">
+                                <h4 class="text-white">Gudang Tokopedia</h4>
+                                <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[3]->total ?? 0 }} </h5>
+                                <h6 class="text-white m-b-0">Box : {{ $stokBox[3]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[3]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">N/A : {{ $stokNa[3]->total ?? 0 }} </h6>
+                            </div>
+                            <div class="col-4 text-end">
+                                <canvas id="update-chart-3" height="50"></canvas>
+                            </div>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
+                    </div>
                 </div>
-                <div class="card-footer">
-                    <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
-                </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <div class="card bg-c-lite-green update-card">
-                <div class="card-block">
-                    <div class="row align-items-end">
-                        <div class="col-8">
-                            <h4 class="text-white">Gudang Laptop / DSLR</h4>
-                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[5]->total ?? 0 }} </h5>
-                            <h6 class="text-white m-b-0">Box : {{ $stokBox[5]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[5]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[5]->total ?? 0 }} </h6>
-                        </div>
-                        <div class="col-4 text-end">
-                            <canvas id="update-chart-4" height="50"></canvas>
+            <a href="{{ url('/stok-opname?gudang_id=5') }}">
+                <div class="card bg-c-lite-green update-card">
+                    <div class="card-block">
+                        <div class="row align-items-end">
+                            <div class="col-8">
+                                <h4 class="text-white">Gudang Vira</h4>
+                                <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[5]->total ?? 0 }} </h5>
+                                <h6 class="text-white m-b-0">Box : {{ $stokBox[5]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[5]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">N/A : {{ $stokNa[5]->total ?? 0 }} </h6>
+                            </div>
+                            <div class="col-4 text-end">
+                                <canvas id="update-chart-4" height="50"></canvas>
+                            </div>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
+                    </div>
                 </div>
-                <div class="card-footer">
-                    <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
-                </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-xl-6 col-md-6">
-            <div class="card bg-c-orenge update-card">
-                <div class="card-block">
-                    <div class="row align-items-end">
-                        <div class="col-8">
-                            <h4 class="text-white">Gudang Return</h4>
-                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[6]->total ?? 0 }} </h5>
-                            <h6 class="text-white m-b-0">Box : {{ $stokBox[6]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[6]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[6]->total ?? 0 }} </h6>
-                        </div>
-                        <div class="col-4 text-end">
-                            <canvas id="update-chart-4" height="50"></canvas>
+            <a href="{{ url('/stok-opname?gudang_id=6') }}">
+                <div class="card bg-c-orenge update-card">
+                    <div class="card-block">
+                        <div class="row align-items-end">
+                            <div class="col-8">
+                                <h4 class="text-white">Gudang Return</h4>
+                                <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[6]->total ?? 0 }} </h5>
+                                <h6 class="text-white m-b-0">Box : {{ $stokBox[6]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[6]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">N/A : {{ $stokNa[6]->total ?? 0 }} </h6>
+                            </div>
+                            <div class="col-4 text-end">
+                                <canvas id="update-chart-4" height="50"></canvas>
+                            </div>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
+                    </div>
                 </div>
-                <div class="card-footer">
-                    <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
-                </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-xl-6 col-md-6">
-            <div class="card bg-c-orenge update-card">
-                <div class="card-block">
-                    <div class="row align-items-end">
-                        <div class="col-8">
-                            <h4 class="text-white">Gudang Lain Lain</h4>
-                            <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[7]->total ?? 0 }} </h5>
-                            <h6 class="text-white m-b-0">Box : {{ $stokBox[7]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[7]->total ?? 0 }} </h6>
-                            <h6 class="text-white m-b-0">N/A : {{ $stokNa[7]->total ?? 0 }} </h6>
-                        </div>
-                        <div class="col-4 text-end">
-                            <canvas id="update-chart-4" height="50"></canvas>
+            <a href="{{ url('/stok-opname?gudang_id=7') }}">
+                <div class="card bg-c-orenge update-card">
+                    <div class="card-block">
+                        <div class="row align-items-end">
+                            <div class="col-8">
+                                <h4 class="text-white">Gudang Lain Lain</h4>
+                                <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[7]->total ?? 0 }} </h5>
+                                <h6 class="text-white m-b-0">Box : {{ $stokBox[7]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[7]->total ?? 0 }} </h6>
+                                <h6 class="text-white m-b-0">N/A : {{ $stokNa[7]->total ?? 0 }} </h6>
+                            </div>
+                            <div class="col-4 text-end">
+                                <canvas id="update-chart-4" height="50"></canvas>
+                            </div>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
+                    </div>
                 </div>
-                <div class="card-footer">
-                    <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
-                </div>
-            </div>
+            </a>
         </div>
 
         <!-- task, page, download counter  end -->
