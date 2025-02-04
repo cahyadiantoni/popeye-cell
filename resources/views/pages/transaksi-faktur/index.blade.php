@@ -85,7 +85,7 @@
                                                     <!-- Tombol View -->
                                                     <a href="{{ route('transaksi-faktur.show', $faktur->nomor_faktur) }}" class="btn btn-info btn-sm">View</a>
                                                     <!-- Tombol Edit -->
-                                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $faktur->nomor_faktur }}" data-pembeli="{{ $faktur->pembeli }}" data-tgl-jual="{{ $faktur->tgl_jual }}" data-petugas="{{ $faktur->petugas }}" data-keterangan="{{ $faktur->keterangan }}">Edit</button>
+                                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $faktur->id }}" data-nomor_faktur="{{ $faktur->nomor_faktur }}" data-pembeli="{{ $faktur->pembeli }}" data-tgl-jual="{{ $faktur->tgl_jual }}" data-petugas="{{ $faktur->petugas }}" data-keterangan="{{ $faktur->keterangan }}">Edit</button>
                                                     <form action="{{ route('transaksi-faktur.delete', $faktur->nomor_faktur) }}" method="POST" class="d-inline delete-form">
                                                         @csrf
                                                         @method('DELETE')
@@ -130,7 +130,11 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" id="editNomorFaktur" name="nomor_faktur">
+                        <input type="hidden" id="editId" name="id">
+                        <div class="mb-3">
+                            <label for="editNomorFaktur" class="form-label">Nomor Faktur</label>
+                            <input type="text" class="form-control" id="editNomorFaktur" name="nomor_faktur" required>
+                        </div>
                         <div class="mb-3">
                             <label for="editPembeli" class="form-label">Pembeli</label>
                             <input type="text" class="form-control" id="editPembeli" name="pembeli" required>
@@ -163,6 +167,7 @@
             const editModal = new bootstrap.Modal(document.getElementById('editModal'));
             const editForm = document.getElementById('editForm');
             const editNomorFaktur = document.getElementById('editNomorFaktur');
+            const editId = document.getElementById('editId');
             const editPembeli = document.getElementById('editPembeli');
             const editTglJual = document.getElementById('editTglJual');
             const editPetugas = document.getElementById('editPetugas');
@@ -171,13 +176,15 @@
             editButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     // Ambil data dari button
-                    const nomorFaktur = button.dataset.id;
+                    const id = button.dataset.id;
+                    const nomorFaktur = button.dataset.nomor_faktur;
                     const pembeli = button.dataset.pembeli;
                     const tglJual = button.dataset.tglJual;
                     const petugas = button.dataset.petugas;
                     const keterangan = button.dataset.keterangan;
 
                     // Isi form modal dengan data
+                    editId.value = id;
                     editNomorFaktur.value = nomorFaktur;
                     editPembeli.value = pembeli;
                     editTglJual.value = tglJual;
@@ -185,7 +192,7 @@
                     editKeterangan.value = keterangan;
 
                     // Update action form dan tampilkan modal
-                    editForm.action = `/transaksi-faktur/update/${nomorFaktur}`;
+                    editForm.action = `/transaksi-faktur/update/${id}`;
                     editModal.show();
                 });
             });

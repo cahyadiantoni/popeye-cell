@@ -70,27 +70,36 @@ class TransaksiFakturController extends Controller
         return $pdf->stream('Faktur_Penjualan_' . $faktur->nomor_faktur . '.pdf');
     }
 
-    public function update(Request $request, $nomor_faktur)
+    public function update(Request $request, $id)
     {
         try {
             // Validasi data input
             $validated = $request->validate([
+                'nomor_faktur' => 'required|string|max:255|unique:t_faktur,nomor_faktur,' . $id,
                 'pembeli' => 'required|string|max:255',
                 'tgl_jual' => 'required|date',
                 'petugas' => 'required|string|max:255',
                 'keterangan' => 'nullable|string',
-            ]);
+            ]);            
     
             // Cari faktur berdasarkan nomor faktur
-            $faktur = Faktur::where('nomor_faktur', $nomor_faktur)->firstOrFail();
-    
+            $faktur = Faktur::where('id', $id)->firstOrFail();
+
+            // Simpan nomor_faktur sebelum diupdate
+            $nomorFakturLama = $faktur->nomor_faktur;
+
             // Update data faktur
             $faktur->update([
+                'nomor_faktur' => $validated['nomor_faktur'],
                 'pembeli' => $validated['pembeli'],
                 'tgl_jual' => $validated['tgl_jual'],
                 'petugas' => $validated['petugas'],
                 'keterangan' => $validated['keterangan'],
             ]);
+
+            // Update Transaksijual yang memiliki nomor_faktur lama menjadi nomor_faktur baru
+            Transaksijual::where('nomor_faktur', $nomorFakturLama)
+                ->update(['nomor_faktur' => $validated['nomor_faktur']]);
     
             // Flash session message
             session()->flash('success', 'Faktur berhasil diupdate');
