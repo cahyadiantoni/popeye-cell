@@ -39,7 +39,31 @@ class TransaksiOnlineController extends Controller
 
     public function create()
     {
-        return view('pages.transaksi-jual-online.create');
+        $Userid = Auth::user()->id;
+        $SugestNoFak = null;
+
+        if ($Userid == 8 || $Userid == 7) {
+            // Tentukan prefix berdasarkan User ID
+            $prefix = $Userid == 8 ? "VROL 0" : "TKP 0";
+        
+            // Ambil faktur dengan format yang sesuai
+            $lastFaktur = FakturOnline::where('title', 'like', $prefix . '%')
+                ->orderByRaw("CAST(SUBSTRING(title, " . (strlen($prefix) + 1) . ", LENGTH(title) - " . strlen($prefix) . ") AS UNSIGNED) DESC")
+                ->first();
+        
+            if ($lastFaktur) {
+                // Ambil angka tertinggi dari nomor faktur dengan regex
+                preg_match('/' . preg_quote($prefix, '/') . '(\d+)/', $lastFaktur->title, $matches);
+                $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1; // Jika belum ada faktur, mulai dari 1
+            }
+        
+            $SugestNoFak = $prefix . $newNumber;
+        }
+        
+        return view('pages.transaksi-jual-online.create', compact('SugestNoFak'));
     }
 
     public function store(Request $request)

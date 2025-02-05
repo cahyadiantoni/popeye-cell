@@ -57,7 +57,7 @@
                                     <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Nomor Faktur</label>
                                         <div class="col-sm-10">
-                                            <input type="text" name="nomor_faktur" class="form-control" placeholder="Ketik Nomor Faktur" required>
+                                            <input type="text" value="{{ $SugestNoFak }}" name="nomor_faktur" class="form-control" placeholder="Ketik Nomor Faktur" required>
                                         </div>
                                     </div>
                                     <div class="mb-3 row">

@@ -149,7 +149,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="editKeterangan" class="form-label">Keterangan</label>
-                            <textarea class="form-control" id="editKeterangan" name="keterangan" required></textarea>
+                            <textarea class="form-control" id="editKeterangan" name="keterangan"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">

@@ -57,7 +57,7 @@
                                     <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Title</label>
                                         <div class="col-sm-10">
-                                            <input type="text" name="title" class="form-control" placeholder="Ketik Judul Faktur" required>
+                                            <input type="text" name="title" value="{{ $SugestNoFak }}" class="form-control" placeholder="Ketik Judul Faktur" required>
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
