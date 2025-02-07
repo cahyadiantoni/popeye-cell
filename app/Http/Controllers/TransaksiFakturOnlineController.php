@@ -12,6 +12,7 @@ use App\Models\FakturOnline;
 use App\Models\TransaksiJualOnline;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Storage;
 
 class TransaksiFakturOnlineController extends Controller
 {
@@ -241,5 +242,33 @@ class TransaksiFakturOnlineController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    public function uploadBukti(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:t_faktur,id',
+            'bukti_tf' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+        ]);
+
+        $faktur = FakturOnline::findOrFail($request->id);
+
+        // Simpan gambar di folder 'bukti_transfer'
+        if ($request->hasFile('bukti_tf')) {
+            $file = $request->file('bukti_tf');
+            $filePath = $file->store('bukti_transfer_online', 'public');
+
+            // Hapus bukti lama jika ada
+            if ($faktur->bukti_tf) {
+                $oldFilePath = str_replace('/storage/', '', $faktur->bukti_tf);
+                Storage::disk('public')->delete($oldFilePath);
+            }
+
+            // Simpan path bukti transfer di database
+            $faktur->bukti_tf = "/storage/" . $filePath;
+            $faktur->save();
+        }
+
+        return redirect()->back()->with('success', 'Bukti transfer berhasil diupload.');
     }
 }
