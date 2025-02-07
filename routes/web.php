@@ -58,6 +58,7 @@ Route::delete('/transaksi-faktur/{nomor_faktur}', [TransaksiFakturController::cl
 Route::get('/transaksi-faktur/{nomor_faktur}', [TransaksiFakturController::class, 'show'])->name('transaksi-faktur.show');
 Route::get('/transaksi-faktur/{nomor_faktur}/print', [TransaksiFakturController::class, 'printPdf'])->name('transaksi-faktur.print');
 Route::put('/transaksi-faktur/update/{nomor_faktur}', [TransaksiFakturController::class, 'update'])->name('transaksi-faktur.update');
+Route::post('/transaksi-faktur/upload-bukti', [TransaksiFakturController::class, 'uploadBukti'])->name('transaksi-faktur.upload-bukti');
 
 Route::resource('/transaksi-jual', TransaksiController::class)->middleware('auth');
 Route::delete('/transaksi-jual/{lok_spk}', [TransaksiController::class, 'destroy'])->name('transaksi-jual.delete');
@@ -68,6 +69,7 @@ Route::resource('/transaksi-jual-online', TransaksiOnlineController::class)->mid
 Route::delete('/transaksi-jual-online/{lok_spk}', [TransaksiOnlineController::class, 'destroy'])->name('transaksi-jual-online.delete');
 Route::put('/transaksi-jual-online/update', [TransaksiOnlineController::class, 'update'])->name('transaksi-jual-online.update');
 Route::post('/transaksi-jual-online/addbarang', [TransaksiFakturOnlineController::class, 'addbarang'])->name('transaksi-jual-online.addbarang');
+Route::post('/transaksi-faktur-online/upload-bukti', [TransaksiFakturOnlineController::class, 'uploadBukti'])->name('transaksi-faktur-online.upload-bukti');
 
 Route::resource('/transaksi-faktur-online', TransaksiFakturOnlineController::class)->middleware('auth');
 Route::delete('/transaksi-faktur-online/{nomor_faktur}', [TransaksiFakturOnlineController::class, 'destroy'])->name('transaksi-faktur-online.delete');
