@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Detail Kirim Barang</title>
+    <title>Bukti Kirim Barang</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 12px; }
         .title { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 10px; }
@@ -49,7 +49,7 @@
     </style>
 </head>
 <body>
-    <div class="title">Detail Kirim Barang</div>
+    <div class="title">Bukti Kirim Barang</div>
     <div class="line"></div>
 
     <div class="info">
@@ -88,25 +88,7 @@
         </table>
     </div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Lok SPK</th>
-                <th>Tipe Barang</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($kirimBarangs as $index => $barang)
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $barang->lok_spk }}</td>
-                <td>{{ $barang->barang->tipe ?? '-' }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <h2 class="total">Bubuhkan tanda tangan di bawah ini!</h2>
 
-    <!-- <div class="footer">Terima Kasih telah Berbelanja dengan Kami!</div> -->
 </body>
 </html>

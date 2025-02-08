@@ -2,6 +2,9 @@
 
 @section('title', 'List Kirim Barang')
 @section('content')
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <!-- Main-body start -->
     <div class="main-body">
         <div class="page-wrapper">
@@ -113,6 +116,16 @@
                                                             @method('DELETE')
                                                             <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
                                                         </form>
+                                                    @elseif($kirim->status == 1)
+                                                        <!-- Tombol Upload Bukti Transfer -->
+                                                        <button class="btn btn-success btn-sm upload-bukti-btn" 
+                                                            data-id="{{ $kirim->id }}" 
+                                                            data-bukti-tf="{{ $kirim->bukti_tf }}">
+                                                            Upload Bukti
+                                                        </button>
+                                                        @if ($kirim->bukti_tf)
+                                                            <a href="{{ asset($kirim->bukti_tf) }}" target="_blank" class="btn btn-primary btn-sm">Lihat Bukti</a>
+                                                        @endif
                                                     @endif
                                                 </td>
                                             </tr>
@@ -189,6 +202,41 @@
         </div>
     </div>
 
+    <div class="modal fade" id="uploadBuktiModal" tabindex="-1" aria-labelledby="uploadBuktiModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="uploadBuktiForm" action="{{ route('kirim-barang.upload-bukti') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('POST')
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="uploadBuktiModalLabel">Upload Bukti Kirim Barang</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="buktiId" name="id">
+
+                        <div class="mb-3">
+                            <a href="{{ route('kirim-barang.print-bukti', $kirim->id) }}" class="btn btn-primary btn-round" download>Print Bukti Kirim Barang</a>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bukti_tf" class="form-label">Pilih Bukti Kirim Barang</label>
+                            <input type="file" class="form-control" id="bukti_tf" name="bukti_tf" accept="image/*" required>
+                        </div>
+
+                        <div id="buktiPreview" class="text-center d-none">
+                            <img id="previewImage" src="" class="img-fluid mt-2" style="max-height: 200px;">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
@@ -206,6 +254,35 @@
             const addKirimModal = new bootstrap.Modal(document.getElementById('addKirimModal'));
             addKirimBtn.addEventListener('click', () => {
                 addKirimModal.show();
+            });
+        });
+
+        $(document).ready(function () {
+            // Tampilkan modal saat tombol "Upload Bukti" diklik
+            $('.upload-bukti-btn').click(function () {
+                let id = $(this).data('id');
+                let buktiTf = $(this).data('bukti-tf');
+
+                $('#buktiId').val(id); // Set ID ke dalam input hidden
+
+                if (buktiTf) {
+                    $('#previewImage').attr('src', buktiTf).removeClass('d-none');
+                    $('#buktiPreview').removeClass('d-none');
+                } else {
+                    $('#buktiPreview').addClass('d-none');
+                }
+
+                $('#uploadBuktiModal').modal('show');
+            });
+
+            // Preview gambar sebelum diupload
+            $('#bukti_tf').change(function (event) {
+                let reader = new FileReader();
+                reader.onload = function (e) {
+                    $('#previewImage').attr('src', e.target.result).removeClass('d-none');
+                    $('#buktiPreview').removeClass('d-none');
+                };
+                reader.readAsDataURL(event.target.files[0]);
             });
         });
     </script>

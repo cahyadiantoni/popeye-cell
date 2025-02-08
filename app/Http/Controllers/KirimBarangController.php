@@ -11,6 +11,7 @@ use App\Models\Kirim;
 use App\Models\KirimBarang;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Storage;
 
 class KirimBarangController extends Controller
 {
@@ -178,7 +179,7 @@ class KirimBarangController extends Controller
         $pdf = \PDF::loadView('pages.kirim-barang.print', compact('kirim', 'kirimBarangs', 'jumlahBarang'));
 
         // Unduh atau tampilkan PDF
-        return $pdf->stream('Bukti_Kirim_Barang_' . $kirim->id . '.pdf');
+        return $pdf->stream('Detail_Kirim_Barang_' . $kirim->id . '.pdf');
     }
 
     public function addbarang(Request $request)
@@ -245,5 +246,54 @@ class KirimBarangController extends Controller
         // Jika tidak ada data valid, hanya tampilkan error
         return redirect()->back()
             ->with('errors', $errors);
+    }
+
+    public function printBukti($id)
+    {
+        // Ambil data faktur berdasarkan nomor faktur
+        $kirim = Kirim::where('id', $id)
+            ->firstOrFail();
+
+        // Ambil data barang yang berhubungan dengan transaksi jual
+        $kirimBarangs = KirimBarang::with('barang')
+            ->where('kirim_id', $id)
+            ->get();
+
+        // Hitung jumlah barang
+        $jumlahBarang = $kirimBarangs->count();
+
+        // Kirim data ke template PDF
+        $pdf = \PDF::loadView('pages.kirim-barang.print-bukti', compact('kirim', 'kirimBarangs', 'jumlahBarang'));
+
+        // Unduh atau tampilkan PDF
+        return $pdf->stream('Bukti_Kirim_Barang_' . $kirim->id . '.pdf');
+    }
+
+    public function uploadBukti(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:t_kirim,id',
+            'bukti_tf' => 'required|image|mimes:jpeg,png,jpg|max:10240'
+        ]);
+
+        $kirim = Kirim::findOrFail($request->id);
+
+        // Simpan gambar di folder 'bukti_transfer'
+        if ($request->hasFile('bukti_tf')) {
+            $file = $request->file('bukti_tf');
+            $filePath = $file->store('bukti_kirim_barang', 'public');
+
+            // Hapus bukti lama jika ada
+            if ($kirim->bukti_tf) {
+                $oldFilePath = str_replace('/storage/', '', $kirim->bukti_tf);
+                Storage::disk('public')->delete($oldFilePath);
+            }
+
+            // Simpan path bukti transfer di database
+            $kirim->bukti_tf = "/storage/" . $filePath;
+            $kirim->save();
+        }
+
+        return redirect()->back()->with('success', 'Bukti kirim barang berhasil diupload.');
     }
 }

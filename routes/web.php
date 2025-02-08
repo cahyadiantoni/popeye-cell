@@ -39,6 +39,8 @@ Route::delete('/kirim-barang/deletebarang/{id}', [KirimBarangController::class, 
 Route::resource('/kirim-barang', KirimBarangController::class)->middleware('auth');
 Route::get('/kirim-barang/{id}/print', [KirimBarangController::class, 'printPdf'])->name('kirim-barang.print');
 Route::post('/kirim-barang/addbarang', [KirimBarangController::class, 'addbarang'])->name('kirim-barang.addbarang');
+Route::post('/kirim-barang/upload-bukti', [KirimBarangController::class, 'uploadBukti'])->name('kirim-barang.upload-bukti');
+Route::get('/kirim-barang/{id}/print-bukti', [KirimBarangController::class, 'printBukti'])->name('kirim-barang.print-bukti');
 
 Route::resource('/terima-barang', TerimaBarangController::class)->middleware('auth');
 Route::post('/terima-barang/terima', [TerimaBarangController::class, 'terima'])->name('terima-barang.terima');

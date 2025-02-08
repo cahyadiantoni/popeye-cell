@@ -249,7 +249,7 @@ class TransaksiFakturController extends Controller
     {
         $request->validate([
             'id' => 'required|exists:t_faktur,id',
-            'bukti_tf' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+            'bukti_tf' => 'required|image|mimes:jpeg,png,jpg|max:10240'
         ]);
 
         $faktur = Faktur::findOrFail($request->id);

@@ -247,8 +247,8 @@ class TransaksiFakturOnlineController extends Controller
     public function uploadBukti(Request $request)
     {
         $request->validate([
-            'id' => 'required|exists:t_faktur,id',
-            'bukti_tf' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+            'id' => 'required|exists:t_faktur_online,id',
+            'bukti_tf' => 'required|image|mimes:jpeg,png,jpg|max:10240'
         ]);
 
         $faktur = FakturOnline::findOrFail($request->id);
