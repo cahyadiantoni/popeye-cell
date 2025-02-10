@@ -44,6 +44,12 @@
         </ul>
         <div class="pcoded-navigatio-lavel">Stok Gudang</div>
         <ul class="pcoded-item pcoded-left-item">
+            <li class="{{ Request::is('cek-so*') ? 'active' : '' }}">
+                <a href="{{ url('/cek-so') }}">
+                    <span class="pcoded-micon"><i class="fas fa-clipboard-list"></i></span>
+                    <span class="pcoded-mtext">Cek SO</span>
+                </a>
+            </li>
             <li class="{{ Request::is('choice-gudang*') ? 'active' : '' }}">
                 <a href="{{ url('/choice-gudang') }}">
                     <span class="pcoded-micon"><i class="fas fa-boxes"></i></span>

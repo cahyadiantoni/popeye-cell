@@ -12,6 +12,7 @@ use App\Http\Controllers\TransaksiFakturController;
 use App\Http\Controllers\TransaksiOnlineController;
 use App\Http\Controllers\TransaksiFakturOnlineController;
 use App\Http\Controllers\TransaksiReturnController;
+use App\Http\Controllers\CekSOController;
 use App\Exports\BarangExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -79,4 +80,10 @@ Route::get('/transaksi-faktur-online/{nomor_faktur}', [TransaksiFakturOnlineCont
 Route::get('/transaksi-faktur-online/{nomor_faktur}/print', [TransaksiFakturOnlineController::class, 'printPdf'])->name('transaksi-faktur-online.print');
 Route::put('/transaksi-faktur-online/update/{nomor_faktur}', [TransaksiFakturOnlineController::class, 'update'])->name('transaksi-faktur-online.update');
 
-
+Route::resource('/cek-so', CekSOController::class)->middleware('auth');
+Route::get('/get-last-kode/{gudang_id}', [CekSOController::class, 'getLastKode']);
+Route::get('/get-cek-so/{id}/barangs', [CekSOController::class, 'getCekSOBarangs'])->name('get-cekso.barangs');
+Route::post('/scan-cek-so', [CekSOController::class, 'scan'])->name('cekso.scan');
+Route::post('/finish-cek-so', [CekSOController::class, 'finish'])->name('cekso.finish');
+Route::get('/finish-cek-so/{id}', [CekSOController::class, 'showFinish'])->name('cekso.showFinish');
+Route::get('/get-cek-so-finish/{id}', [CekSOController::class, 'getCekSOFinish'])->name('get-cekso.finish');
