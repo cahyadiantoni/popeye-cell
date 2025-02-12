@@ -84,6 +84,7 @@ Route::resource('/cek-so', CekSOController::class)->middleware('auth');
 Route::get('/get-last-kode/{gudang_id}', [CekSOController::class, 'getLastKode']);
 Route::get('/get-cek-so/{id}/barangs', [CekSOController::class, 'getCekSOBarangs'])->name('get-cekso.barangs');
 Route::post('/scan-cek-so', [CekSOController::class, 'scan'])->name('cekso.scan');
+Route::post('/upload-cek-so', [CekSOController::class, 'upload'])->name('cekso.upload');
 Route::post('/finish-cek-so', [CekSOController::class, 'finish'])->name('cekso.finish');
 Route::get('/finish-cek-so/{id}', [CekSOController::class, 'showFinish'])->name('cekso.showFinish');
 Route::get('/get-cek-so-finish/{id}', [CekSOController::class, 'getCekSOFinish'])->name('get-cekso.finish');

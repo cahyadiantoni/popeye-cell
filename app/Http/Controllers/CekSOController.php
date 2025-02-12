@@ -9,6 +9,7 @@ use App\Models\CekSO;
 use App\Models\CekSOBarang;
 use App\Models\CekSOFinished;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
@@ -399,6 +400,98 @@ class CekSOController extends Controller
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
         }
-    }    
-
+    } 
+    
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'filedata' => 'required|mimes:xlsx,csv',
+            't_cek_so_id' => 'required|integer'
+        ]);
+    
+        $t_cek_so_id = $request->t_cek_so_id;
+        $errors = [];
+        $success = [];
+        
+        try {
+            // Baca file Excel
+            $file = $request->file('filedata');
+            $data = Excel::toArray([], $file);
+            
+            $lokSpks = collect();
+            foreach ($data[0] as $index => $row) {
+                // Lewati baris pertama jika merupakan header
+                if ($index === 0) continue;
+                
+                // Validasi kolom di Excel
+                if (!isset($row[0]) || empty($row[0])) {
+                    $errors[] = "Baris " . ($index + 1) . " memiliki sel kosong.";
+                    continue;
+                }
+                
+                $lokSpks->push($row[0]);
+            }
+            $lokSpks = $lokSpks->unique();
+    
+            // Cek apakah barang sudah pernah discan
+            $existing = CekSOBarang::where('t_cek_so_id', $t_cek_so_id)
+                                    ->whereIn('lok_spk', $lokSpks)
+                                    ->exists();
+            if ($existing) {
+                $lokSpks = $lokSpks->diff(
+                    CekSOBarang::where('t_cek_so_id', $t_cek_so_id)
+                                ->whereIn('lok_spk', $lokSpks)
+                                ->pluck('lok_spk')
+                );
+            }
+    
+            // Simpan data scan baru
+            foreach ($lokSpks as $lok_spk) {
+                CekSOBarang::create([
+                    't_cek_so_id' => $t_cek_so_id,
+                    'lok_spk' => $lok_spk
+                ]);
+            }
+    
+            // Ambil data CekSO
+            $cekso = CekSO::findOrFail($t_cek_so_id);
+            
+            // Hitung jumlah scan dan jumlah stok
+            $jumlahScan = CekSOBarang::where('t_cek_so_id', $cekso->id)->count();
+            $jumlahStok = Barang::where('gudang_id', $cekso->gudang_id)->where('status_barang', 1)->count();
+            
+            // Cek barang yang tidak ada di database
+            $ceksoBarangnas = CekSOBarang::where('t_cek_so_id', $cekso->id)
+                ->whereNotIn('lok_spk', function ($query) use ($cekso) {
+                    $query->select('lok_spk')
+                          ->from('t_barang')
+                          ->where('gudang_id', $cekso->gudang_id)
+                          ->where('status_barang', 1);
+                })
+                ->exists();
+    
+            // Tentukan hasil berdasarkan aturan
+            if ($jumlahScan != $jumlahStok) {
+                $hasil = 0;
+            } elseif ($jumlahScan == $jumlahStok && !$ceksoBarangnas) {
+                $hasil = 1;
+            } elseif ($jumlahScan == $jumlahStok && $ceksoBarangnas) {
+                $hasil = 2;
+            }
+    
+            // Update nilai di model CekSO
+            $cekso->update([
+                'jumlah_scan' => $jumlahScan,
+                'jumlah_stok' => $jumlahStok,
+                'hasil' => $hasil
+            ]);
+    
+            $success[] = 'Data berhasil diproses.';
+            return redirect()->back()->with('success', implode('<br>', $success))->with('errors', $errors);
+    
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+    
 }

@@ -17,10 +17,40 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-lg-4 text-end">
+                    @if($cekso->is_finished == 0)
+                        <button class="btn btn-success" id="addBarangBtn">Upload Excel</button>
+                    @endif
+                </div>
             </div>
         </div>
 
         <div class="page-body">
+            <!-- Pesan Success atau Error -->
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            @if(session('errors'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <ul>
+                        @foreach (session('errors') as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
             <!-- Informasi Cek SO Barang -->
             <div class="card">
                 <div class="card-block">
@@ -137,6 +167,35 @@
                 </button>
             </div>
 
+        </div>
+    </div>
+</div>
+
+<!-- Modal Add Barang -->
+<div class="modal fade" id="addBarangModal" tabindex="-1" aria-labelledby="addBarangModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('cekso.upload') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addBarangModalLabel">Add LokSPK</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <a href="{{ asset('files/template cek so.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fileExcel" class="form-label">Upload File Excel</label>
+                        <input type="file" class="form-control" id="filedata" name="filedata" required>
+                        <input type="hidden" class="form-control" id="t_cek_so_id" name="t_cek_so_id" value="{{ $cekso->id }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -330,6 +389,12 @@
                     });
                 }
             });
+        });
+
+        const addBarangBtn = document.getElementById('addBarangBtn');
+        const addBarangModal = new bootstrap.Modal(document.getElementById('addBarangModal'));
+        addBarangBtn.addEventListener('click', () => {
+            addBarangModal.show();
         });
     });
 

@@ -161,7 +161,7 @@
                             <input type="text" class="form-control" id="kode" name="kode" readonly required>
                         </div>
                         <div class="mb-3">
-                            <label for="petugas" class="form-label">Keterangan</label>
+                            <label for="petugas" class="form-label">Nama Petugas</label>
                             <input type="text" class="form-control" id="petugas" name="petugas" placeholder="Tambahkan nama petugas" required>
                         </div>
                         <div class="mb-3">
@@ -196,7 +196,7 @@
                 addCekSOBtn.addEventListener("click", function () {
                     let addCekSOModal = new bootstrap.Modal(document.getElementById("addCekSOModal"));
                     addCekSOModal.show();
-                }, { once: true }); // Tambahkan hanya sekali
+                });
             }
         });
 
