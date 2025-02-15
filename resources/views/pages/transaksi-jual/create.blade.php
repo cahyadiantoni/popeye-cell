@@ -3,6 +3,8 @@
 @section('title', 'Jual Barang')
 @section('content')
     <!-- Main-body start -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <div class="main-body">
         <div class="page-wrapper">
             <!-- Page body start -->
@@ -55,9 +57,22 @@
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Pilih kode Faktur</label>
+                                        <div class="col-sm-10">
+                                            <select name="kode_faktur" class="form-select form-control">
+                                                <option value="">-- Pilih Kode Faktur --</option>
+                                                <option value="BW">BW - Gudang Bawah</option>
+                                                <option value="AT">AT - Gudang Zilfa</option>
+                                                <option value="TKP">TKP - Gudang Tokopedia</option>
+                                                <option value="VR">VR - Gudang Vira</option>
+                                                <option value="LN">LN - Lain Lain</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Nomor Faktur</label>
                                         <div class="col-sm-10">
-                                            <input type="text" value="{{ $SugestNoFak }}" name="nomor_faktur" class="form-control" placeholder="Ketik Nomor Faktur" required>
+                                            <input type="text" name="nomor_faktur" class="form-control" placeholder="Ketik Nomor Faktur" required>
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
@@ -108,4 +123,28 @@
         </div>
     </div>
     <!-- Main-body end -->
+    <script>
+        $(document).ready(function() {
+            $('select[name="kode_faktur"]').on('change', function() {
+                var kodeFaktur = $(this).val();
+                console.log("Gudang Dipilih:", kodeFaktur); // Debugging
+
+                if (kodeFaktur) {
+                    $.ajax({
+                        url: "{{ route('suggest.no.fak') }}",
+                        type: "GET",
+                        data: { kode_faktur: kodeFaktur },
+                        dataType: "json",
+                        success: function(response) {
+                            console.log("Response:", response); // Debugging
+                            $('input[name="nomor_faktur"]').val(response.suggested_no_fak);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("AJAX Error:", error); // Debugging
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 @endsection()

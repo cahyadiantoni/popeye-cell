@@ -39,31 +39,7 @@ class TransaksiOnlineController extends Controller
 
     public function create()
     {
-        $Userid = Auth::user()->id;
-        $SugestNoFak = null;
-
-        if ($Userid == 8 || $Userid == 7) {
-            // Tentukan prefix berdasarkan User ID
-            $prefix = $Userid == 8 ? "VROL 0" : "TKP 0";
-        
-            // Ambil faktur dengan format yang sesuai
-            $lastFaktur = FakturOnline::where('title', 'like', $prefix . '%')
-                ->orderByRaw("CAST(SUBSTRING(title, " . (strlen($prefix) + 1) . ", LENGTH(title) - " . strlen($prefix) . ") AS UNSIGNED) DESC")
-                ->first();
-        
-            if ($lastFaktur) {
-                // Ambil angka tertinggi dari nomor faktur dengan regex
-                preg_match('/' . preg_quote($prefix, '/') . '(\d+)/', $lastFaktur->title, $matches);
-                $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
-                $newNumber = $lastNumber + 1;
-            } else {
-                $newNumber = 1; // Jika belum ada faktur, mulai dari 1
-            }
-        
-            $SugestNoFak = $prefix . $newNumber;
-        }
-        
-        return view('pages.transaksi-jual-online.create', compact('SugestNoFak'));
+        return view('pages.transaksi-jual-online.create');
     }
 
     public function store(Request $request)
@@ -240,5 +216,28 @@ class TransaksiOnlineController extends Controller
     }
     
     
+    public function getSuggestNoFak(Request $request)
+    {
+        $kodeFaktur = $request->kode_faktur;
+        $currentMonthYear = Carbon::now()->format('my'); // Ubah format jadi MMYY (contoh: 0225)
 
+        // Ambil faktur terakhir dengan format yang sesuai
+        $lastFaktur = FakturOnline::where('title', 'like', "$kodeFaktur-$currentMonthYear-%")
+            ->orderByRaw("CAST(SUBSTRING(title, 10, LENGTH(title) - 9) AS UNSIGNED) DESC")
+            ->first();
+
+        // Tentukan nomor urut
+        if ($lastFaktur) {
+            preg_match('/-(\d+)$/', $lastFaktur->title, $matches);
+            $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
+            $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '001';
+        }
+
+        // Format nomor faktur baru
+        $suggestedNoFak = "$kodeFaktur-$currentMonthYear-$newNumber";
+
+        return response()->json(['suggested_no_fak' => $suggestedNoFak]);
+    }
 }

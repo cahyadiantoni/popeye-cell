@@ -38,32 +38,8 @@ class TransaksiController extends Controller
     }
 
     public function create()
-    {
-        $Userid = Auth::user()->id;
-        $SugestNoFak = null;
-
-        if ($Userid == 8 || $Userid == 6) {
-            // Tentukan prefix berdasarkan User ID
-            $prefix = $Userid == 8 ? "VR 0" : "AT ";
-        
-            // Ambil faktur dengan format yang sesuai
-            $lastFaktur = Faktur::where('nomor_faktur', 'like', $prefix . '%')
-                ->orderByRaw("CAST(SUBSTRING(nomor_faktur, " . (strlen($prefix) + 1) . ", LENGTH(nomor_faktur) - " . strlen($prefix) . ") AS UNSIGNED) DESC")
-                ->first();
-        
-            if ($lastFaktur) {
-                // Ambil angka tertinggi dari nomor faktur dengan regex
-                preg_match('/' . preg_quote($prefix, '/') . '(\d+)/', $lastFaktur->nomor_faktur, $matches);
-                $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
-                $newNumber = $lastNumber + 1;
-            } else {
-                $newNumber = 1; // Jika belum ada faktur, mulai dari 1
-            }
-        
-            $SugestNoFak = $prefix . $newNumber;
-        }
-        
-        return view('pages.transaksi-jual.create', compact('SugestNoFak'));
+    {   
+        return view('pages.transaksi-jual.create');
     }
 
     public function store(Request $request)
@@ -227,6 +203,29 @@ class TransaksiController extends Controller
         }
     }
     
-    
+    public function getSuggestNoFak(Request $request)
+    {
+        $kodeFaktur = $request->kode_faktur;
+        $currentMonthYear = Carbon::now()->format('my'); // Ubah format jadi MMYY (contoh: 0225)
+
+        // Ambil faktur terakhir dengan format yang sesuai
+        $lastFaktur = Faktur::where('nomor_faktur', 'like', "$kodeFaktur-$currentMonthYear-%")
+            ->orderByRaw("CAST(SUBSTRING(nomor_faktur, 10, LENGTH(nomor_faktur) - 9) AS UNSIGNED) DESC")
+            ->first();
+
+        // Tentukan nomor urut
+        if ($lastFaktur) {
+            preg_match('/-(\d+)$/', $lastFaktur->nomor_faktur, $matches);
+            $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
+            $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '001';
+        }
+
+        // Format nomor faktur baru
+        $suggestedNoFak = "$kodeFaktur-$currentMonthYear-$newNumber";
+
+        return response()->json(['suggested_no_fak' => $suggestedNoFak]);
+    }
 
 }

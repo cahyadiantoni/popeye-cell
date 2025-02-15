@@ -2,6 +2,9 @@
 
 @section('title', 'Jual Barang Online')
 @section('content')
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <!-- Main-body start -->
     <div class="main-body">
         <div class="page-wrapper">
@@ -55,9 +58,22 @@
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
-                                        <label class="form-label col-sm-2 col-form-label">Title</label>
+                                        <label class="form-label col-sm-2 col-form-label">Pilih kode Faktur</label>
                                         <div class="col-sm-10">
-                                            <input type="text" name="title" value="{{ $SugestNoFak }}" class="form-control" placeholder="Ketik Judul Faktur" required>
+                                            <select name="kode_faktur" class="form-select form-control">
+                                                <option value="">-- Pilih Kode Faktur --</option>
+                                                <option value="PPY">PPY - Popeye</option>
+                                                <option value="JJ">JJ - Toko JJ</option>
+                                                <option value="POD">POD - Podomoro Gadget</option>
+                                                <option value="NAR">NAR - Naruto</option>
+                                                <option value="LN">LN - Lain Lain</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Nomor Faktur</label>
+                                        <div class="col-sm-10">
+                                            <input type="text" name="title" class="form-control" placeholder="Ketik Judul Faktur" required>
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
@@ -108,4 +124,28 @@
         </div>
     </div>
     <!-- Main-body end -->
+    <script>
+        $(document).ready(function() {
+            $('select[name="kode_faktur"]').on('change', function() {
+                var kodeFaktur = $(this).val();
+                console.log("Gudang Dipilih:", kodeFaktur); // Debugging
+
+                if (kodeFaktur) {
+                    $.ajax({
+                        url: "{{ route('suggest.no.fak.online') }}",
+                        type: "GET",
+                        data: { kode_faktur: kodeFaktur },
+                        dataType: "json",
+                        success: function(response) {
+                            console.log("Response:", response); // Debugging
+                            $('input[name="title"]').val(response.suggested_no_fak);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("AJAX Error:", error); // Debugging
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 @endsection()
