@@ -16,15 +16,32 @@ use Illuminate\Support\Facades\Storage;
 
 class TransaksiFakturOnlineController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $fakturs = FakturOnline::withCount(['barangs as total_barang'])
-                     ->orderBy('tgl_jual', 'desc')
-                     ->get();
+        $query = FakturOnline::withCount(['barangs as total_barang'])->orderBy('tgl_jual', 'desc');
 
+        $daftarGudang = ['POD', 'PPY', 'JJ', 'NAR'];
+
+        if ($request->filled('kode_faktur')) {
+            $kodeFaktur = $request->kode_faktur;
+
+            if (in_array($kodeFaktur, $daftarGudang)) {
+                // Jika kode faktur sesuai daftar, filter seperti biasa
+                $query->where('title', 'like', "$kodeFaktur-%");
+            } else {
+                // Jika "Lain-Lain" dipilih (kode tidak ada dalam daftar), tampilkan semua faktur kecuali yang terdaftar
+                $query->where(function ($q) use ($daftarGudang) {
+                    foreach ($daftarGudang as $kode) {
+                        $q->where('title', 'not like', "$kode-%");
+                    }
+                });
+            }
+        }
+
+        $fakturs = $query->get();
         $roleUser = optional(Auth::user())->role;
 
-        return view('pages.transaksi-faktur-online.index', compact('fakturs', 'roleUser')); 
+        return view('pages.transaksi-faktur-online.index', compact('fakturs', 'roleUser'));
     }
 
     public function show($nomor_faktur)

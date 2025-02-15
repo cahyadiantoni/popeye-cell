@@ -57,12 +57,34 @@
                     <h5>Informasi Faktur</h5>
                 </div>
                 <div class="card-block">
-                    <p><strong>No Faktur:</strong> {{ $faktur->nomor_faktur }}</p>
-                    <p><strong>Pembeli:</strong> {{ $faktur->pembeli }}</p>
-                    <p><strong>Tanggal Jual:</strong> {{ \Carbon\Carbon::parse($faktur->tgl_jual)->translatedFormat('d F Y') }}</p>
-                    <p><strong>Petugas:</strong> {{ $faktur->petugas }}</p>
-                    <p><strong>Total:</strong> Rp. {{ number_format($faktur->total, 0, ',', '.') }}</p>
-                    <p><strong>Keterangan:</strong> {{ $faktur->keterangan }}</p>
+                <table class="table table-bordered table-striped">
+                    <tbody>
+                        <tr>
+                            <th width="30%">No Faktur</th>
+                            <td>{{ $faktur->nomor_faktur }}</td>
+                        </tr>
+                        <tr>
+                            <th>Pembeli</th>
+                            <td>{{ $faktur->pembeli }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tanggal Jual</th>
+                            <td>{{ \Carbon\Carbon::parse($faktur->tgl_jual)->translatedFormat('d F Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Petugas</th>
+                            <td>{{ $faktur->petugas }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total</th>
+                            <td>Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Keterangan</th>
+                            <td>{{ $faktur->keterangan }}</td>
+                        </tr>
+                    </tbody>
+                </table>
                 </div>
             </div>
 

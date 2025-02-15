@@ -57,29 +57,60 @@
                     <h5>Informasi Kirim Barang</h5>
                 </div>
                 <div class="card-block">
-                    <p><strong>ID Kirim:</strong> {{ $kirim->id }}</p>
-                    <p><strong>User Pengirim:</strong> {{ $kirim->pengirimUser->name }}</p>
-                    <p><strong>Gudang Pengirim:</strong> {{ $kirim->pengirimGudang->nama_gudang ?? 'N/A' }}</p>
-                    <p><strong>User Penerima:</strong> {{ $kirim->penerimaUser->name }}</p>
-                    <p><strong>Gudang Penerima:</strong> {{ $kirim->penerimaGudang->nama_gudang }}</p>
-                    <p><strong>Tgl Kirim:</strong> {{ $kirim->dt_kirim }}</p>
-                    <p><strong>Tgl Terima:</strong> {{ $kirim->dt_terima }}</p>
-                    <p><strong>Jumlah Barang:</strong> {{ $jumlahBarang }}</p>
-                    <p><strong>Status:</strong> 
-                    @switch($kirim->status)
-                        @case(0)
-                            <span class="badge bg-warning text-dark">Dalam Proses</span>
-                            @break
-                        @case(1)
-                            <span class="badge bg-success">Diterima</span>
-                            @break
-                        @case(2)
-                            <span class="badge bg-danger">Ditolak</span>
-                            @break
-                        @default
-                            <span class="badge bg-secondary">Status Tidak Diketahui</span>
-                    @endswitch
-                    </p>
+                <table class="table table-bordered table-striped">
+                    <tbody>
+                        <tr>
+                            <th width="30%">ID Kirim</th>
+                            <td>{{ $kirim->id }}</td>
+                        </tr>
+                        <tr>
+                            <th>User Pengirim</th>
+                            <td>{{ $kirim->pengirimUser->name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Gudang Pengirim</th>
+                            <td>{{ $kirim->pengirimGudang->nama_gudang ?? 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>User Penerima</th>
+                            <td>{{ $kirim->penerimaUser->name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Gudang Penerima</th>
+                            <td>{{ $kirim->penerimaGudang->nama_gudang }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tanggal Kirim</th>
+                            <td>{{ $kirim->dt_kirim }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tanggal Terima</th>
+                            <td>{{ $kirim->dt_terima }}</td>
+                        </tr>
+                        <tr>
+                            <th>Jumlah Barang</th>
+                            <td>{{ $jumlahBarang }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status</th>
+                            <td>
+                                @switch($kirim->status)
+                                    @case(0)
+                                        <span class="badge bg-warning text-dark">Dalam Proses</span>
+                                        @break
+                                    @case(1)
+                                        <span class="badge bg-success">Diterima</span>
+                                        @break
+                                    @case(2)
+                                        <span class="badge bg-danger">Ditolak</span>
+                                        @break
+                                    @default
+                                        <span class="badge bg-secondary">Status Tidak Diketahui</span>
+                                @endswitch
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
                 </div>
             </div>
 

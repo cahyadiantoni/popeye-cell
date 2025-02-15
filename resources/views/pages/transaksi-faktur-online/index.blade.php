@@ -55,6 +55,28 @@
                     <div class="col-sm-12">
                         <!-- Zero config.table start -->
                         <div class="card">
+                            <div class="card-header">
+                                <form action="{{ route('transaksi-faktur-online.index') }}" method="GET">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <select name="kode_faktur" class="form-control">
+                                                <option value="">-- Semua Toko --</option>
+                                                <option value="POD" {{ request('kode_faktur') == 'POD' ? 'selected' : '' }}>Toko Podomoro</option>
+                                                <option value="PPY" {{ request('kode_faktur') == 'PPY' ? 'selected' : '' }}>Toko Popeye</option>
+                                                <option value="JJ" {{ request('kode_faktur') == 'JJ' ? 'selected' : '' }}>Toko JJ</option>
+                                                <option value="NAR" {{ request('kode_faktur') == 'NAR' ? 'selected' : '' }}>Toko Naruto</option>
+                                                <option value="Lain" {{ request('kode_faktur') == 'Lain' ? 'selected' : '' }}>Lain Lain</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="submit" class="btn btn-primary">Filter</button>
+                                            <a href="{{ route('transaksi-faktur.index') }}" class="btn btn-secondary">Reset</a>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="card">
                             <div class="card-block">
                                 <div class="dt-responsive table-responsive">
                                     <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
