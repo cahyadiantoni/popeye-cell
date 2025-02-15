@@ -74,6 +74,7 @@ class TransaksiOnlineController extends Controller
             'title' => 'required|string',
             'toko' => 'required|string',
             'petugas' => 'required|string',
+            'grade' => 'required|string',
         ]);
 
         // Inisialisasi variabel
@@ -141,6 +142,7 @@ class TransaksiOnlineController extends Controller
                 'toko' => $request->input('toko'),
                 'tgl_jual' => $request->input('tgl_jual'),
                 'petugas' => $request->input('petugas'),
+                'grade' => $request->input('grade'),
                 'keterangan' => $request->input('keterangan'),
                 'total' => $totalHargaJual,
             ]);

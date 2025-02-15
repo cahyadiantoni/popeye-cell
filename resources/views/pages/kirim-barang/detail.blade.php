@@ -14,7 +14,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4">
+                <div class="col-lg-4 text-end">
                     <a href="{{ route('kirim-barang.print', $kirim->id) }}" class="btn btn-primary" target="_blank">Print PDF</a>
                     <a href="{{ route('kirim-barang.index') }}" class="btn btn-secondary">Kembali</a>
                     @if($kirim->status == 0)
@@ -97,7 +97,9 @@
                                 <th>No</th>
                                 <th>Lok SPK</th>
                                 <th>Tipe Barang</th>
+                                @if($kirim->status == 0)
                                 <th>Aksi</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -106,15 +108,15 @@
                                 <td>{{ $index + 1 }}</td>
                                 <td>{{ $barang->lok_spk }}</td>
                                 <td>{{ $barang->barang->tipe ?? '-' }}</td>
+                                @if($kirim->status == 0)
                                 <td>
-                                    @if($kirim->status == 0)
-                                        <form action="{{ route('kirim-barang.deletebarang', $barang->id) }}" method="POST" class="d-inline delete-form">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
-                                        </form>
-                                     @endif
+                                    <form action="{{ route('kirim-barang.deletebarang', $barang->id) }}" method="POST" class="d-inline delete-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
+                                    </form>
                                 </td>
+                                @endif
                             </tr>
                             @endforeach
                         </tbody>

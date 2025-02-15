@@ -19,7 +19,6 @@
                                 <form method="POST" action="{{ route('data-user.update', $user->id) }}">
                                     @csrf
                                     @method('PUT')
-
                                     <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Name</label>
                                         <div class="col-sm-10">
@@ -30,6 +29,28 @@
                                         <label class="form-label col-sm-2 col-form-label">Email</label>
                                         <div class="col-sm-10">
                                             <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Role</label>
+                                        <div class="col-sm-10">
+                                            <select name="role" class="form-control">
+                                                <option value="">Pilih Role</option>
+                                                <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Select Gudang</label>
+                                        <div class="col-sm-10">
+                                        <select name="gudang_id" class="form-select form-control" required>
+                                            <option value="0">-- Pilih Gudang --</option>
+                                            @foreach($gudangs as $gudang)
+                                                <option value="{{ $gudang->id }}" {{ $gudang->id == $user->gudang_id ? 'selected' : '' }}>
+                                                    {{ $gudang->nama_gudang }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                         </div>
                                     </div>
                                     <!-- Tambahkan tombol submit di sini -->

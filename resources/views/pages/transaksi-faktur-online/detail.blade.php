@@ -14,10 +14,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4">
+                <div class="col-lg-4 text-end">
                     <a href="{{ route('transaksi-faktur-online.print', $faktur->id) }}" class="btn btn-primary" target="_blank">Print PDF</a>
                     <a href="{{ route('transaksi-faktur-online.index') }}" class="btn btn-secondary">Kembali</a>
+                    @if($roleUser=='admin')
                     <button class="btn btn-success" id="addBarangBtn">Add Barang</button>
+                    @endif
                 </div>
             </div>
         </div>
@@ -79,7 +81,9 @@
                                 <th>Tipe Barang</th>
                                 <th>Harga</th>
                                 <th>PJ</th>
+                                @if($roleUser=='admin')
                                 <th>Aksi</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -91,6 +95,7 @@
                                 <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
                                 <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
                                 <td>Rp. {{ number_format($transaksi->pj, 0, ',', '.') }}</td>
+                                @if($roleUser=='admin')
                                 <td>
                                     <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $transaksi->lok_spk }}" data-invoice="{{ $transaksi->invoice }}" data-harga="{{ $transaksi->harga }}" data-pj="{{ $transaksi->pj }}">Edit</button>
                                     <form action="{{ route('transaksi-jual-online.delete', $transaksi->lok_spk) }}" method="POST" class="d-inline delete-form">
@@ -99,6 +104,7 @@
                                         <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
                                     </form>
                                 </td>
+                                @endif
                             </tr>
                             @endforeach
                         </tbody>

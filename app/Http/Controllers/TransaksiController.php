@@ -74,6 +74,7 @@ class TransaksiController extends Controller
             'nomor_faktur' => 'required|string',
             'pembeli' => 'required|string',
             'petugas' => 'required|string',
+            'grade' => 'required|string',
         ]);
 
         // Cek apakah nomor_faktur sudah ada di tabel Faktur
@@ -142,6 +143,7 @@ class TransaksiController extends Controller
                 'pembeli' => $request->input('pembeli'),
                 'tgl_jual' => $request->input('tgl_jual'),
                 'petugas' => $request->input('petugas'),
+                'grade' => $request->input('grade'),
                 'keterangan' => $request->input('keterangan'),
                 'total' => $totalHargaJual,
             ]);

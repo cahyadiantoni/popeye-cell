@@ -31,6 +31,26 @@
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Role</label>
+                                        <div class="col-sm-10">
+                                            <select name="role" class="form-control">
+                                                <option value="">Pilih Role</option>
+                                                <option value="admin">Admin</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Select Gudang</label>
+                                        <div class="col-sm-10">
+                                            <select name="gudang_id" class="form-select form-control">
+                                                <option value="0">-- Pilih Gudang --</option>
+                                                @foreach($gudangs as $gudang)
+                                                    <option value="{{ $gudang->id }}">{{ $gudang->nama_gudang }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Password</label>
                                         <div class="col-sm-10">
                                             <input type="password" name="password" class="form-control" placeholder="Ketik Password User" required>

@@ -52,6 +52,8 @@
                                             <tr>
                                                 <th>Name</th>
                                                 <th>Email</th>
+                                                <th>Role</th>
+                                                <th>Gudang</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
@@ -60,6 +62,8 @@
                                             <tr>
                                                 <td>{{ $user->name }}</td>
                                                 <td>{{ $user->email }}</td>
+                                                <td>{{ $user->role ?? 'User'}}</td>
+                                                <td>{{ $user->gudang ? $user->gudang->nama_gudang : '-' }}</td>
                                                 <td>
                                                     <a href="{{ route('data-user.edit', $user->id) }}" class="btn btn-warning btn-round">Edit</a>
                                                     <!-- Tombol Delete -->
@@ -77,6 +81,8 @@
                                             <tr>
                                                 <th>Name</th>
                                                 <th>Email</th>
+                                                <th>Role</th>
+                                                <th>Gudang</th>
                                                 <th>Action</th>
                                             </tr>
                                         </tfoot>

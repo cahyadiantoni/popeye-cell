@@ -19,7 +19,9 @@ class Faktur extends Model
         'tgl_jual',
         'petugas',
         'total',
+        'grade',
         'keterangan',
+        'is_finish',
     ];
 
     public function barangs()

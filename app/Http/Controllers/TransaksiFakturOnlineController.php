@@ -22,7 +22,9 @@ class TransaksiFakturOnlineController extends Controller
                      ->orderBy('tgl_jual', 'desc')
                      ->get();
 
-        return view('pages.transaksi-faktur-online.index', compact('fakturs')); 
+        $roleUser = optional(Auth::user())->role;
+
+        return view('pages.transaksi-faktur-online.index', compact('fakturs', 'roleUser')); 
     }
 
     public function show($nomor_faktur)
@@ -37,7 +39,9 @@ class TransaksiFakturOnlineController extends Controller
             ->where('faktur_online_id', $nomor_faktur)
             ->get();
 
-        return view('pages.transaksi-faktur-online.detail', compact('faktur', 'transaksiJuals'));
+        $roleUser = optional(Auth::user())->role;
+
+        return view('pages.transaksi-faktur-online.detail', compact('faktur', 'transaksiJuals', 'roleUser'));
     }
 
     public function printPdf($nomor_faktur)
@@ -80,6 +84,7 @@ class TransaksiFakturOnlineController extends Controller
                 'toko' => 'required|string|max:255',
                 'tgl_jual' => 'required|date',
                 'petugas' => 'required|string|max:255',
+                'grade' => 'required',
                 'keterangan' => 'nullable|string',
             ]);
     
@@ -92,6 +97,7 @@ class TransaksiFakturOnlineController extends Controller
                 'toko' => $validated['toko'],
                 'tgl_jual' => $validated['tgl_jual'],
                 'petugas' => $validated['petugas'],
+                'grade' => $validated['grade'],
                 'keterangan' => $validated['keterangan'],
             ]);
     
@@ -270,5 +276,20 @@ class TransaksiFakturOnlineController extends Controller
         }
 
         return redirect()->back()->with('success', 'Bukti transfer berhasil diupload.');
+    }
+
+    public function tandaiSudahDicek($id)
+    {
+        try {
+            // Cari faktur berdasarkan nomor_faktur
+            $faktur = FakturOnline::where('id', $id)->firstOrFail();
+
+            $faktur->is_finish = 1;
+            $faktur->save();
+    
+            return redirect()->back()->with('success', 'Faktur ditandai sudah selesai');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 }

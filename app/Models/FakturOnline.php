@@ -20,6 +20,8 @@ class FakturOnline extends Model
         'petugas',
         'total',
         'keterangan',
+        'grade',
+        'is_finish',
     ];
 
     public function barangs()

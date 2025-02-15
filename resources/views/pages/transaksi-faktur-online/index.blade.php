@@ -60,12 +60,14 @@
                                     <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                         <thead>
                                             <tr>
+                                                <th>Cek</th>
                                                 <th>Title</th>
                                                 <th>Toko</th>
                                                 <th>Tgl Faktur</th>
                                                 <th>jumlah Barang</th>
                                                 <th>Total Harga</th>
                                                 <th>Petugas</th>
+                                                <th>Grade</th>
                                                 <th>Keterangan</th>
                                                 <th>Action</th>
                                             </tr>
@@ -73,6 +75,22 @@
                                         <tbody>
                                             @foreach($fakturs as $faktur)
                                             <tr>
+                                                <td>
+                                                    @if ($faktur->is_finish == 0)
+                                                        @if($roleUser == 'admin')
+                                                            <form action="{{ route('transaksi-faktur-online.tandai-sudah-dicek', $faktur->id) }}" method="POST" class="d-inline finish-form">
+                                                                @csrf
+                                                                @method('PUT')
+                                                                <button type="submit" class="btn btn-primary btn-sm finish-btn">Tandai Dicek</button>
+                                                            </form>
+                                                        @else
+                                                        <span class="badge bg-warning">Belum Dicek</span>
+                                                        @endif
+                                                    @else
+                                                        <!-- Keterangan Sudah Dicek -->
+                                                        <span class="badge bg-success">Sudah Dicek</span>
+                                                    @endif
+                                                </td>
                                                 <td>
                                                     <a href="{{ route('transaksi-faktur-online.show', $faktur->id) }}">
                                                         {{ $faktur->title }}
@@ -83,12 +101,14 @@
                                                 <td>{{ $faktur->total_barang }}</td>
                                                 <td>{{ 'Rp. ' . number_format($faktur->total, 0, ',', '.') }}</td>
                                                 <td>{{ $faktur->petugas }}</td>
+                                                <td>{{ $faktur->grade }}</td>
                                                 <td>{{ $faktur->keterangan }}</td>
                                                 <td>
                                                     <!-- Tombol View -->
                                                     <a href="{{ route('transaksi-faktur-online.show', $faktur->id) }}" class="btn btn-info btn-sm">View</a>
+                                                    @if ($faktur->is_finish==0)
                                                     <!-- Tombol Edit -->
-                                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $faktur->id }}" data-title="{{ $faktur->title }}" data-toko="{{ $faktur->toko }}" data-tgl-jual="{{ $faktur->tgl_jual }}" data-petugas="{{ $faktur->petugas }}" data-keterangan="{{ $faktur->keterangan }}">Edit</button>
+                                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $faktur->id }}" data-title="{{ $faktur->title }}" data-toko="{{ $faktur->toko }}" data-tgl-jual="{{ $faktur->tgl_jual }}" data-petugas="{{ $faktur->petugas }}" data-keterangan="{{ $faktur->keterangan }}" data-grade="{{ $faktur->grade }}">Edit</button>
                                                     <form action="{{ route('transaksi-faktur-online.delete', $faktur->id) }}" method="POST" class="d-inline delete-form">
                                                         @csrf
                                                         @method('DELETE')
@@ -100,6 +120,7 @@
                                                         data-bukti-tf="{{ $faktur->bukti_tf }}">
                                                         Upload Bukti
                                                     </button>
+                                                    @endif
                                                     @if ($faktur->bukti_tf)
                                                         <a href="{{ asset($faktur->bukti_tf) }}" target="_blank" class="btn btn-primary btn-sm">Lihat Bukti</a>
                                                     @endif
@@ -109,12 +130,15 @@
                                         </tbody>
                                         <tfoot>
                                             <tr>
+                                                <th>Cek</th>
                                                 <th>Title</th>
                                                 <th>Toko</th>
                                                 <th>Tgl Faktur</th>
                                                 <th>jumlah Barang</th>
                                                 <th>Total Harga</th>
                                                 <th>Petugas</th>
+                                                <th>Grade</th>
+                                                <th>Keterangan</th>
                                                 <th>Action</th>
                                             </tr>
                                         </tfoot>
@@ -158,6 +182,18 @@
                         <div class="mb-3">
                             <label for="editPetugas" class="form-label">Petugas</label>
                             <input type="text" class="form-control" id="editPetugas" name="petugas" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGrade" class="form-label">Grade</label>
+                            <select class="form-control" id="editGrade" name="grade" required>
+                                <option value="">Pilih Grade</option>
+                                <option value="Barang JB">Barang JB</option>
+                                <option value="Barang 2nd">Barang 2nd</option>
+                                <option value="Grade B">Grade B</option>
+                                <option value="Grade C">Grade C</option>
+                                <option value="Batangan">Batangan</option>
+                                <option value="Lain Lain">Lain Lain</option>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label for="editKeterangan" class="form-label">Keterangan</label>
@@ -215,6 +251,7 @@
             const editTglJual = document.getElementById('editTglJual');
             const editPetugas = document.getElementById('editPetugas');
             const editKeterangan = document.getElementById('editKeterangan');
+            const editGrade = document.getElementById('editGrade');
 
             editButtons.forEach(button => {
                 button.addEventListener('click', () => {
@@ -224,6 +261,7 @@
                     const toko = button.dataset.toko;
                     const tglJual = button.dataset.tglJual;
                     const petugas = button.dataset.petugas;
+                    const grade = button.dataset.grade;
                     const keterangan = button.dataset.keterangan;
 
                     // Isi form modal dengan data
@@ -232,6 +270,7 @@
                     editToko.value = toko;
                     editTglJual.value = tglJual;
                     editPetugas.value = petugas;
+                    editGrade.value = grade;
                     editKeterangan.value = keterangan;
 
                     // Update action form dan tampilkan modal
@@ -245,6 +284,16 @@
                 form.addEventListener('submit', function (event) {
                     event.preventDefault(); // Mencegah submit form langsung
                     if (confirm('Yakin ingin menghapus data ini?')) {
+                        form.submit(); // Submit form jika konfirmasi "OK"
+                    }
+                });
+            });
+
+            const finishForms = document.querySelectorAll('.finish-form');
+            finishForms.forEach(form => {
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault(); // Mencegah submit form langsung
+                    if (confirm('Apakah Anda yakin ingin menandai transaksi ini sebagai sudah dicek?')) {
                         form.submit(); // Submit form jika konfirmasi "OK"
                     }
                 });

@@ -73,6 +73,20 @@
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Grade</label>
+                                        <div class="col-sm-10">
+                                            <select name="grade" class="form-control" required>
+                                                <option value="">Pilih Grade</option>
+                                                <option value="Barang JB">Barang JB</option>
+                                                <option value="Barang 2nd">Barang 2nd</option>
+                                                <option value="Grade B">Grade B</option>
+                                                <option value="Grade C">Grade C</option>
+                                                <option value="Batangan">Batangan</option>
+                                                <option value="Lain Lain">Lain Lain</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Keterangan</label>
                                         <div class="col-sm-10">
                                             <textarea name="keterangan" class="form-control" placeholder="Tambahkan keterangan jika diperlukan" rows="4"></textarea>

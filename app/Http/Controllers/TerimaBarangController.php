@@ -17,11 +17,10 @@ class TerimaBarangController extends Controller
 {
     public function index()
     {
-        // Mendapatkan auth id pengguna yang sedang login
-        $authId = Auth::id();
+        $gudangId = Auth::user()->gudang_id;
 
         // Mengambil data dari model 
-        $requests = Kirim::where('penerima_user_id', $authId)
+        $requests = Kirim::where('penerima_gudang_id', $gudangId)
             ->orderBy('status')
             ->orderBy('dt_kirim')
             ->get();
@@ -53,20 +52,23 @@ class TerimaBarangController extends Controller
     {
         $lokSpks = explode(',', $request->lok_spks); // Daftar lok_spk
         $gudangId = $request->gudang_id;
+        $authId = Auth::id();
 
         // Update barang berdasarkan lok_spk
         Barang::whereIn('lok_spk', $lokSpks)->update(['gudang_id' => $gudangId]);
 
         // Update status kirim
-        Kirim::where('id', $request->kirim_id)->update(['status' => 1, 'dt_terima' => now()]);
+        Kirim::where('id', $request->kirim_id)->update(['penerima_user_id' => $authId, 'status' => 1, 'dt_terima' => now()]);
 
         return redirect()->back()->with('success', 'Barang berhasil diterima.');
     }
 
     public function tolak(Request $request)
     {
+        $authId = Auth::id();
+
         // Update status kirim
-        Kirim::where('id', $request->kirim_id)->update(['status' => 2, 'dt_terima' => now()]);
+        Kirim::where('id', $request->kirim_id)->update(['penerima_user_id' => $authId, 'status' => 2, 'dt_terima' => now()]);
 
         return redirect()->back()->with('success', 'Barang berhasil ditolak.');
     }

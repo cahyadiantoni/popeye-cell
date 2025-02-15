@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Gudang;
 use Illuminate\Http\Request;
 
 class DataUSerController extends Controller
@@ -11,7 +12,7 @@ class DataUSerController extends Controller
     public function index()
     {
         // Mengambil semua pengguna dari database
-        $users = User::all(); // Ganti dengan metode sesuai kebutuhan
+        $users = User::with('gudang')->get(); 
         return view('pages.data-user.index', compact('users'));
     }
 
@@ -20,7 +21,10 @@ class DataUSerController extends Controller
     {
         // Mencari pengguna berdasarkan ID
         $user = User::findOrFail($id);
-        return view('pages.data-user.edit', compact('user'));
+
+        $gudangs = Gudang::all();
+
+        return view('pages.data-user.edit', compact('user', 'gudangs'));
     }
 
     // Menyimpan pembaruan pengguna
@@ -30,11 +34,13 @@ class DataUSerController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
+            'role' => 'nullable',
+            'gudang_id' => 'required',
         ]);
 
         // Mencari pengguna berdasarkan ID
         $user = User::findOrFail($id);
-        $user->update($request->only('name', 'email'));
+        $user->update($request->only('name', 'email', 'role', 'gudang_id'));
 
         return redirect()->route('data-user.index')->with('success', 'User updated successfully!');
     }
@@ -43,7 +49,9 @@ class DataUSerController extends Controller
     // Menampilkan form untuk menambah pengguna
     public function create()
     {
-        return view('pages.data-user.create');
+        $gudangs = Gudang::all();
+
+        return view('pages.data-user.create', compact('gudangs'));
     }
 
     // Menyimpan pengguna baru
@@ -53,6 +61,8 @@ class DataUSerController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
+            'role' => 'nullable',
+            'gudang_id' => 'required',
             'password' => 'required|string|min:8', // Validasi password
         ]);
 
@@ -60,6 +70,8 @@ class DataUSerController extends Controller
         User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'role' => $request->role,
+            'gudang_id' => $request->gudang_id,
             'password' => bcrypt($request->password), // Hash password
         ]);
 
