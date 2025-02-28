@@ -105,7 +105,7 @@
             </ul>
         @endif
         @if(auth()->user()->adm)
-            <div class="pcoded-navigatio-lavel">To Do Transfer</div>
+            <div class="pcoded-navigatio-lavel">Administrasi</div>
             <ul class="pcoded-item pcoded-left-item">
                 <li class="{{ Request::is('todo-transfer') ? 'active' : '' }}">
                     <a href="{{ url('/todo-transfer') }}">
