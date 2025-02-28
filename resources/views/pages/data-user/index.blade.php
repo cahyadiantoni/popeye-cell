@@ -53,6 +53,7 @@
                                                 <th>Name</th>
                                                 <th>Email</th>
                                                 <th>Role</th>
+                                                <th>Web</th>
                                                 <th>Gudang</th>
                                                 <th>Action</th>
                                             </tr>
@@ -63,6 +64,17 @@
                                                 <td>{{ $user->name }}</td>
                                                 <td>{{ $user->email }}</td>
                                                 <td>{{ $user->role ?? 'User'}}</td>
+                                                <td>
+                                                    @if ($user->sales)
+                                                        <span class="badge bg-success">Sales</span>
+                                                    @endif
+                                                    @if ($user->adm)
+                                                        <span class="badge bg-primary">Administrasi</span>
+                                                    @endif
+                                                    @if (!$user->sales && !$user->adm)
+                                                        <span class="badge bg-secondary">-</span>
+                                                    @endif
+                                                </td>
                                                 <td>{{ $user->gudang ? $user->gudang->nama_gudang : '-' }}</td>
                                                 <td>
                                                     <a href="{{ route('data-user.edit', $user->id) }}" class="btn btn-warning btn-round">Edit</a>
@@ -82,6 +94,7 @@
                                                 <th>Name</th>
                                                 <th>Email</th>
                                                 <th>Role</th>
+                                                <th>Web</th>
                                                 <th>Gudang</th>
                                                 <th>Action</th>
                                             </tr>

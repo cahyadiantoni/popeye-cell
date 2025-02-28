@@ -41,6 +41,19 @@
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">web Sales</label>
+                                        <div class="col-sm-10">
+                                            <input type="checkbox" name="sales" value="1" {{ old('sales', $user->sales) ? 'checked' : '' }}>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Web Administrasi</label>
+                                        <div class="col-sm-10">
+                                            <input type="checkbox" name="adm" value="1" {{ old('adm', $user->adm) ? 'checked' : '' }}>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Select Gudang</label>
                                         <div class="col-sm-10">
                                         <select name="gudang_id" class="form-select form-control" required>

@@ -36,15 +36,25 @@ class DataUSerController extends Controller
             'email' => 'required|email|max:255',
             'role' => 'nullable',
             'gudang_id' => 'required',
+            'sales' => 'nullable|boolean',
+            'adm' => 'nullable|boolean',
         ]);
-
+    
         // Mencari pengguna berdasarkan ID
         $user = User::findOrFail($id);
-        $user->update($request->only('name', 'email', 'role', 'gudang_id'));
-
+    
+        // Simpan data user dengan update nilai sales dan adm
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'role' => $request->role,
+            'gudang_id' => $request->gudang_id,
+            'sales' => $request->has('sales'), // Jika dicentang jadi true, jika tidak jadi false
+            'adm' => $request->has('adm'), // Jika dicentang jadi true, jika tidak jadi false
+        ]);
+    
         return redirect()->route('data-user.index')->with('success', 'User updated successfully!');
-    }
-
+    }    
 
     // Menampilkan form untuk menambah pengguna
     public function create()
@@ -64,6 +74,8 @@ class DataUSerController extends Controller
             'role' => 'nullable',
             'gudang_id' => 'required',
             'password' => 'required|string|min:8', // Validasi password
+            'sales' => 'nullable|boolean',
+            'adm' => 'nullable|boolean',
         ]);
 
         // Menyimpan data pengguna baru dengan password di-hash
@@ -73,6 +85,8 @@ class DataUSerController extends Controller
             'role' => $request->role,
             'gudang_id' => $request->gudang_id,
             'password' => bcrypt($request->password), // Hash password
+            'sales' => $request->has('sales'), // Jika dicentang maka true
+            'adm' => $request->has('adm'), // Jika dicentang maka true
         ]);
 
         return redirect()->route('data-user.index')->with('success', 'User added successfully!');

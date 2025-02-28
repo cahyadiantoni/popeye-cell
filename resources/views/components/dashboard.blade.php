@@ -1,6 +1,7 @@
 <div class="main-body">
     <div class="page-wrapper">
     <div class="page-body">
+    @if(auth()->user()->sales)
         <div class="row">
         <!-- task, page, download counter  start -->
         <div class="col-xl-3 col-md-6">
@@ -576,8 +577,13 @@
         </div> -->
         <!-- social download  end -->
         </div>
+        @endif
     </div>
     </div>
+
+    @if(auth()->user()->adm)
+        <h3>Selamat Datang di Aplikasi Administrasi PT Indogadai</h3>
+    @endif
 
     <div id="styleSelector"></div>
 </div>
