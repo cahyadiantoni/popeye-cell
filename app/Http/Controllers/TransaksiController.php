@@ -216,7 +216,8 @@ class TransaksiController extends Controller
     public function getSuggestNoFak(Request $request)
     {
         $kodeFaktur = $request->kode_faktur;
-        $currentMonthYear = Carbon::now()->format('my'); // Ubah format jadi MMYY (contoh: 0225)
+        $tglJual = $request->tgl_jual ? Carbon::parse($request->tgl_jual) : Carbon::now(); 
+        $currentMonthYear = $tglJual->format('my'); // Menggunakan tanggal yang dipilih user
 
         // Ambil faktur terakhir dengan format yang sesuai
         $lastFaktur = Faktur::where('nomor_faktur', 'like', "$kodeFaktur-$currentMonthYear-%")

@@ -125,15 +125,15 @@
     <!-- Main-body end -->
     <script>
         $(document).ready(function() {
-            $('select[name="kode_faktur"]').on('change', function() {
-                var kodeFaktur = $(this).val();
-                console.log("Gudang Dipilih:", kodeFaktur); // Debugging
+            function updateNomorFaktur() {
+                var kodeFaktur = $('select[name="kode_faktur"]').val();
+                var tglJual = $('input[name="tgl_jual"]').val(); // Ambil tanggal jual yang dipilih
 
-                if (kodeFaktur) {
+                if (kodeFaktur && tglJual) {
                     $.ajax({
                         url: "{{ route('suggest.no.fak') }}",
                         type: "GET",
-                        data: { kode_faktur: kodeFaktur },
+                        data: { kode_faktur: kodeFaktur, tgl_jual: tglJual }, // Kirim tanggal jual
                         dataType: "json",
                         success: function(response) {
                             console.log("Response:", response); // Debugging
@@ -144,7 +144,10 @@
                         }
                     });
                 }
-            });
+            }
+
+            $('select[name="kode_faktur"]').on('change', updateNomorFaktur);
+            $('input[name="tgl_jual"]').on('change', updateNomorFaktur);
         });
     </script>
 @endsection()

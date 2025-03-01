@@ -126,26 +126,28 @@
     <!-- Main-body end -->
     <script>
         $(document).ready(function() {
-            $('select[name="kode_faktur"]').on('change', function() {
-                var kodeFaktur = $(this).val();
-                console.log("Gudang Dipilih:", kodeFaktur); // Debugging
+            function updateNomorFaktur() {
+                var kodeFaktur = $('select[name="kode_faktur"]').val();
+                var tglJual = $('input[name="tgl_jual"]').val();
 
-                if (kodeFaktur) {
+                if (kodeFaktur && tglJual) {
                     $.ajax({
                         url: "{{ route('suggest.no.fak.online') }}",
                         type: "GET",
-                        data: { kode_faktur: kodeFaktur },
+                        data: { kode_faktur: kodeFaktur, tgl_jual: tglJual },
                         dataType: "json",
                         success: function(response) {
-                            console.log("Response:", response); // Debugging
                             $('input[name="title"]').val(response.suggested_no_fak);
                         },
                         error: function(xhr, status, error) {
-                            console.error("AJAX Error:", error); // Debugging
+                            console.error("AJAX Error:", error);
                         }
                     });
                 }
-            });
+            }
+
+            $('select[name="kode_faktur"]').on('change', updateNomorFaktur);
+            $('input[name="tgl_jual"]').on('change', updateNomorFaktur);
         });
     </script>
 @endsection()
