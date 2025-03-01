@@ -12,29 +12,40 @@ use App\Models\FakturOnline;
 use App\Models\TransaksiJualOnline;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use Yajra\DataTables\Facades\DataTables;
 
 class TransaksiOnlineController extends Controller
 {
     public function index()
     {
-        
-        $barangs = Barang::join('t_faktur_online', 't_barang.no_faktur', '=', 't_faktur_online.id')
-        ->select(
-            't_barang.lok_spk',
-            't_barang.tipe',
-            't_barang.no_faktur',
-            't_barang.harga_jual',
-            't_barang.status_barang',
-            't_faktur_online.*'
-        )
-        ->where('t_barang.status_barang', 2)
-        ->orderBy('t_faktur_online.tgl_jual', 'desc')
-        ->get();   
-
         $allgudangs = Gudang::all();
+        return view('pages.transaksi-jual-online.index', compact('allgudangs'));
+    }
 
+    public function getData(Request $request)
+    {
+        if ($request->ajax()) {
+            $barangs = Barang::join('t_faktur_online', 't_barang.no_faktur', '=', 't_faktur_online.id')
+                ->select(
+                    't_barang.lok_spk',
+                    't_barang.tipe',
+                    't_barang.no_faktur',
+                    't_barang.harga_jual',
+                    't_barang.status_barang',
+                    't_faktur_online.title',
+                    't_faktur_online.toko',
+                    't_faktur_online.tgl_jual',
+                    't_faktur_online.petugas'
+                )
+                ->where('t_barang.status_barang', 2)
+                ->orderBy('t_faktur_online.tgl_jual', 'desc');
 
-        return view('pages.transaksi-jual-online.index', compact('barangs', 'allgudangs'));
+            return DataTables::of($barangs)
+                ->addColumn('harga_jual', function ($barang) {
+                    return 'Rp. ' . number_format($barang->harga_jual, 0, ',', '.');
+                })
+                ->make(true);
+        }
     }
 
     public function create()

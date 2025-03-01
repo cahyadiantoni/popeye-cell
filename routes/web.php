@@ -70,12 +70,14 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::post('/transaksi-faktur/upload-bukti', [TransaksiFakturController::class, 'uploadBukti'])->name('transaksi-faktur.upload-bukti');
     Route::put('/transaksi-faktur/{id}/tandai-sudah-dicek', [TransaksiFakturController::class, 'tandaiSudahDicek'])->name('transaksi-faktur.tandai-sudah-dicek');
 
+    Route::get('/transaksi-jual/data', [TransaksiController::class, 'getData'])->name('transaksi-jual.data');
     Route::resource('/transaksi-jual', TransaksiController::class)->middleware('auth');
     Route::delete('/transaksi-jual/{lok_spk}', [TransaksiController::class, 'destroy'])->name('transaksi-jual.delete');
     Route::put('/transaksi-jual/update', [TransaksiController::class, 'update'])->name('transaksi-jual.update');
     Route::post('/transaksi-jual/addbarang', [TransaksiFakturController::class, 'addbarang'])->name('transaksi-jual.addbarang');
     Route::get('/suggest-no-fak', [TransaksiController::class, 'getSuggestNoFak'])->name('suggest.no.fak');
-
+    
+    Route::get('/transaksi-jual-online/data', [TransaksiOnlineController::class, 'getData'])->name('transaksi-jual-online.data');
     Route::resource('/transaksi-jual-online', TransaksiOnlineController::class)->middleware('auth');
     Route::delete('/transaksi-jual-online/{lok_spk}', [TransaksiOnlineController::class, 'destroy'])->name('transaksi-jual-online.delete');
     Route::put('/transaksi-jual-online/update', [TransaksiOnlineController::class, 'update'])->name('transaksi-jual-online.update');
