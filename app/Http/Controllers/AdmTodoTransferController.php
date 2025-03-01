@@ -21,10 +21,12 @@ class AdmTodoTransferController extends Controller
     {
         $roleUser = optional(Auth::user())->role;
         
-        $query = AdmTodoTf::with('user')->orderBy('tgl', 'desc');
+        $query = AdmTodoTf::with('user')->orderBy('tgl', 'desc')->orderBy('status', 'asc');
 
         // Jika bukan admin, filter berdasarkan user_id
-        if ($roleUser !== 'admin') {
+        if ($roleUser == 'admin') {
+            $query->whereNotIn('status', [0, 2]);
+        } else {
             $query->where('user_id', Auth::id());
         }
 
@@ -135,6 +137,13 @@ class AdmTodoTransferController extends Controller
             try {
                 Mail::to($todoTransfer->user->email)->send(new TodoTransferStatusUpdated($todoTransfer));
                 Log::info("Email berhasil dikirim ke: " . $todoTransfer->user->email);
+            } catch (\Exception $e) {
+                Log::error("Gagal mengirim email: " . $e->getMessage());
+            }
+        } else if($status == 1){
+            try {
+                Mail::to("adpusatindogadai@gmail.com")->send(new TodoTransferStatusUpdated($todoTransfer));
+                Log::info("Email berhasil dikirim ke: " . "adpusatindogadai@gmail.com");
             } catch (\Exception $e) {
                 Log::error("Gagal mengirim email: " . $e->getMessage());
             }

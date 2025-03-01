@@ -130,6 +130,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {
     Route::delete('/req-tokped/bukti/{id}', [AdmReqTokpedController::class, 'deleteBukti'])->name('req-tokped.bukti.delete');
     Route::post('/req-tokped/item', [AdmReqTokpedController::class, 'storeItem'])->name('req-tokped.item.store');
     Route::delete('/req-tokped/item/{id}', [AdmReqTokpedController::class, 'deleteItem'])->name('req-tokped.item.delete');
+    Route::put('/req-tokped/item/{id}', [AdmReqTokpedController::class, 'updateItem'])->name('req-tokped.item.update');
     
     Route::resource('item-tokped', AdmItemTokpedController::class);
 });

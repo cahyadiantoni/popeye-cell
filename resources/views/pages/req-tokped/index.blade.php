@@ -127,7 +127,7 @@
                                             @endif
                                             </td>
                                             <td>
-                                                <a href="{{ route('req-tokped.show', $todo->id) }}" class="btn btn-info">Detail</a>
+                                                <a href="{{ route('req-tokped.show', $todo->id) }}" class="btn btn-primary">Detail</a>
 
                                                 @if($roleUser=='admin')
                                                     @if(!in_array($todo->status, [3, 5])) 
@@ -155,7 +155,7 @@
                                                             <form action="{{ route('req-tokped.updateStatus', ['id' => $todo->id, 'status' => 5]) }}" method="POST" class="d-inline confirm-form">
                                                                 @csrf
                                                                 @method('PUT')
-                                                                <button type="submit" class="btn btn-success">Sudah Ditransfer</button>
+                                                                <button type="submit" class="btn btn-success">Sudah Diterima</button>
                                                             </form>
                                                         @endif
                                                     @endif

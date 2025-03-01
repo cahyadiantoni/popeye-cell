@@ -24,10 +24,12 @@ class AdmReqTokpedController extends Controller
     {
         $roleUser = optional(Auth::user())->role;
         
-        $query = AdmReqTokped::with('user')->orderBy('tgl', 'desc');
+        $query = AdmReqTokped::with('user')->orderBy('tgl', 'desc')->orderBy('status', 'asc');
 
         // Jika bukan admin, filter berdasarkan user_id
-        if ($roleUser !== 'admin') {
+        if ($roleUser == 'admin') {
+            $query->whereNotIn('status', [0, 2]);
+        } else {
             $query->where('user_id', Auth::id());
         }
 
@@ -131,6 +133,13 @@ class AdmReqTokpedController extends Controller
             } catch (\Exception $e) {
                 Log::error("Gagal mengirim email: " . $e->getMessage());
             }
+        } else if($status == 1){
+            try {
+                Mail::to("adpusatindogadai@gmail.com")->send(new ReqTokpedStatusUpdated($reqTokped));
+                Log::info("Email berhasil dikirim ke: " . "adpusatindogadai@gmail.com");
+            } catch (\Exception $e) {
+                Log::error("Gagal mengirim email: " . $e->getMessage());
+            }
         }
 
         return back()->with('success', 'Status berhasil diperbarui.');
@@ -166,7 +175,6 @@ class AdmReqTokpedController extends Controller
         return back()->with('success', 'Bukti transfer berhasil dihapus.');
     }  
 
-    // Menambahkan bukti transfer
     public function storeItem(Request $request)
     {
         $request->validate([
@@ -186,7 +194,6 @@ class AdmReqTokpedController extends Controller
         return back()->with('success', 'Item berhasil ditambahkan.');
     }    
 
-    // Menghapus bukti transfer
     public function deleteItem($id)
     {
         $bukti = AdmReqTokpedItem::findOrFail($id);
@@ -194,6 +201,20 @@ class AdmReqTokpedController extends Controller
     
         return back()->with('success', 'Item berhasil dihapus.');
     }  
+
+    public function updateItem(Request $request, $id)
+    {
+        $request->validate([
+            'quantity' => 'required|integer',
+        ]);
+
+        $item = AdmReqTokpedItem::findOrFail($id);
+        $item->update([
+            'quantity' => $request->quantity,
+        ]);
+
+        return back()->with('success', 'Item berhasil diperbarui.');
+    }
     
     public function export(Request $request)
     {

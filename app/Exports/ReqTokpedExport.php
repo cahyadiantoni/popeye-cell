@@ -22,7 +22,7 @@ class ReqTokpedExport implements FromCollection, WithHeadings, WithStyles, Shoul
 
     public function collection()
     {
-        $query = AdmReqTokped::with(['user', 'items.item'])->orderBy('status', 'asc')->orderBy('tgl', 'asc');
+        $query = AdmReqTokped::with(['user', 'items.item']);
 
         if (!is_null($this->filters['status'])) {
             $query->where('status', $this->filters['status']);
@@ -45,14 +45,22 @@ class ReqTokpedExport implements FromCollection, WithHeadings, WithStyles, Shoul
                     'Nama AM'      => $todo->user->name ?? '-',
                     'Nama Barang'  => $item->item->name ?? '-',
                     'Lain Lain'    => $item->nama_barang ?? '-',
-                    'Quantity'     => $item->quantity, // Tidak dijumlahkan
+                    'Quantity'     => $item->quantity,
                     'Alasan'       => $todo->alasan,
                     'Status'       => $this->getStatusLabel($todo->status),
                 ]);
             }
         });
-        
-        return $data;
+
+        // **Sorting**
+        $data = $data->sortBy([
+            ['Status', 'asc'], // Urutkan Nama Barang secara ASC
+            ['Nama Barang', 'asc'], // Urutkan Nama Barang secara ASC
+            ['Lain Lain', 'asc'], // Urutkan Nama Barang secara ASC
+            ['Nama Toko', 'asc'], // Urutkan Nama Barang secara ASC
+        ]);
+
+        return $data->values(); // Reset index array setelah sorting
     }
 
     public function headings(): array

@@ -41,7 +41,7 @@
                             <form action="{{ route('req-tokped.updateStatus', ['id' => $todoTransfer->id, 'status' => 4]) }}" method="POST" class="d-inline confirm-form">
                                 @csrf
                                 @method('PUT')
-                                <button type="submit" class="btn btn-info">Proses Transfer</button>
+                                <button type="submit" class="btn btn-info">Proses Tokped</button>
                             </form>
                         @endif
                     @elseif($todoTransfer->status == 4)
@@ -49,7 +49,7 @@
                             <form action="{{ route('req-tokped.updateStatus', ['id' => $todoTransfer->id, 'status' => 5]) }}" method="POST" class="d-inline confirm-form">
                                 @csrf
                                 @method('PUT')
-                                <button type="submit" class="btn btn-success">Sudah Ditransfer</button>
+                                <button type="submit" class="btn btn-success">Sudah Diterima</button>
                             </form>
                         @endif
                     @endif
@@ -112,9 +112,7 @@
                                 <th>Barang</th>
                                 <th>Lain2</th>
                                 <th>Jumlah</th>
-                                @if($todoTransfer->status == 0 || $todoTransfer->status == 2)
                                 <th>Aksi</th>
-                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -124,16 +122,71 @@
                                 <td>{{ $item->item->name }}</td>
                                 <td>{{ $item->nama_barang ?? "-" }}</td>
                                 <td>{{ $item->quantity }}</td>
-                                @if($todoTransfer->status == 0 || $todoTransfer->status == 2)
-                                <td>
-                                    <form action="{{ route('req-tokped.item.delete', $item->id) }}" method="POST">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
-                                    </form>
-                                </td>
+                                @if($roleUser=='admin')
+                                    @if($todoTransfer->status == 1 || $todoTransfer->status == 4)
+                                        <td>
+                                            <!-- Tombol Edit -->
+                                            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editItemModal{{ $item->id }}">Edit</button>
+
+                                            <!-- Tombol Hapus -->
+                                            <form action="{{ route('req-tokped.item.delete', $item->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                            </form>
+                                        </td>
+                                    @else
+                                    <td>  </td>
+                                    @endif
+                                @else
+                                    @if($todoTransfer->status == 0 || $todoTransfer->status == 2)
+                                    <td>
+                                        <!-- Tombol Edit -->
+                                        <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editItemModal{{ $item->id }}">Edit</button>
+
+                                        <!-- Tombol Hapus -->
+                                        <form action="{{ route('req-tokped.item.delete', $item->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                        </form>
+                                    </td>
+                                    @else
+                                    <td>  </td>
+                                    @endif
                                 @endif
                             </tr>
+
+                            <!-- Modal Edit Item -->
+                            <div class="modal fade" id="editItemModal{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form action="{{ route('req-tokped.item.update', $item->id) }}" method="POST">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Edit Item</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+
+                                                <label for="nama_barang">Nama Barang</label>
+                                                <input type="text" class="form-control" name="nama_barang" value="{{ $item->item->name ?? '-' }}" readonly>
+                                                
+                                                <label for="lain_lain">Lain Lain</label>
+                                                <input type="text" class="form-control" name="lain_lain" value="{{ $item->nama_barang ?? '-' }}" readonly>
+
+                                                <label for="quantity">Jumlah Barang</label>
+                                                <input type="number" class="form-control" name="quantity" value="{{ $item->quantity }}" required>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                             @endforeach
                         </tbody>
                     </table>

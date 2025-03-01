@@ -131,7 +131,7 @@
                                             @endif
                                             </td>
                                             <td>
-                                                <a href="{{ route('todo-transfer.show', $todo->id) }}" class="btn btn-info">Detail</a>
+                                                <a href="{{ route('todo-transfer.show', $todo->id) }}" class="btn btn-primary">Detail</a>
 
                                                 @if($roleUser=='admin')
                                                     @if(!in_array($todo->status, [3, 5])) 

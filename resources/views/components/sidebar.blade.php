@@ -125,13 +125,13 @@
         @if(auth()->user()->adm)
             <div class="pcoded-navigatio-lavel">Administrasi</div>
             <ul class="pcoded-item pcoded-left-item">
-                <li class="{{ Request::is('todo-transfer') ? 'active' : '' }}">
+                <li class="{{ Request::is('todo-transfer*') ? 'active' : '' }}">
                     <a href="{{ url('/todo-transfer') }}">
                         <span class="pcoded-micon"><i class="fas fa-exchange-alt"></i></span>
                         <span class="pcoded-mtext">Todo Transfer</span>
                     </a>
                 </li>
-                <li class="{{ Request::is('req-tokped') ? 'active' : '' }}">
+                <li class="{{ Request::is('req-tokped*') ? 'active' : '' }}">
                     <a href="{{ url('/req-tokped') }}">
                         <span class="pcoded-micon"><i class="fas fa-shopping-cart"></i></span>
                         <span class="pcoded-mtext">Request Tokped</span>
