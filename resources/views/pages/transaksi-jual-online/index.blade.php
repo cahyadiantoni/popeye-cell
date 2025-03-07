@@ -69,11 +69,11 @@
             columns: [
                 { data: 'lok_spk', name: 'lok_spk' },
                 { data: 'tipe', name: 'tipe' },
-                { data: 'title', name: 'title' },
-                { data: 'toko', name: 'toko' },
-                { data: 'tgl_jual', name: 'tgl_jual' },
+                { data: 'title_faktur', name: 'title' },
+                { data: 'toko_faktur', name: 'toko' },
+                { data: 'tgl_jual', name: 'tgl_jual', orderable: false, searchable: false },
                 { data: 'harga_jual', name: 'harga_jual', orderable: false, searchable: false },
-                { data: 'petugas', name: 'petugas' }
+                { data: 'petugas_faktur', name: 'petugas' }
             ]
         });
     });

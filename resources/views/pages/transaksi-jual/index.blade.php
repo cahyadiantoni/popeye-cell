@@ -98,10 +98,10 @@
                 { data: 'lok_spk', name: 'lok_spk' },
                 { data: 'tipe', name: 'tipe' },
                 { data: 'no_faktur', name: 'no_faktur' },
-                { data: 'pembeli', name: 'pembeli' },
-                { data: 'tgl_jual', name: 'tgl_jual' },
+                { data: 'pembeli_faktur', name: 'pembeli' },
+                { data: 'tgl_jual', name: 'tgl_jual', orderable: false, searchable: false },
                 { data: 'harga_jual', name: 'harga_jual', orderable: false, searchable: false },
-                { data: 'petugas', name: 'petugas' }
+                { data: 'petugas_faktur', name: 'petugas' }
             ]
         });
     });

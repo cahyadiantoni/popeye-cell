@@ -32,20 +32,26 @@ class TransaksiController extends Controller
                     't_barang.no_faktur',
                     't_barang.harga_jual',
                     't_barang.status_barang',
-                    't_faktur.pembeli',
+                    't_faktur.pembeli as pembeli_faktur', // Alias pembeli
                     't_faktur.tgl_jual',
-                    't_faktur.petugas'
+                    't_faktur.petugas as petugas_faktur'  // Alias petugas
                 )
                 ->where('t_barang.status_barang', 2)
                 ->orderBy('t_faktur.tgl_jual', 'desc');
-
+    
             return DataTables::of($barangs)
                 ->addColumn('harga_jual', function ($barang) {
                     return 'Rp. ' . number_format($barang->harga_jual, 0, ',', '.');
                 })
+                ->filterColumn('pembeli', function ($query, $keyword) {
+                    $query->where('t_faktur.pembeli', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('petugas', function ($query, $keyword) {
+                    $query->where('t_faktur.petugas', 'like', "%{$keyword}%");
+                })
                 ->make(true);
         }
-    }
+    }    
 
     public function create()
     {   

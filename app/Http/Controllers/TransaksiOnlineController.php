@@ -32,10 +32,10 @@ class TransaksiOnlineController extends Controller
                     't_barang.no_faktur',
                     't_barang.harga_jual',
                     't_barang.status_barang',
-                    't_faktur_online.title',
-                    't_faktur_online.toko',
+                    't_faktur_online.title as title_faktur',
+                    't_faktur_online.toko as toko_faktur',
                     't_faktur_online.tgl_jual',
-                    't_faktur_online.petugas'
+                    't_faktur_online.petugas as petugas_faktur'
                 )
                 ->where('t_barang.status_barang', 2)
                 ->orderBy('t_faktur_online.tgl_jual', 'desc');
@@ -43,6 +43,15 @@ class TransaksiOnlineController extends Controller
             return DataTables::of($barangs)
                 ->addColumn('harga_jual', function ($barang) {
                     return 'Rp. ' . number_format($barang->harga_jual, 0, ',', '.');
+                })
+                ->filterColumn('title', function ($query, $keyword) {
+                    $query->where('t_faktur_online.title', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('toko', function ($query, $keyword) {
+                    $query->where('t_faktur_online.toko', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('petugas', function ($query, $keyword) {
+                    $query->where('t_faktur_online.petugas', 'like', "%{$keyword}%");
                 })
                 ->make(true);
         }
