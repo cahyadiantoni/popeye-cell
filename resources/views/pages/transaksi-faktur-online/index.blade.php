@@ -58,7 +58,8 @@
                             <div class="card-header">
                                 <form action="{{ route('transaksi-faktur-online.index') }}" method="GET">
                                     <div class="row">
-                                        <div class="col-md-4">
+                                        <div class="col-md-3">
+                                            <label for="kode_faktur">Pilih Toko</label>
                                             <select name="kode_faktur" class="form-control">
                                                 <option value="">-- Semua Toko --</option>
                                                 <option value="POD" {{ request('kode_faktur') == 'POD' ? 'selected' : '' }}>Toko Podomoro</option>
@@ -68,9 +69,17 @@
                                                 <option value="Lain" {{ request('kode_faktur') == 'Lain' ? 'selected' : '' }}>Lain Lain</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-2">
+                                        <div class="col-md-3">
+                                            <label for="tanggal_mulai">Tanggal Mulai</label>
+                                            <input type="date" name="tanggal_mulai" class="form-control" value="{{ request('tanggal_mulai') }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="tanggal_selesai">Tanggal Selesai</label>
+                                            <input type="date" name="tanggal_selesai" class="form-control" value="{{ request('tanggal_selesai') }}">
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-end">
                                             <button type="submit" class="btn btn-primary">Filter</button>
-                                            <a href="{{ route('transaksi-faktur.index') }}" class="btn btn-secondary">Reset</a>
+                                            <a href="{{ route('transaksi-faktur-online.index') }}" class="btn btn-secondary mx-2">Reset</a>
                                         </div>
                                     </div>
                                 </form>

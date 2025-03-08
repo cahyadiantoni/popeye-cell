@@ -8,14 +8,14 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('adm_req_tokped_item', function (Blueprint $table) {
-            $table->integer('status')->default(0)->after('alasan'); // Menambahkan kolom status setelah nominal
+            $table->string('adm_toko_id', 255)->after('id');
         });
     }
 
     public function down(): void
     {
         Schema::table('adm_req_tokped_item', function (Blueprint $table) {
-            $table->dropColumn('status');
+            $table->dropColumn('adm_toko_id');
         });
     }
 };

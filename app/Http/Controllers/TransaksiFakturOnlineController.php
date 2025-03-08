@@ -38,6 +38,11 @@ class TransaksiFakturOnlineController extends Controller
             }
         }
 
+        // Filter berdasarkan rentang tanggal
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
         $fakturs = $query->get();
         $roleUser = optional(Auth::user())->role;
 

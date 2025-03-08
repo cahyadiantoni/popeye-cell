@@ -58,19 +58,28 @@
                             <div class="card-header">
                                 <form action="{{ route('transaksi-faktur.index') }}" method="GET">
                                     <div class="row">
-                                        <div class="col-md-4">
+                                        <div class="col-md-3">
+                                            <label for="kode_faktur">Gudang</label>
                                             <select name="kode_faktur" class="form-control">
                                                 <option value="">-- Semua gudang --</option>
                                                 <option value="AT" {{ request('kode_faktur') == 'AT' ? 'selected' : '' }}>Gudang Zilfa</option>
                                                 <option value="TKP" {{ request('kode_faktur') == 'TKP' ? 'selected' : '' }}>Gudang Tokopedia</option>
                                                 <option value="VR" {{ request('kode_faktur') == 'VR' ? 'selected' : '' }}>Gudang Vira</option>
                                                 <option value="BW" {{ request('kode_faktur') == 'BW' ? 'selected' : '' }}>Gudang Bawah</option>
-                                                <option value="Lain" {{ request('kode_faktur') == 'Lain' ? 'selected' : '' }}>Lain Lain</option>
+                                                <option value="Lain" {{ request('kode_faktur') == 'Lain' ? 'selected' : '' }}>Lain-Lain</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-2">
+                                        <div class="col-md-3">
+                                            <label for="tanggal_mulai">Tanggal Mulai</label>
+                                            <input type="date" name="tanggal_mulai" class="form-control" value="{{ request('tanggal_mulai') }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="tanggal_selesai">Tanggal Selesai</label>
+                                            <input type="date" name="tanggal_selesai" class="form-control" value="{{ request('tanggal_selesai') }}">
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-end">
                                             <button type="submit" class="btn btn-primary">Filter</button>
-                                            <a href="{{ route('transaksi-faktur.index') }}" class="btn btn-secondary">Reset</a>
+                                            <a href="{{ route('transaksi-faktur.index') }}" class="btn btn-secondary mx-2">Reset</a>
                                         </div>
                                     </div>
                                 </form>
