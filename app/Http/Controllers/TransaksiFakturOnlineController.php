@@ -314,4 +314,60 @@ class TransaksiFakturOnlineController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+
+    public function rekap(Request $request) 
+    {
+        // Definisi nama gudang
+        $daftarGudang = [
+            'POD' => 'Toko Podomoro',
+            'PPY' => 'Toko Popeye',
+            'JJ'  => 'Toko JJ',
+            'NAR' => 'Toko Naruto',
+            'LN'  => 'Toko Lain Lain'
+        ];
+    
+        // Ambil filter dari request
+        $filterGudang = $request->input('gudang');
+        $filterBulan = $request->input('bulan');
+    
+        // Subquery untuk menghitung total barang per faktur
+        $subquery = TransaksiJualOnline::selectRaw("faktur_online_id, COUNT(*) as total_barang")
+            ->groupBy('faktur_online_id');
+    
+        // Query utama untuk rekap faktur online
+        $query = FakturOnline::selectRaw("
+                LEFT(title, LOCATE('-', title) - 1) as kode_gudang, 
+                DATE_FORMAT(tgl_jual, '%m-%Y') as bulan_sort, 
+                DATE_FORMAT(tgl_jual, '%Y-%m') as bulan_display, 
+                SUM(total) as total_pendapatan, 
+                COALESCE(SUM(sub.total_barang), 0) as total_barang
+            ")
+            ->leftJoinSub($subquery, 'sub', function ($join) {
+                $join->on('t_faktur_online.id', '=', 'sub.faktur_online_id');
+            })
+            ->groupBy('kode_gudang', 'bulan_sort', 'bulan_display');
+    
+        // Terapkan filter jika ada input
+        if (!empty($filterGudang)) {
+            $query->having('kode_gudang', '=', $filterGudang);
+        }
+        if (!empty($filterBulan)) {
+            $query->having('bulan_display', '=', $filterBulan);
+        }        
+    
+        // Eksekusi query dan urutkan hasilnya
+        $data = $query->orderBy('bulan_sort', 'desc')->get();
+    
+        // Mapping data dengan nama bulan dalam bahasa Indonesia
+        $rekaps = $data->map(function ($item) use ($daftarGudang) {
+            return (object) [
+                'nama_gudang' => $daftarGudang[$item->kode_gudang] ?? 'Tidak Diketahui',
+                'bulan' => Carbon::createFromFormat('Y-m', $item->bulan_display)->translatedFormat('F Y'), 
+                'total_pendapatan' => $item->total_pendapatan,
+                'total_barang' => $item->total_barang
+            ];
+        });
+    
+        return view('pages.transaksi-faktur-online.rekap', compact('rekaps', 'daftarGudang', 'filterGudang', 'filterBulan'));
+    }
 }

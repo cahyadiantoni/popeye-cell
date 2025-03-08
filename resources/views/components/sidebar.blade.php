@@ -80,7 +80,7 @@
                         <span class="pcoded-mtext">Transaksi Jual Offline</span>
                     </a>
                 </li>
-                <li class="{{ Request::is('transaksi-faktur*') ? 'active' : '' }}">
+                <li class="{{ Request::is('transaksi-faktur') ? 'active' : '' }}">
                     <a href="{{ url('/transaksi-faktur') }}">
                         <span class="pcoded-micon"><i class="fas fa-file"></i></span>
                         <span class="pcoded-mtext">Transaksi Faktur Offline</span>
@@ -90,6 +90,12 @@
                     <a href="{{ url('/transaksi-jual') }}">
                         <span class="pcoded-micon"><i class="fas fa-history"></i></span>
                         <span class="pcoded-mtext">Riwayat Transaksi Offline</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('transaksi-rekap') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-rekap') }}">
+                        <span class="pcoded-micon"><i class="fas fa-chart-bar"></i></span>
+                        <span class="pcoded-mtext">Rekap Transaksi Offline</span>
                     </a>
                 </li>
             </ul>
@@ -111,6 +117,12 @@
                     <a href="{{ url('/transaksi-jual-online') }}">
                         <span class="pcoded-micon"><i class="fas fa-history"></i></span>
                         <span class="pcoded-mtext">Riwayat Transaksi Online</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('transaksi-rekap-online') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-rekap-online') }}">
+                        <span class="pcoded-micon"><i class="fas fa-network-wired"></i></span>
+                        <span class="pcoded-mtext">Rekap Transaksi Online</span>
                     </a>
                 </li>
             </ul>

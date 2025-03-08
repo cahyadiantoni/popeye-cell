@@ -64,6 +64,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
 
     Route::resource('/transaksi-faktur', TransaksiFakturController::class)->middleware('auth');
     Route::delete('/transaksi-faktur/{nomor_faktur}', [TransaksiFakturController::class, 'destroy'])->name('transaksi-faktur.delete');
+    Route::get('/transaksi-rekap', [TransaksiFakturController::class, 'rekap'])->name('transaksi-faktur.rekap');
     Route::get('/transaksi-faktur/{nomor_faktur}', [TransaksiFakturController::class, 'show'])->name('transaksi-faktur.show');
     Route::get('/transaksi-faktur/{nomor_faktur}/print', [TransaksiFakturController::class, 'printPdf'])->name('transaksi-faktur.print');
     Route::put('/transaksi-faktur/update/{nomor_faktur}', [TransaksiFakturController::class, 'update'])->name('transaksi-faktur.update');
@@ -86,6 +87,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
 
     Route::resource('/transaksi-faktur-online', TransaksiFakturOnlineController::class)->middleware('auth');
     Route::delete('/transaksi-faktur-online/{nomor_faktur}', [TransaksiFakturOnlineController::class, 'destroy'])->name('transaksi-faktur-online.delete');
+    Route::get('/transaksi-rekap-online', [TransaksiFakturOnlineController::class, 'rekap'])->name('transaksi-faktur-online.rekap');
     Route::get('/transaksi-faktur-online/{nomor_faktur}', [TransaksiFakturOnlineController::class, 'show'])->name('transaksi-faktur-online.show');
     Route::get('/transaksi-faktur-online/{nomor_faktur}/print', [TransaksiFakturOnlineController::class, 'printPdf'])->name('transaksi-faktur-online.print');
     Route::put('/transaksi-faktur-online/update/{nomor_faktur}', [TransaksiFakturOnlineController::class, 'update'])->name('transaksi-faktur-online.update');
