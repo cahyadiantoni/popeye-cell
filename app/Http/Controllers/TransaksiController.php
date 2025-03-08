@@ -25,23 +25,24 @@ class TransaksiController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $barangs = Barang::join('t_faktur', 't_barang.no_faktur', '=', 't_faktur.nomor_faktur')
+            $barangs = Barang::join('t_jual', 't_barang.lok_spk', '=', 't_jual.lok_spk') // Join t_barang dengan t_jual
+                ->join('t_faktur', 't_jual.nomor_faktur', '=', 't_faktur.nomor_faktur') // Join t_jual dengan t_faktur
                 ->select(
                     't_barang.lok_spk',
                     't_barang.tipe',
-                    't_barang.no_faktur',
-                    't_barang.harga_jual',
+                    't_faktur.nomor_faktur as nomor_faktur', // Mengambil nomor_faktur dari t_faktur
+                    't_jual.harga as harga_jual', // Mengambil harga dari t_jual
                     't_barang.status_barang',
-                    't_faktur.pembeli as pembeli_faktur', // Alias pembeli
+                    't_faktur.pembeli as pembeli_faktur', // Alias pembeli dari t_faktur
                     't_faktur.tgl_jual',
-                    't_faktur.petugas as petugas_faktur'  // Alias petugas
+                    't_faktur.petugas as petugas_faktur'  // Alias petugas dari t_faktur
                 )
                 ->where('t_barang.status_barang', 2)
                 ->orderBy('t_faktur.tgl_jual', 'desc');
-    
+
             return DataTables::of($barangs)
                 ->addColumn('harga_jual', function ($barang) {
-                    return 'Rp. ' . number_format($barang->harga_jual, 0, ',', '.');
+                    return 'Rp. ' . number_format($barang->harga_jual, 0, ',', '.'); // Format harga ke Rupiah
                 })
                 ->filterColumn('pembeli', function ($query, $keyword) {
                     $query->where('t_faktur.pembeli', 'like', "%{$keyword}%");
@@ -49,9 +50,12 @@ class TransaksiController extends Controller
                 ->filterColumn('petugas', function ($query, $keyword) {
                     $query->where('t_faktur.petugas', 'like', "%{$keyword}%");
                 })
+                ->filterColumn('nomor_faktur', function ($query, $keyword) {
+                    $query->where('t_faktur.nomor_faktur', 'like', "%{$keyword}%");
+                })
                 ->make(true);
         }
-    }    
+    }   
 
     public function create()
     {   

@@ -25,12 +25,12 @@ class TransaksiOnlineController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $barangs = Barang::join('t_faktur_online', 't_barang.no_faktur', '=', 't_faktur_online.id')
+            $barangs = Barang::join('t_jual_online', 't_barang.lok_spk', '=', 't_jual_online.lok_spk')
+                ->join('t_faktur_online', 't_jual_online.faktur_online_id', '=', 't_faktur_online.id')
                 ->select(
                     't_barang.lok_spk',
                     't_barang.tipe',
-                    't_barang.no_faktur',
-                    't_barang.harga_jual',
+                    't_jual_online.harga as harga_jual', // Gunakan harga dari t_jual_online
                     't_barang.status_barang',
                     't_faktur_online.title as title_faktur',
                     't_faktur_online.toko as toko_faktur',
@@ -39,7 +39,7 @@ class TransaksiOnlineController extends Controller
                 )
                 ->where('t_barang.status_barang', 2)
                 ->orderBy('t_faktur_online.tgl_jual', 'desc');
-
+    
             return DataTables::of($barangs)
                 ->addColumn('harga_jual', function ($barang) {
                     return 'Rp. ' . number_format($barang->harga_jual, 0, ',', '.');
@@ -55,7 +55,7 @@ class TransaksiOnlineController extends Controller
                 })
                 ->make(true);
         }
-    }
+    }    
 
     public function create()
     {

@@ -97,7 +97,7 @@
             columns: [
                 { data: 'lok_spk', name: 'lok_spk' },
                 { data: 'tipe', name: 'tipe' },
-                { data: 'no_faktur', name: 'no_faktur' },
+                { data: 'nomor_faktur', name: 'nomor_faktur' },
                 { data: 'pembeli_faktur', name: 'pembeli' },
                 { data: 'tgl_jual', name: 'tgl_jual', orderable: false, searchable: false },
                 { data: 'harga_jual', name: 'harga_jual', orderable: false, searchable: false },
