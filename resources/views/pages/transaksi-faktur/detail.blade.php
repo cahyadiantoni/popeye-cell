@@ -17,7 +17,7 @@
                 <div class="col-lg-4 text-end">
                     <a href="{{ route('transaksi-faktur.print', $faktur->nomor_faktur) }}" class="btn btn-primary" target="_blank">Print PDF</a>
                     <a href="{{ route('transaksi-faktur.index') }}" class="btn btn-secondary">Kembali</a>
-                    @if($roleUser=='admin')
+                    @if($roleUser=='admin' && $faktur->is_finish==0)
                     <button class="btn btn-success" id="addBarangBtn">Add Barang</button>
                     @endif
                 </div>
@@ -101,7 +101,7 @@
                                 <th>Lokasi SPK</th>
                                 <th>Tipe Barang</th>
                                 <th>Harga</th>
-                                @if($roleUser=='admin')
+                                @if($roleUser=='admin' && $faktur->is_finish==0)
                                 <th>Aksi</th>
                                 @endif
                             </tr>
@@ -113,7 +113,7 @@
                                 <td>{{ $transaksi->lok_spk }}</td>
                                 <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
                                 <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
-                                @if($roleUser=='admin')
+                                @if($roleUser=='admin' && $faktur->is_finish==0)
                                 <td>
                                     <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $transaksi->lok_spk }}" data-harga="{{ $transaksi->harga }}">Edit</button>
                                     <form action="{{ route('transaksi-jual.delete', $transaksi->lok_spk) }}" method="POST" class="d-inline delete-form">
