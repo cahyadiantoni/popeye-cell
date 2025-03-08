@@ -12,18 +12,20 @@
         @if(auth()->user()->sales)
             <div class="pcoded-navigatio-lavel">Master Data</div>
             <ul class="pcoded-item pcoded-left-item">
-                <!-- <li class="{{ Request::is('data-user*') ? 'active' : '' }}">
-                    <a href="{{ url('/data-user') }}">
-                        <span class="pcoded-micon"><i class="fas fa-users"></i></span>
-                        <span class="pcoded-mtext">Data User</span>
-                    </a>
-                </li> -->
-                <!-- <li class="{{ Request::is('data-gudang*') ? 'active' : '' }}">
-                    <a href="{{ url('/data-gudang') }}">
-                        <span class="pcoded-micon"><i class="fas fa-warehouse"></i></span>
-                        <span class="pcoded-mtext">Data Gudang</span>
-                    </a>
-                </li> -->
+                @if(auth()->user()->role=="admin")
+                    <li class="{{ Request::is('data-user*') ? 'active' : '' }}">
+                        <a href="{{ url('/data-user') }}">
+                            <span class="pcoded-micon"><i class="fas fa-users"></i></span>
+                            <span class="pcoded-mtext">Data User</span>
+                        </a>
+                    </li>
+                    <li class="{{ Request::is('data-gudang*') ? 'active' : '' }}">
+                        <a href="{{ url('/data-gudang') }}">
+                            <span class="pcoded-micon"><i class="fas fa-warehouse"></i></span>
+                            <span class="pcoded-mtext">Data Gudang</span>
+                        </a>
+                    </li>
+                @endif
                 <li class="{{ Request::is('data-barang') ? 'active' : '' }}">
                     <a href="{{ url('/data-barang') }}">
                         <span class="pcoded-micon"><i class="fas fa-box"></i></span>
