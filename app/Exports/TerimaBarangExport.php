@@ -29,6 +29,7 @@ class TerimaBarangExport implements FromCollection, WithHeadings, WithStyles, Sh
                     'no' => $index + 1, // Tambahkan nomor increment
                     'lok_spk' => $barang->lok_spk,
                     'tipe_barang' => $barang->barang->tipe ?? '-',
+                    'kelengkapan' => $barang->barang->kelengkapan ?? '-',
                 ];
             });
     }
@@ -39,6 +40,7 @@ class TerimaBarangExport implements FromCollection, WithHeadings, WithStyles, Sh
             'No', // Tambahkan header untuk nomor
             'Lok SPK',
             'Tipe Barang',
+            'Kelengkapan',
         ];
     }
 

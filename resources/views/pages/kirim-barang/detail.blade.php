@@ -128,6 +128,7 @@
                                 <th>No</th>
                                 <th>Lok SPK</th>
                                 <th>Tipe Barang</th>
+                                <th>Kelengkapan</th>
                                 @if($kirim->status == 0)
                                 <th>Aksi</th>
                                 @endif
@@ -139,6 +140,7 @@
                                 <td>{{ $index + 1 }}</td>
                                 <td>{{ $barang->lok_spk }}</td>
                                 <td>{{ $barang->barang->tipe ?? '-' }}</td>
+                                <td>{{ $barang->barang->kelengkapan ?? '-' }}</td>
                                 @if($kirim->status == 0)
                                 <td>
                                     <form action="{{ route('kirim-barang.deletebarang', $barang->id) }}" method="POST" class="d-inline delete-form">
