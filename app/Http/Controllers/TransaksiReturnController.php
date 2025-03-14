@@ -11,17 +11,57 @@ use App\Models\ReturnBarang;
 use App\Models\Kirim;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
 
 class TransaksiReturnController extends Controller
 {
     public function index()
     {
-        
-        $returns = ReturnBarang::with(['user', 'barang.faktur'])->get()->sortByDesc('tgl_return');;
-          
-
+        $returns = ReturnBarang::select(
+                't_return.lok_spk',
+                't_barang.tipe',
+                DB::raw("
+                    CASE 
+                        WHEN t_jual.nomor_faktur IS NOT NULL THEN t_faktur.nomor_faktur
+                        ELSE t_faktur_online.title
+                    END AS nomor_faktur
+                "),
+                DB::raw("
+                    CASE 
+                        WHEN t_jual.nomor_faktur IS NOT NULL THEN t_faktur.pembeli
+                        ELSE t_faktur_online.toko
+                    END AS pembeli
+                "),
+                DB::raw("
+                    CASE 
+                        WHEN t_jual.nomor_faktur IS NOT NULL THEN t_faktur.tgl_jual
+                        ELSE t_faktur_online.tgl_jual
+                    END AS tgl_jual
+                "),
+                't_return.tgl_return',
+                DB::raw("
+                    CASE 
+                        WHEN t_jual.harga IS NOT NULL THEN t_jual.harga
+                        ELSE t_jual_online.harga
+                    END AS harga_jual
+                "),
+                'users.name'
+            )
+            // Join ke Barang untuk mendapatkan tipe
+            ->join('t_barang', 't_return.lok_spk', '=', 't_barang.lok_spk')
+            // Left join ke transaksi offline
+            ->leftJoin('t_jual', 't_return.lok_spk', '=', 't_jual.lok_spk')
+            ->leftJoin('t_faktur', 't_jual.nomor_faktur', '=', 't_faktur.nomor_faktur')
+            // Left join ke transaksi online
+            ->leftJoin('t_jual_online', 't_return.lok_spk', '=', 't_jual_online.lok_spk')
+            ->leftJoin('t_faktur_online', 't_jual_online.faktur_online_id', '=', 't_faktur_online.id')
+            // Join ke User
+            ->join('users', 't_return.user_id', '=', 'users.id')
+            ->orderByDesc('t_return.tgl_return')
+            ->get();
+    
         return view('pages.transaksi-return.index', compact('returns'));
-    }
+    }    
 
     public function returnBarang(Request $request)
     {

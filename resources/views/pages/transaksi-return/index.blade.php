@@ -82,16 +82,16 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($returns as $return)
+                                        @foreach($returns as $return)
                                             <tr>
                                                 <td>{{ $return->lok_spk }}</td>
-                                                <td>{{ $return->barang->tipe ?? '-' }}</td>
-                                                <td>{{ $return->barang->no_faktur ?? '-' }}</td>
-                                                <td>{{ $return->barang->faktur->pembeli ?? '-' }}</td>
-                                                <td>{{ $return->barang->faktur->tgl_jual ?? '-' }}</td>
+                                                <td>{{ $return->tipe ?? '-' }}</td>
+                                                <td>{{ $return->nomor_faktur ?? '-' }}</td>
+                                                <td>{{ $return->pembeli ?? '-' }}</td>
+                                                <td>{{ $return->tgl_jual ?? '-' }}</td>
                                                 <td>{{ $return->tgl_return }}</td>
-                                                <td>{{ 'Rp. ' . number_format($return->barang->harga_jual ?? 0, 0, ',', '.') }}</td>
-                                                <td>{{ $return->user->name }}</td>
+                                                <td>{{ 'Rp. ' . number_format($return->harga_jual ?? 0, 0, ',', '.') }}</td>
+                                                <td>{{ $return->name }}</td>
                                                 <td>
                                                     <form action="{{ route('transaksi-return.delete', $return->lok_spk) }}" method="POST" class="d-inline delete-form">
                                                         @csrf
@@ -100,7 +100,7 @@
                                                     </form>
                                                 </td>
                                             </tr>
-                                            @endforeach
+                                        @endforeach
                                         </tbody>
                                         <tfoot>
                                             <tr>
