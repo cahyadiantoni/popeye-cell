@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
+use App\Models\FakturBukti;
 use App\Models\Gudang;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -18,7 +19,9 @@ class TransaksiFakturController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Faktur::withCount(['barangs as total_barang'])->orderBy('tgl_jual', 'desc');
+        $query = Faktur::withCount(['barangs as total_barang'])
+            ->withSum('bukti as total_nominal', 'nominal') // Assuming the relationship is defined
+            ->orderBy('tgl_jual', 'desc');
     
         $daftarGudang = ['AT', 'TKP', 'VR', 'BW'];
     
@@ -41,7 +44,36 @@ class TransaksiFakturController extends Controller
             $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
         }
     
+        // Filter berdasarkan status Lunas/Hutang
+        if ($request->filled('status')) {
+            if ($request->status == 'Lunas') {
+                $query->where('is_lunas', 1);
+            } elseif ($request->status == 'Hutang') {
+                $query->where('is_lunas', 0);
+            }
+        }
+    
         $fakturs = $query->get();
+    
+        // Loop through each Faktur record to update is_lunas
+        foreach ($fakturs as $faktur) {
+            // Set total_nominal to 0 if it is empty
+            if (empty($faktur->total_nominal)) {
+                $total_nominal = 0; 
+            } else {
+                $total_nominal = $faktur->total_nominal;
+            }
+    
+            // Update is_lunas based on the comparison
+            if ($total_nominal >= $faktur->total) {
+                $faktur->is_lunas = 1; // Update is_lunas to 1
+                $faktur->update(); // Update is_lunas to 1
+            } else {
+                $faktur->is_lunas = 0; // Update is_lunas to 0
+                $faktur->update(); // Update is_lunas to 0
+            }
+        }
+    
         $roleUser = optional(Auth::user())->role;
     
         return view('pages.transaksi-faktur.index', compact('fakturs', 'roleUser'));
@@ -50,9 +82,12 @@ class TransaksiFakturController extends Controller
     public function show($nomor_faktur)
     {
         // Ambil data faktur berdasarkan nomor faktur
-        $faktur = Faktur::with('barangs')
+        $faktur = Faktur::with('barangs', 'bukti')
             ->where('nomor_faktur', $nomor_faktur)
             ->firstOrFail();
+
+        // Calculate the total nominal from the bukti relationship
+        $totalNominal = $faktur->bukti->sum('nominal');
 
         // Ambil data barang yang berhubungan dengan transaksi jual
         $transaksiJuals = TransaksiJual::with('barang')
@@ -61,7 +96,7 @@ class TransaksiFakturController extends Controller
 
         $roleUser = optional(Auth::user())->role;
 
-        return view('pages.transaksi-faktur.detail', compact('faktur', 'transaksiJuals', 'roleUser'));
+        return view('pages.transaksi-faktur.detail', compact('faktur', 'transaksiJuals', 'roleUser', 'totalNominal'));
     }
 
     public function printPdf($nomor_faktur)
@@ -269,6 +304,67 @@ class TransaksiFakturController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    // Menambahkan bukti transfer
+    public function storeBukti(Request $request)
+    {
+        $request->validate([
+            't_faktur_id' => 'required|exists:t_faktur,id',
+            'keterangan' => 'string|max:255',
+            'nominal' => 'required|numeric', // Changed 'number' to 'numeric' for better validation
+            'foto' => 'required|image'
+        ]);
+    
+        $path = $request->file('foto')->store('faktur_bukti', 'public');
+    
+        // Create the new FakturBukti record
+        $fakturBukti = FakturBukti::create([
+            't_faktur_id' => $request->t_faktur_id,
+            'keterangan' => $request->keterangan,
+            'nominal' => $request->nominal,
+            'foto' => $path
+        ]);
+    
+        // Calculate the total nominal of all FakturBukti records associated with the given t_faktur_id
+        $totalNominal = FakturBukti::where('t_faktur_id', $request->t_faktur_id)->sum('nominal');
+    
+        // Retrieve the Faktur record
+        $faktur = Faktur::find($request->t_faktur_id);
+    
+        // Check if the total nominal is equal to or greater than the total in the Faktur model
+        if ($totalNominal >= $faktur->total) {
+            $faktur->is_lunas = 1;
+            $faktur->update();
+        } else {
+            $faktur->is_lunas = 0;
+            $faktur->update();
+        }
+    
+        return back()->with('success', 'Bukti transfer berhasil ditambahkan.');
+    }      
+
+    // Menghapus bukti transfer
+    public function deleteBukti($id)
+    {
+        $bukti = FakturBukti::findOrFail($id);
+        Storage::disk('public')->delete($bukti->foto);
+        
+        $tFakturId = $bukti->t_faktur_id;
+        $bukti->delete();
+
+        $totalNominal = FakturBukti::where('t_faktur_id', $tFakturId)->sum('nominal');
+        $faktur = Faktur::find($tFakturId);
+
+        if ($totalNominal >= $faktur->total) {
+            $faktur->is_lunas = 1;
+            $faktur->update();
+        } else {
+            $faktur->is_lunas = 0;
+            $faktur->update();
+        }
+
+        return back()->with('success', 'Bukti transfer berhasil dihapus.');
     }
 
     public function uploadBukti(Request $request)

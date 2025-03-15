@@ -71,6 +71,8 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::put('/transaksi-faktur/update/{nomor_faktur}', [TransaksiFakturController::class, 'update'])->name('transaksi-faktur.update');
     Route::post('/transaksi-faktur/upload-bukti', [TransaksiFakturController::class, 'uploadBukti'])->name('transaksi-faktur.upload-bukti');
     Route::put('/transaksi-faktur/{id}/tandai-sudah-dicek', [TransaksiFakturController::class, 'tandaiSudahDicek'])->name('transaksi-faktur.tandai-sudah-dicek');
+    Route::post('/transaksi-faktur/bukti', [TransaksiFakturController::class, 'storeBukti'])->name('transaksi-faktur.bukti.store');
+    Route::delete('/transaksi-faktur/bukti/{id}', [TransaksiFakturController::class, 'deleteBukti'])->name('transaksi-faktur.bukti.delete');
 
     Route::get('/transaksi-jual/data', [TransaksiController::class, 'getData'])->name('transaksi-jual.data');
     Route::resource('/transaksi-jual', TransaksiController::class)->middleware('auth');

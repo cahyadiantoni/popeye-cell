@@ -76,8 +76,26 @@
                             <td>{{ $faktur->petugas }}</td>
                         </tr>
                         <tr>
-                            <th>Total</th>
+                            <th>Total Harga</th>
                             <td>Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Bayar</th>
+                            <td>Rp. {{ number_format($totalNominal, 0, ',', '.') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Sisa Hutang</th>
+                            <td>Rp. {{ number_format($faktur->total - $totalNominal, 0, ',', '.') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Pembayaran</th>
+                            <td>
+                                @if ($faktur->is_lunas == 0)
+                                    <span class="badge bg-warning">Hutang</span>
+                                @else
+                                    <span class="badge bg-success">Lunas</span>
+                                @endif
+                            </td>
                         </tr>
                         <tr>
                             <th>Keterangan</th>
@@ -85,6 +103,51 @@
                         </tr>
                     </tbody>
                 </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <h5>List Bukti Transfer</h5>
+                    @if($faktur->is_finish == 0)
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addBuktiModal">Tambah Bukti</button>
+                    @endif
+                </div>
+                <div class="card-block table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Keterangan</th>
+                                <th>Nominal</th>
+                                <th>Foto</th>
+                                @if($faktur->is_finish == 0)
+                                <th>Aksi</th>
+                                @endif
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($faktur->bukti as $bukti)
+                            <tr>
+                                <td>{{ $bukti->keterangan }}</td>
+                                <td>{{ $bukti->nominal }}</td>
+                                <td>
+                                    <a href="{{ asset('storage/' . $bukti->foto) }}" target="_blank">
+                                        <img src="{{ asset('storage/' . $bukti->foto) }}" alt="Bukti Transfer" class="img-thumbnail" style="width: 150px; height: auto;">
+                                    </a>
+                                </td>
+                                @if($faktur->is_finish == 0)
+                                <td>
+                                    <form action="{{ route('transaksi-faktur.bukti.delete', $bukti->id) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                    </form>
+                                </td>
+                                @endif
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -188,6 +251,31 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah Bukti -->
+<div class="modal fade" id="addBuktiModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('transaksi-faktur.bukti.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Tambah Bukti Transfer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="t_faktur_id" value="{{ $faktur->id }}">
+                    <input type="text" class="form-control mb-2" name="keterangan" placeholder="Keterangan" required>
+                    <input type="number" class="form-control mb-2" name="nominal" placeholder="Nominal Transfer" required>
+                    <input type="file" class="form-control" name="foto" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">Tambah Bukti</button>
                 </div>
             </form>
         </div>

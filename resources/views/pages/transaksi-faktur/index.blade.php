@@ -77,10 +77,18 @@
                                             <label for="tanggal_selesai">Tanggal Selesai</label>
                                             <input type="date" name="tanggal_selesai" class="form-control" value="{{ request('tanggal_selesai') }}">
                                         </div>
-                                        <div class="col-md-3 d-flex align-items-end">
-                                            <button type="submit" class="btn btn-primary">Filter</button>
-                                            <a href="{{ route('transaksi-faktur.index') }}" class="btn btn-secondary mx-2">Reset</a>
+                                        <div class="col-md-3">
+                                            <label for="status">Status</label>
+                                            <select name="status" class="form-control">
+                                                <option value="">-- Semua status --</option>
+                                                <option value="Lunas" {{ request('status') == 'Lunas' ? 'selected' : '' }}>Lunas</option>
+                                                <option value="Hutang" {{ request('status') == 'Hutang' ? 'selected' : '' }}>Hutang</option>
+                                            </select>
                                         </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end mt-3">
+                                        <button type="submit" class="btn btn-primary">Filter</button>
+                                        <a href="{{ route('transaksi-faktur.index') }}" class="btn btn-secondary mx-2">Reset</a>
                                     </div>
                                 </form>
                             </div>
@@ -97,6 +105,8 @@
                                                 <th>Tgl Faktur</th>
                                                 <th>jumlah Barang</th>
                                                 <th>Total Harga</th>
+                                                <th>Total Bayar</th>
+                                                <th>Pembayaran</th>
                                                 <th>Petugas</th>
                                                 <th>Grade</th>
                                                 <th>Keterangan</th>
@@ -131,6 +141,14 @@
                                                 <td>{{ $faktur->tgl_jual }}</td>
                                                 <td>{{ $faktur->total_barang }}</td>
                                                 <td>{{ 'Rp. ' . number_format($faktur->total, 0, ',', '.') }}</td>
+                                                <td>{{ 'Rp. ' . number_format($faktur->total_bayar, 0, ',', '.') }}</td>
+                                                <td>
+                                                    @if ($faktur->is_lunas == 0)
+                                                        <span class="badge bg-warning">Hutang</span>
+                                                    @else
+                                                        <span class="badge bg-success">Lunas</span>
+                                                    @endif
+                                                </td>
                                                 <td>{{ $faktur->petugas }}</td>
                                                 <td>{{ $faktur->grade }}</td>
                                                 <td>{{ $faktur->keterangan }}</td>
@@ -145,15 +163,6 @@
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
                                                     </form>
-                                                    <!-- Tombol Upload Bukti Transfer -->
-                                                    <button class="btn btn-success btn-sm upload-bukti-btn" 
-                                                        data-id="{{ $faktur->id }}" 
-                                                        data-bukti-tf="{{ $faktur->bukti_tf }}">
-                                                        Upload Bukti
-                                                    </button>
-                                                    @endif
-                                                    @if ($faktur->bukti_tf)
-                                                        <a href="{{ asset($faktur->bukti_tf) }}" target="_blank" class="btn btn-primary btn-sm">Lihat Bukti</a>
                                                     @endif
                                                 </td>
                                             </tr>
@@ -167,6 +176,8 @@
                                                 <th>Tgl Faktur</th>
                                                 <th>jumlah Barang</th>
                                                 <th>Total Harga</th>
+                                                <th>Total Bayar</th>
+                                                <th>Pembayaran</th>
                                                 <th>Petugas</th>
                                                 <th>Grade</th>
                                                 <th>Keterangan</th>
@@ -240,37 +251,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="uploadBuktiModal" tabindex="-1" aria-labelledby="uploadBuktiModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="uploadBuktiForm" action="{{ route('transaksi-faktur.upload-bukti') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    @method('POST')
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="uploadBuktiModalLabel">Upload Bukti Transfer</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="buktiId" name="id">
-                        
-                        <div class="mb-3">
-                            <label for="bukti_tf" class="form-label">Pilih Bukti Transfer</label>
-                            <input type="file" class="form-control" id="bukti_tf" name="bukti_tf" accept="image/*" required>
-                        </div>
-
-                        <div id="buktiPreview" class="text-center d-none">
-                            <img id="previewImage" src="" class="img-fluid mt-2" style="max-height: 200px;">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Upload</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const editButtons = document.querySelectorAll('.edit-btn');
@@ -328,35 +308,6 @@
                         form.submit(); // Submit form jika konfirmasi "OK"
                     }
                 });
-            });
-        });
-
-        $(document).ready(function () {
-            // Tampilkan modal saat tombol "Upload Bukti" diklik
-            $('.upload-bukti-btn').click(function () {
-                let id = $(this).data('id');
-                let buktiTf = $(this).data('bukti-tf');
-
-                $('#buktiId').val(id); // Set ID ke dalam input hidden
-
-                if (buktiTf) {
-                    $('#previewImage').attr('src', buktiTf).removeClass('d-none');
-                    $('#buktiPreview').removeClass('d-none');
-                } else {
-                    $('#buktiPreview').addClass('d-none');
-                }
-
-                $('#uploadBuktiModal').modal('show');
-            });
-
-            // Preview gambar sebelum diupload
-            $('#bukti_tf').change(function (event) {
-                let reader = new FileReader();
-                reader.onload = function (e) {
-                    $('#previewImage').attr('src', e.target.result).removeClass('d-none');
-                    $('#buktiPreview').removeClass('d-none');
-                };
-                reader.readAsDataURL(event.target.files[0]);
             });
         });
     </script>
