@@ -38,6 +38,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::post('/handle-request', [StokGudangController::class, 'handleRequest'])->middleware('auth')->name('handleRequest');
     Route::get('/stok-opname', [StokGudangController::class, 'stok_opname'])->middleware('auth')->name('stokOpname');
     Route::get('/choice-gudang', [StokGudangController::class, 'choice_gudang'])->middleware('auth')->name('choiceGudang');
+    Route::get('/buku-stok', [StokGudangController::class, 'index'])->name('buku-stok.index');
 
     // Route::post('/kirim-barang', [StokGudangController::class, 'kirimBarang'])->middleware('auth')->name('kirimBarang');
     Route::delete('/kirim-barang/{id}', [KirimBarangController::class, 'destroy'])->name('kirim-barang.delete');
@@ -84,7 +85,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::put('/transaksi-jual-online/update', [TransaksiOnlineController::class, 'update'])->name('transaksi-jual-online.update');
     Route::post('/transaksi-jual-online/addbarang', [TransaksiFakturOnlineController::class, 'addbarang'])->name('transaksi-jual-online.addbarang');
     Route::get('/suggest-no-fak-online', [TransaksiOnlineController::class, 'getSuggestNoFak'])->name('suggest.no.fak.online');
-
+    
     Route::resource('/transaksi-faktur-online', TransaksiFakturOnlineController::class)->middleware('auth');
     Route::delete('/transaksi-faktur-online/{nomor_faktur}', [TransaksiFakturOnlineController::class, 'destroy'])->name('transaksi-faktur-online.delete');
     Route::get('/transaksi-rekap-online', [TransaksiFakturOnlineController::class, 'rekap'])->name('transaksi-faktur-online.rekap');
@@ -93,7 +94,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::put('/transaksi-faktur-online/update/{nomor_faktur}', [TransaksiFakturOnlineController::class, 'update'])->name('transaksi-faktur-online.update');
     Route::post('/transaksi-faktur-online/upload-bukti', [TransaksiFakturOnlineController::class, 'uploadBukti'])->name('transaksi-faktur-online.upload-bukti');
     Route::put('/transaksi-faktur-online/{id}/tandai-sudah-dicek', [TransaksiFakturOnlineController::class, 'tandaiSudahDicek'])->name('transaksi-faktur-online.tandai-sudah-dicek');
-
+    
     Route::resource('/cek-so', CekSOController::class)->middleware('auth');
     Route::get('/get-last-kode/{gudang_id}', [CekSOController::class, 'getLastKode']);
     Route::get('/get-cek-so/{id}/barangs', [CekSOController::class, 'getCekSOBarangs'])->name('get-cekso.barangs');

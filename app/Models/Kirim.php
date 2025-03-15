@@ -43,8 +43,8 @@ class Kirim extends Model
         return $this->belongsTo(User::class, 'penerima_user_id');
     }
 
-    // public function barang()
-    // {
-    //     return $this->belongsTo(Barang::class, 'lok_spk', 'lok_spk');
-    // }
+    public function barangs()
+    {
+        return $this->hasMany(KirimBarang::class, 'kirim_id', 'id');
+    }
 }

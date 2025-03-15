@@ -44,6 +44,12 @@
                         <span class="pcoded-mtext">Mass Edit Barang</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('buku-stok*') ? 'active' : '' }}">
+                    <a href="{{ url('/buku-stok') }}">
+                        <span class="pcoded-micon"><i class="fas fa-book"></i></span>
+                        <span class="pcoded-mtext">Buku Stok</span>
+                    </a>
+                </li>
             </ul>
             <div class="pcoded-navigatio-lavel">Stok Gudang</div>
             <ul class="pcoded-item pcoded-left-item">
