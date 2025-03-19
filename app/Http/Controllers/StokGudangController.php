@@ -99,7 +99,7 @@ class StokGudangController extends Controller
         }
 
         // Mendapatkan kirim Barang berdasarkan nomor_faktur dari Faktur
-        $kirimBarang = Kirim::withCount(['barangs as total_barang'])->where('pengirim_gudang_id', $selectedGudangId)->get();
+        $kirimBarang = Kirim::withCount(['barangs as total_barang'])->where('pengirim_gudang_id', $selectedGudangId)->where('status', 1)->get();
 
         // Mengolah data kirim Barang
         $kirimBarangData = [];
@@ -113,7 +113,7 @@ class StokGudangController extends Controller
         }
 
         // Mendapatkan terima Barang berdasarkan nomor_faktur dari Faktur
-        $terimaBarang = Kirim::withCount(['barangs as total_barang'])->where('penerima_gudang_id', $selectedGudangId)->get();
+        $terimaBarang = Kirim::withCount(['barangs as total_barang'])->where('penerima_gudang_id', $selectedGudangId)->where('status', 1)->get();
 
         // Mengolah data terima Barang
         $terimaBarangData = [];
