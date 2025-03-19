@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('t_return', function (Blueprint $table) {
+        Schema::create('t_return_old', function (Blueprint $table) {
             $table->id();
             $table->string('lok_spk', 255);
             $table->datetime('tgl_return');
@@ -25,7 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('t_return');
+        Schema::dropIfExists('t_return_old');
     }
 };
 

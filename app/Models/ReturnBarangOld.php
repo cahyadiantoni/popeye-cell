@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class ReturnBarang extends Model
+class ReturnBarangOld extends Model
 {
     use HasFactory;
 
     // Tentukan nama tabel jika berbeda dari default
-    protected $table = 't_return';
+    protected $table = 't_return_old';
 
     // Kolom yang dapat diisi (mass assignable)
     protected $fillable = ['lok_spk', 'tgl_return', 'user_id'];

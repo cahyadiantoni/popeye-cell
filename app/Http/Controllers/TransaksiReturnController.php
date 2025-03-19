@@ -7,7 +7,7 @@ use App\Models\Barang;
 use App\Models\Gudang;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use App\Models\ReturnBarang;
+use App\Models\ReturnBarangOld;
 use App\Models\Kirim;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -17,8 +17,8 @@ class TransaksiReturnController extends Controller
 {
     public function index()
     {
-        $returns = ReturnBarang::select(
-                't_return.lok_spk',
+        $returns = ReturnBarangOld::select(
+                't_return_old.lok_spk',
                 't_barang.tipe',
                 DB::raw("
                     CASE 
@@ -38,7 +38,7 @@ class TransaksiReturnController extends Controller
                         ELSE t_faktur_online.tgl_jual
                     END AS tgl_jual
                 "),
-                't_return.tgl_return',
+                't_return_old.tgl_return',
                 DB::raw("
                     CASE 
                         WHEN t_jual.harga IS NOT NULL THEN t_jual.harga
@@ -48,16 +48,16 @@ class TransaksiReturnController extends Controller
                 'users.name'
             )
             // Join ke Barang untuk mendapatkan tipe
-            ->join('t_barang', 't_return.lok_spk', '=', 't_barang.lok_spk')
+            ->join('t_barang', 't_return_old.lok_spk', '=', 't_barang.lok_spk')
             // Left join ke transaksi offline
-            ->leftJoin('t_jual', 't_return.lok_spk', '=', 't_jual.lok_spk')
+            ->leftJoin('t_jual', 't_return_old.lok_spk', '=', 't_jual.lok_spk')
             ->leftJoin('t_faktur', 't_jual.nomor_faktur', '=', 't_faktur.nomor_faktur')
             // Left join ke transaksi online
-            ->leftJoin('t_jual_online', 't_return.lok_spk', '=', 't_jual_online.lok_spk')
+            ->leftJoin('t_jual_online', 't_return_old.lok_spk', '=', 't_jual_online.lok_spk')
             ->leftJoin('t_faktur_online', 't_jual_online.faktur_online_id', '=', 't_faktur_online.id')
             // Join ke User
-            ->join('users', 't_return.user_id', '=', 'users.id')
-            ->orderByDesc('t_return.tgl_return')
+            ->join('users', 't_return_old.user_id', '=', 'users.id')
+            ->orderByDesc('t_return_old.tgl_return')
             ->get();
     
         return view('pages.transaksi-return.index', compact('returns'));
@@ -84,8 +84,8 @@ class TransaksiReturnController extends Controller
             // Logika untuk menerima permintaan
             foreach ($lok_spks as $index => $lok_spk) {
 
-                // Simpan data return barang ke tabel t_return
-                ReturnBarang::create([
+                // Simpan data return barang ke tabel t_return_old
+                ReturnBarangOld::create([
                     'lok_spk' => $lok_spk,
                     'tgl_return' => $tglReturn,  // Menyimpan tanggal return
                     'user_id' => Auth::id(),    // Mendapatkan ID pengguna yang login
@@ -152,7 +152,7 @@ class TransaksiReturnController extends Controller
             
             // Update Barang untuk lok_spk yang valid
             foreach ($validLokSpk as $item) {
-                ReturnBarang::create([
+                ReturnBarangOld::create([
                     'lok_spk' => $item['lok_spk'],
                     'tgl_return' => now(),  // Menyimpan tanggal return
                     'user_id' => Auth::id(),    // Mendapatkan ID pengguna yang login
@@ -179,7 +179,7 @@ class TransaksiReturnController extends Controller
     public function destroy($lok_spk)
     {
         try {
-            $return = ReturnBarang::where('lok_spk', $lok_spk)->firstOrFail();
+            $return = ReturnBarangOld::where('lok_spk', $lok_spk)->firstOrFail();
 
             Barang::where('lok_spk', $lok_spk)->update([
                 'status_barang' => 2,
