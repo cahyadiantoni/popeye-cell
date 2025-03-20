@@ -2,9 +2,6 @@
 
 @section('title', 'Transaksi Return')
 @section('content')
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
     <!-- Main-body start -->
     <div class="main-body">
         <div class="page-wrapper">
@@ -36,7 +33,7 @@
 
             <!-- Page-body start -->
             <div class="page-body">
-                {{-- Pesan Berhasil --}}
+                <!-- Pesan Success atau Error -->
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{ session('success') }}
@@ -44,10 +41,20 @@
                     </div>
                 @endif
 
-                {{-- Pesan Gagal --}}
                 @if(session('error'))
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
+                @if(session('errors'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <ul>
+                            @foreach (session('errors') as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 @endif
@@ -57,57 +64,54 @@
                         <!-- Zero config.table start -->
                         <div class="card">
                             <div class="card-block">
-                                <a href="{{ route('transaksi-return.create') }}" class="btn btn-primary btn-round">Return Barang</a>
+                                <button type="button" class="btn btn-primary btn-round" id="returnBarangBtn">Return Barang</button>
                                 <hr>
                                 <div class="dt-responsive table-responsive">
                                     <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th>No</th>
-                                                <th>No Return</th>
-                                                <th>Pedagang</th>
+                                                <th>LOK_SPK</th>
+                                                <th>Tipe</th>
+                                                <th>No Faktur</th>
+                                                <th>Pembeli</th>
+                                                <th>Tgl Jual</th>
                                                 <th>Tgl Return</th>
-                                                <th>Total Barang</th>
-                                                <th>Total Harga</th>
-                                                <th>Keterangan</th>
+                                                <th>Harga Jual</th>
+                                                <th>Petugas</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($returns as $return)
+                                        @foreach($returns as $return)
                                             <tr>
-                                                <td>{{ $loop->iteration }}</td>
-                                                <td>
-                                                    <a href="{{ route('transaksi-return.show', $return->nomor_return) }}">
-                                                        {{ $return->id }}
-                                                    </a>
-                                                </td>
-                                                <td>{{ $return->pedagang }}</td>
+                                                <td>{{ $return->lok_spk }}</td>
+                                                <td>{{ $return->tipe ?? '-' }}</td>
+                                                <td>{{ $return->nomor_faktur ?? '-' }}</td>
+                                                <td>{{ $return->pembeli ?? '-' }}</td>
+                                                <td>{{ $return->tgl_jual ?? '-' }}</td>
                                                 <td>{{ $return->tgl_return }}</td>
-                                                <td>{{ $return->total_barang }}</td>
-                                                <td>{{ 'Rp. ' . number_format($return->total_harga, 0, ',', '.') }}</td>
-                                                <td>{{ $return->keterangan }}</td>
+                                                <td>{{ 'Rp. ' . number_format($return->harga_jual ?? 0, 0, ',', '.') }}</td>
+                                                <td>{{ $return->name }}</td>
                                                 <td>
-                                                    <!-- Tombol View -->
-                                                    <a href="{{ route('transaksi-return.show', $return->id) }}" class="btn btn-info btn-sm">View</a>
-                                                    <form action="{{ route('transaksi-return.destroy', $return->id) }}" method="POST" class="d-inline delete-form">
+                                                    <form action="{{ route('transaksi-return.delete', $return->lok_spk) }}" method="POST" class="d-inline delete-form">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
                                                     </form>
                                                 </td>
                                             </tr>
-                                            @endforeach
+                                        @endforeach
                                         </tbody>
                                         <tfoot>
                                             <tr>
-                                                <th>No</th>
-                                                <th>No Return</th>
-                                                <th>Pedagang</th>
+                                                <th>LOK_SPK</th>
+                                                <th>Tipe</th>
+                                                <th>No Faktur</th>
+                                                <th>Pembeli</th>
+                                                <th>Tgl Jual</th>
                                                 <th>Tgl Return</th>
-                                                <th>Total Barang</th>
-                                                <th>Total Harga</th>
-                                                <th>Keterangan</th>
+                                                <th>Harga Jual</th>
+                                                <th>Petugas</th>
                                                 <th>Action</th>
                                             </tr>
                                         </tfoot>
@@ -124,8 +128,43 @@
     </div>
     <!-- Main-body end -->
 
+    <!-- Modal Return Barang -->
+    <div class="modal fade" id="returnBarangModal" tabindex="-1" aria-labelledby="returnBarangModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ route('transaksi-return.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="returnBarangModalLabel">Return Barang</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                    <div class="mb-3">
+                        <a href="{{ asset('files/template return barang.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
+                    </div>
+                        <div class="mb-3">
+                            <label for="fileBarang" class="form-label">Upload File Return</label>
+                            <input type="file" class="form-control" id="fileBarang" name="filedata" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const returnBarangBtn = document.getElementById('returnBarangBtn');
+            const returnBarangModal = new bootstrap.Modal(document.getElementById('returnBarangModal'));
+
+            returnBarangBtn.addEventListener('click', () => {
+                returnBarangModal.show();
+            });
+
             const deleteForms = document.querySelectorAll('.delete-form');
             deleteForms.forEach(form => {
                 form.addEventListener('submit', function (event) {
@@ -137,4 +176,4 @@
             });
         });
     </script>
-@endsection()
+@endsection

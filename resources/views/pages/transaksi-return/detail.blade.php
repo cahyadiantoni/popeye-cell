@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Detail Faktur')
+@section('title', 'Detail Return')
 @section('content')
 <div class="main-body">
     <div class="page-wrapper">
@@ -9,17 +9,14 @@
                 <div class="col-lg-8">
                     <div class="page-header-title">
                         <div class="d-inline">
-                            <h4>Detail Faktur</h4>
-                            <span>Nomor Faktur: {{ $faktur->nomor_faktur }}</span>
+                            <h4>Detail Return</h4>
+                            <span>Nomor Return: {{ $return->nomor_return }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-4 text-end">
-                    <a href="{{ route('transaksi-faktur.print', $faktur->nomor_faktur) }}" class="btn btn-primary" target="_blank">Print PDF</a>
-                    <a href="{{ route('transaksi-faktur.index') }}" class="btn btn-secondary">Kembali</a>
-                    @if($roleUser=='admin' && $faktur->is_finish==0)
+                    <a href="{{ route('transaksi-return.index') }}" class="btn btn-secondary">Kembali</a>
                     <button class="btn btn-success" id="addBarangBtn">Add Barang</button>
-                    @endif
                 </div>
             </div>
         </div>
@@ -51,103 +48,44 @@
                 </div>
             @endif
 
-            <!-- Informasi Faktur -->
+            <!-- Informasi Return -->
             <div class="card">
                 <div class="card-header">
-                    <h5>Informasi Faktur</h5>
+                    <h5>Informasi Return</h5>
                 </div>
                 <div class="card-block">
                 <table class="table table-bordered table-striped">
                     <tbody>
                         <tr>
-                            <th width="30%">No Faktur</th>
-                            <td>{{ $faktur->nomor_faktur }}</td>
+                            <th width="30%">No Return</th>
+                            <td>{{ $return->nomor_return }}</td>
                         </tr>
                         <tr>
-                            <th>Pembeli</th>
-                            <td>{{ $faktur->pembeli }}</td>
+                            <th>Pedagang</th>
+                            <td>{{ $return->pedagang }}</td>
                         </tr>
                         <tr>
-                            <th>Tanggal Jual</th>
-                            <td>{{ \Carbon\Carbon::parse($faktur->tgl_jual)->translatedFormat('d F Y') }}</td>
+                            <th>Tanggal Return</th>
+                            <td>{{ \Carbon\Carbon::parse($return->tgl_return)->translatedFormat('d F Y') }}</td>
                         </tr>
                         <tr>
                             <th>Petugas</th>
-                            <td>{{ $faktur->petugas }}</td>
+                            <td>{{ $return->user->name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Barang</th>
+                            <td>{{ $return->total_barang }}</td>
                         </tr>
                         <tr>
                             <th>Total Harga</th>
-                            <td>Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Total Bayar</th>
-                            <td>Rp. {{ number_format($totalNominal, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Sisa Hutang</th>
-                            <td>Rp. {{ number_format($faktur->total - $totalNominal, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Pembayaran</th>
-                            <td>
-                                @if ($faktur->is_lunas == 0)
-                                    <span class="badge bg-warning">Hutang</span>
-                                @else
-                                    <span class="badge bg-success">Lunas</span>
-                                @endif
-                            </td>
+                            <td>Rp. {{ number_format($return->total_harga, 0, ',', '.') }}</td>
                         </tr>
                         <tr>
                             <th>Keterangan</th>
-                            <td>{{ $faktur->keterangan }}</td>
+                            <td>{{ $return->keterangan }}</td>
                         </tr>
                     </tbody>
                 </table>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                    <h5>List Bukti Transfer</h5>
-                    @if($faktur->is_finish == 0)
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addBuktiModal">Tambah Bukti</button>
-                    @endif
-                </div>
-                <div class="card-block table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Keterangan</th>
-                                <th>Nominal</th>
-                                <th>Foto</th>
-                                @if($faktur->is_finish == 0)
-                                <th>Aksi</th>
-                                @endif
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($faktur->bukti as $bukti)
-                            <tr>
-                                <td>{{ $bukti->keterangan }}</td>
-                                <td>{{ $bukti->nominal }}</td>
-                                <td>
-                                    <a href="{{ asset('storage/' . $bukti->foto) }}" target="_blank">
-                                        <img src="{{ asset('storage/' . $bukti->foto) }}" alt="Bukti Transfer" class="img-thumbnail" style="width: 150px; height: auto;">
-                                    </a>
-                                </td>
-                                @if($faktur->is_finish == 0)
-                                <td>
-                                    <form action="{{ route('transaksi-faktur.bukti.delete', $bukti->id) }}" method="POST">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
-                                    </form>
-                                </td>
-                                @endif
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
                 </div>
             </div>
 
@@ -161,36 +99,32 @@
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>Lokasi SPK</th>
+                                <th>Lok SPK</th>
                                 <th>Tipe Barang</th>
                                 <th>Harga</th>
-                                @if($roleUser=='admin' && $faktur->is_finish==0)
                                 <th>Aksi</th>
-                                @endif
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($transaksiJuals as $index => $transaksi)
+                            @foreach($returnBarangs as  $return)
                             <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ $transaksi->lok_spk }}</td>
-                                <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
-                                <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
-                                @if($roleUser=='admin' && $faktur->is_finish==0)
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $return->lok_spk }}</td>
+                                <td>{{ $return->barang->tipe ?? '-' }}</td>
+                                <td>Rp. {{ number_format($return->harga, 0, ',', '.') }}</td>
+                                <td>{{ $return->alasan ?? '-' }}</td>
                                 <td>
-                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $transaksi->id }}" data-lok_spk="{{ $transaksi->lok_spk }}" data-harga="{{ $transaksi->harga }}">Edit</button>
-                                    <form action="{{ route('transaksi-jual.delete', $transaksi->id) }}" method="POST" class="d-inline delete-form">
+                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $return->id }}" data-lok_spk="{{ $return->lok_spk }}" data-harga="{{ $return->harga }}" data-alasan="{{ $return->alasan }}">Edit</button>
+                                    <form action="{{ route('transaksi-return-barang.delete', $return->id) }}" method="POST" class="d-inline delete-form">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
                                     </form>
                                 </td>
-                                @endif
                             </tr>
                             @endforeach
                         </tbody>
                     </table>
-                    <h4><strong>Total:</strong> Rp. {{ number_format($faktur->total, 0, ',', '.') }}</h4>
                 </div>
             </div>
         </div>
@@ -201,7 +135,7 @@
 <div class="modal fade" id="addBarangModal" tabindex="-1" aria-labelledby="addBarangModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="{{ route('transaksi-jual.addbarang') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('transaksi-return-barang.addbarang') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title" id="addBarangModalLabel">Add Barang</h5>
@@ -209,13 +143,13 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <a href="{{ asset('files/template jual barang.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
+                        <a href="{{ asset('files/template return.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
                     </div>
                     <div class="mb-3">
                         <label for="fileExcel" class="form-label">Upload File Excel</label>
                         <input type="file" class="form-control" id="filedata" name="filedata" required>
-                        <input type="hidden" class="form-control" id="nomor_faktur" name="nomor_faktur" value="<?= $faktur->nomor_faktur ?>" required>
-                        <input type="hidden" class="form-control" id="total" name="total" value="<?= $faktur->total ?>" required>
+                        <input type="hidden" class="form-control" id="t_return_id" name="t_return_id" value="<?= $return->t_return_id ?>" required>
+                        <input type="hidden" class="form-control" id="petugas" name="petugas" value="<?= $return->return->user->name ?>" required>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -248,35 +182,14 @@
                         <label for="editHarga" class="form-label">Harga</label>
                         <input type="number" class="form-control" id="editHarga" name="harga" required>
                     </div>
+                    <div class="mb-3">
+                        <label for="editAlasan" class="form-label">Alasan</label>
+                        <input type="text" class="form-control" id="editAlasan" name="alasan" required>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Tambah Bukti -->
-<div class="modal fade" id="addBuktiModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="{{ route('transaksi-faktur.bukti.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Tambah Bukti Transfer</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="t_faktur_id" value="{{ $faktur->id }}">
-                    <input type="text" class="form-control mb-2" name="keterangan" placeholder="Keterangan" required>
-                    <input type="number" class="form-control mb-2" name="nominal" placeholder="Nominal Transfer" required>
-                    <input type="file" class="form-control" name="foto" required>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-success">Tambah Bukti</button>
                 </div>
             </form>
         </div>
@@ -291,18 +204,21 @@
         const editTransaksiId = document.getElementById('editTransaksiId');
         const editTransaksiLokSpk = document.getElementById('editTransaksiLokSpk');
         const editHarga = document.getElementById('editHarga');
+        const editAlasan = document.getElementById('editAlasan');
 
         editButtons.forEach(button => {
             button.addEventListener('click', () => {
-                const transaksiId = button.dataset.id;
-                const transaksiLokSpk = button.dataset.lok_spk;
+                const returnId = button.dataset.id;
+                const returnLokSpk = button.dataset.lok_spk;
                 const harga = button.dataset.harga;
+                const alasan = button.dataset.alasan;
 
-                editTransaksiId.value = transaksiId;
-                editTransaksiLokSpk.value = transaksiLokSpk;
+                editTransaksiId.value = returnId;
+                editTransaksiLokSpk.value = returnLokSpk;
                 editHarga.value = harga;
+                editAlasan.value = alasan;
 
-                editForm.action = '{{ route("transaksi-jual.update") }}';
+                editForm.action = '{{ route("transaksi-return-barang.update") }}';
                 editModal.show();
             });
         });

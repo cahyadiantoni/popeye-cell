@@ -55,9 +55,11 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::post('/terima-barang/tolak', [TerimaBarangController::class, 'tolak'])->name('terima-barang.tolak');
     Route::get('/terima-barang/export/{id}', [TerimaBarangController::class, 'export'])->name('terima-barang.export');
 
+    Route::get('/transaksi-return/suggest', [TransaksiReturnController::class, 'getSuggest'])->name('transaksi-return.suggest');
     Route::resource('/transaksi-return', TransaksiReturnController::class)->middleware('auth');
-    Route::post('/return-barang', [TransaksiReturnController::class, 'returnBarang'])->name('returnBarang');
-    Route::delete('/transaksi-return/{lok_spk}', [TransaksiReturnController::class, 'destroy'])->name('transaksi-return.delete');
+    Route::delete('/transaksi-return-barang/{id}', [TransaksiReturnController::class, 'destroyBarang'])->name('transaksi-return-barang.delete');
+    Route::put('/transaksi-return-barang', [TransaksiReturnController::class, 'updateBarang'])->name('transaksi-return-barang.update');
+    Route::post('/transaksi-return-barang/addbarang', [TransaksiReturnController::class, 'addBarang'])->name('transaksi-return-barang.addbarang');
 
     Route::get('/export-barang/{id}', function ($id) {
         return Excel::download(new BarangExport($id), 'stok_barang_' . $id . '.xlsx');
@@ -76,14 +78,14 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
 
     Route::get('/transaksi-jual/data', [TransaksiController::class, 'getData'])->name('transaksi-jual.data');
     Route::resource('/transaksi-jual', TransaksiController::class)->middleware('auth');
-    Route::delete('/transaksi-jual/{lok_spk}', [TransaksiController::class, 'destroy'])->name('transaksi-jual.delete');
+    Route::delete('/transaksi-jual/{id}', [TransaksiController::class, 'destroy'])->name('transaksi-jual.delete');
     Route::put('/transaksi-jual/update', [TransaksiController::class, 'update'])->name('transaksi-jual.update');
     Route::post('/transaksi-jual/addbarang', [TransaksiFakturController::class, 'addbarang'])->name('transaksi-jual.addbarang');
     Route::get('/suggest-no-fak', [TransaksiController::class, 'getSuggestNoFak'])->name('suggest.no.fak');
     
     Route::get('/transaksi-jual-online/data', [TransaksiOnlineController::class, 'getData'])->name('transaksi-jual-online.data');
     Route::resource('/transaksi-jual-online', TransaksiOnlineController::class)->middleware('auth');
-    Route::delete('/transaksi-jual-online/{lok_spk}', [TransaksiOnlineController::class, 'destroy'])->name('transaksi-jual-online.delete');
+    Route::delete('/transaksi-jual-online/{id}', [TransaksiOnlineController::class, 'destroy'])->name('transaksi-jual-online.delete');
     Route::put('/transaksi-jual-online/update', [TransaksiOnlineController::class, 'update'])->name('transaksi-jual-online.update');
     Route::post('/transaksi-jual-online/addbarang', [TransaksiFakturOnlineController::class, 'addbarang'])->name('transaksi-jual-online.addbarang');
     Route::get('/suggest-no-fak-online', [TransaksiOnlineController::class, 'getSuggestNoFak'])->name('suggest.no.fak.online');

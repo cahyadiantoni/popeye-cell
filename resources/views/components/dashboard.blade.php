@@ -581,8 +581,8 @@
     </div>
     </div>
 
-    @if(auth()->user()->adm)
-        <h3>Selamat Datang di Aplikasi Administrasi PT Indogadai</h3>
+    @if(auth()->user()->adm && !auth()->user()->adm)
+        <h3>Selamat Datang di Aplikasi Administrasi PT Indo Gadai</h3>
     @endif
 
     <div id="styleSelector"></div>

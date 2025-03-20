@@ -170,11 +170,15 @@ class TransaksiController extends Controller
     }
     
 
-    public function destroy($lok_spk)
+    public function destroy($id)
     {
         try {
-            $transaksi = TransaksiJual::where('lok_spk', $lok_spk)->firstOrFail();
+            $transaksi = TransaksiJual::where('id', $id)->firstOrFail();
 
+            // Mendapatkan lok_spk dari transaksi
+            $lok_spk = $transaksi->lok_spk;
+
+            // Melakukan update pada tabel Barang
             Barang::where('lok_spk', $lok_spk)->update([
                 'status_barang' => 1,
                 'no_faktur' => null,
@@ -200,12 +204,13 @@ class TransaksiController extends Controller
     {
         try {
             $validated = $request->validate([
+                'id' => 'required|exists:t_jual,id',
                 'lok_spk' => 'required|exists:t_jual,lok_spk',
                 'harga' => 'required|numeric|min:0',
             ]);
     
-            // Gunakan firstOrFail() untuk pencarian berdasarkan 'lok_spk'
-            $transaksi = TransaksiJual::where('lok_spk', $validated['lok_spk'])->firstOrFail();
+            // Gunakan firstOrFail() untuk pencarian berdasarkan 'id'
+            $transaksi = TransaksiJual::where('id', $validated['id'])->firstOrFail();
             $transaksi->update(['harga' => $validated['harga']]);
     
             // Update harga_jual pada model Barang

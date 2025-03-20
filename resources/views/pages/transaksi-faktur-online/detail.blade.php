@@ -119,8 +119,8 @@
                                 <td>Rp. {{ number_format($transaksi->pj, 0, ',', '.') }}</td>
                                 @if($roleUser=='admin' && $faktur->is_finish==0)
                                 <td>
-                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $transaksi->lok_spk }}" data-invoice="{{ $transaksi->invoice }}" data-harga="{{ $transaksi->harga }}" data-pj="{{ $transaksi->pj }}">Edit</button>
-                                    <form action="{{ route('transaksi-jual-online.delete', $transaksi->lok_spk) }}" method="POST" class="d-inline delete-form">
+                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $transaksi->id }}" data-lok_spk="{{ $transaksi->lok_spk }}" data-invoice="{{ $transaksi->invoice }}" data-harga="{{ $transaksi->harga }}" data-pj="{{ $transaksi->pj }}">Edit</button>
+                                    <form action="{{ route('transaksi-jual-online.delete', $transaksi->id) }}" method="POST" class="d-inline delete-form">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
@@ -150,7 +150,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <a href="{{ asset('files/templateJual.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
+                        <a href="{{ asset('files/template jual online.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
                     </div>
                     <div class="mb-3">
                         <label for="fileExcel" class="form-label">Upload File Excel</label>
@@ -182,7 +182,8 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="editTransaksiId" class="form-label">LOK SPK</label>
-                        <input type="text" class="form-control" id="editTransaksiId" name="lok_spk" required readonly>
+                        <input type="text" class="form-control" id="editTransaksiLokSpk" name="lok_spk" required readonly>
+                        <input type="hidden" class="form-control" id="editTransaksiId" name="id" required readonly>
                     </div>
                     <div class="mb-3">
                         <label for="editInvoice" class="form-label">Invoice</label>
@@ -212,6 +213,7 @@
         const editModal = new bootstrap.Modal(document.getElementById('editModal'));
         const editForm = document.getElementById('editForm');
         const editTransaksiId = document.getElementById('editTransaksiId');
+        const editTransaksiLokSpk = document.getElementById('editTransaksiLokSpk');
         const editInvoice = document.getElementById('editInvoice');
         const editHarga = document.getElementById('editHarga');
         const editPJ = document.getElementById('editPJ');
@@ -219,11 +221,13 @@
         editButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const transaksiId = button.dataset.id;
+                const transaksiLokSpk = button.dataset.lok_spk;
                 const invoice = button.dataset.invoice;
                 const harga = button.dataset.harga;
                 const pj = button.dataset.pj;
 
                 editTransaksiId.value = transaksiId;
+                editTransaksiLokSpk.value = transaksiLokSpk;
                 editInvoice.value = invoice;
                 editHarga.value = harga;
                 editPJ.value = pj;
