@@ -82,7 +82,8 @@ class KirimBarangController extends Controller
         $pj_gudang = $gudangPenerima->pj_gudang;
         // Mendapatkan auth id pengguna yang sedang login
         $authId = Auth::id();
-        $gudang = Gudang::where('pj_gudang', $authId)->select('id', 'nama_gudang')->first();
+        $gudangId = optional(Auth::user())->gudang_id;
+        $gudang = Gudang::where('id', $gudangId)->select('id', 'nama_gudang')->first();
         $gudangIds = $gudang->id;
 
         // Simpan data Faktur jika ada data valid
