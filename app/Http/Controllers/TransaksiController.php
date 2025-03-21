@@ -59,7 +59,9 @@ class TransaksiController extends Controller
 
     public function create()
     {   
-        return view('pages.transaksi-jual.create');
+        $gudangId = optional(Auth::user())->gudang_id;
+
+        return view('pages.transaksi-jual.create',compact('gudangId'));
     }
 
     public function store(Request $request)

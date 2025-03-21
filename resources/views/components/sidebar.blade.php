@@ -105,6 +105,7 @@
                     </a>
                 </li>
             </ul>
+            @if(auth()->user()->gudang_id == 3 || auth()->user()->gudang_id == 5 || auth()->user()->role == 'admin')
             <div class="pcoded-navigatio-lavel">Transaksi Online</div>
             <ul class="pcoded-item pcoded-left-item">
                 <li class="{{ Request::is('transaksi-jual-online/create') ? 'active' : '' }}">
@@ -132,6 +133,8 @@
                     </a>
                 </li>
             </ul>
+            @endif
+            @if(auth()->user()->role=="admin")
             <div class="pcoded-navigatio-lavel">Transaksi Return</div>
             <ul class="pcoded-item pcoded-left-item">
                 <li class="{{ Request::is('transaksi-return*') ? 'active' : '' }}">
@@ -141,6 +144,7 @@
                     </a>
                 </li>
             </ul>
+            @endif
         @endif
         @if(auth()->user()->adm)
             <div class="pcoded-navigatio-lavel">Administrasi</div>

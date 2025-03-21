@@ -58,6 +58,7 @@
                             <div class="card-header">
                                 <form action="{{ route('transaksi-faktur.index') }}" method="GET">
                                     <div class="row">
+                                        @if($roleUser == 'admin')
                                         <div class="col-md-3">
                                             <label for="kode_faktur">Gudang</label>
                                             <select name="kode_faktur" class="form-control">
@@ -69,6 +70,7 @@
                                                 <option value="Lain" {{ request('kode_faktur') == 'Lain' ? 'selected' : '' }}>Lain-Lain</option>
                                             </select>
                                         </div>
+                                        @endif
                                         <div class="col-md-3">
                                             <label for="tanggal_mulai">Tanggal Mulai</label>
                                             <input type="date" name="tanggal_mulai" class="form-control" value="{{ request('tanggal_mulai') }}">

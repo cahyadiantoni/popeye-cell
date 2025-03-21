@@ -23,20 +23,42 @@ class TransaksiFakturController extends Controller
             ->withSum('bukti as total_nominal', 'nominal') // Assuming the relationship is defined
             ->orderBy('tgl_jual', 'desc');
     
-        $daftarGudang = ['AT', 'TKP', 'VR', 'BW'];
-    
-        if ($request->filled('kode_faktur')) {
-            $kodeFaktur = $request->kode_faktur;
-    
-            if (in_array($kodeFaktur, $daftarGudang)) {
-                $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
-            } else {
-                $query->where(function ($q) use ($daftarGudang) {
-                    foreach ($daftarGudang as $kode) {
-                        $q->where('nomor_faktur', 'not like', "$kode-%");
-                    }
-                });
+        $roleUser = optional(Auth::user())->role;
+        $gudangId = optional(Auth::user())->gudang_id;
+
+        if($roleUser == 'admin'){
+            $daftarGudang = ['AT', 'TKP', 'VR', 'BW'];
+        
+            if ($request->filled('kode_faktur')) {
+                $kodeFaktur = $request->kode_faktur;
+        
+                if (in_array($kodeFaktur, $daftarGudang)) {
+                    $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
+                } else {
+                    $query->where(function ($q) use ($daftarGudang) {
+                        foreach ($daftarGudang as $kode) {
+                            $q->where('nomor_faktur', 'not like', "$kode-%");
+                        }
+                    });
+                }
             }
+        }else{
+            switch ($gudangId) {
+                case 1:
+                    $query->where('nomor_faktur', 'like', "BW-%");
+                    break;
+                case 2:
+                    $query->where('nomor_faktur', 'like', "AT-%");
+                    break;
+                case 3:
+                    $query->where('nomor_faktur', 'like', "TKP-%");
+                    break;
+                case 5:
+                    $query->where('nomor_faktur', 'like', "VR-%");
+                    break;
+                default:
+                    break;
+            }            
         }
     
         // Filter berdasarkan rentang tanggal
@@ -73,8 +95,6 @@ class TransaksiFakturController extends Controller
                 $faktur->update(); // Update is_lunas to 0
             }
         }
-    
-        $roleUser = optional(Auth::user())->role;
     
         return view('pages.transaksi-faktur.index', compact('fakturs', 'roleUser'));
     }    

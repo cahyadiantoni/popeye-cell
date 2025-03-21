@@ -19,9 +19,14 @@ class StokGudangController extends Controller
     {
         // Mendapatkan list Gudang
         $gudangs = Gudang::whereIn('id', range(0, 5))->get();
+        $gudangId = optional(Auth::user())->gudang_id;
 
         // Mendapatkan gudang_id dari request, jika tidak ada maka ambil gudang pertama
-        $selectedGudangId = $request->input('gudang_id', $gudangs->first()->id);
+        if (in_array($gudangId, [1, 2, 3, 5])) {
+            $selectedGudangId = $request->input('gudang_id', $gudangId);
+        } else {
+            $selectedGudangId = $request->input('gudang_id', $gudangs->first()->id);
+        }        
 
         // Mendapatkan nama gudang berdasarkan gudang_id
         $namaGudang = Gudang::find($selectedGudangId)->nama_gudang;

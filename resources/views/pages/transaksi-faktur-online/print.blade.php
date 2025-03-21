@@ -4,8 +4,9 @@
     <title>Faktur Penjualan Online</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 12px; }
-        .title { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 10px; }
-        .line { border-bottom: 1px solid black; margin-bottom: 15px; }
+        .title { text-align: center; font-weight: bold; font-size: 16px; }
+        .subtitle { text-align: center; font-size: 14px; margin-bottom: 10px}
+        .line { border-bottom: 1px solid black; margin-bottom: 10px; margin-top: 10px; }
         .info-table { width: 100%; margin-bottom: 10px; }
         .info-table td { padding: 5px; vertical-align: top; }
         .table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
@@ -17,6 +18,8 @@
     </style>
 </head>
 <body>
+    <div class="title">PT INDO GADAI PRIMA</div>
+    <div class="subtitle">Jl. KH Hasyim Ashari 112BB, Jakarta Pusat | Telp : 0856-9312-4547</div>
     <div class="title">Faktur Penjualan Online</div>
     <div class="line"></div>
 
@@ -41,7 +44,7 @@
                 <th>No</th>
                 <th>Invoice</th>
                 <th>SPK</th>
-                <th>Merk</th>
+                <th>Merk Tipe</th>
                 <th>PJ</th>
                 <th>Harga</th>
                 <th>Sub Total</th>

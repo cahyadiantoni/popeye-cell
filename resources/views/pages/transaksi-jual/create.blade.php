@@ -61,10 +61,10 @@
                                         <div class="col-sm-10">
                                             <select name="kode_faktur" class="form-select form-control">
                                                 <option value="">-- Pilih Kode Faktur --</option>
-                                                <option value="BW">BW - Gudang Bawah</option>
-                                                <option value="AT">AT - Gudang Zilfa</option>
-                                                <option value="TKP">TKP - Gudang Tokopedia</option>
-                                                <option value="VR">VR - Gudang Vira</option>
+                                                <option value="BW" {{ $gudangId == 1 ? 'selected' : '' }}>BW - Gudang Bawah</option>
+                                                <option value="AT" {{ $gudangId == 2 ? 'selected' : '' }}>AT - Gudang Zilfa</option>
+                                                <option value="TKP" {{ $gudangId == 3 ? 'selected' : '' }}>TKP - Gudang Tokopedia</option>
+                                                <option value="VR" {{ $gudangId == 5 ? 'selected' : '' }}>VR - Gudang Vira</option>
                                                 <option value="LN">LN - Lain Lain</option>
                                             </select>
                                         </div>
