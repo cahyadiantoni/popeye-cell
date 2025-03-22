@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\KirimBarangController;
 use App\Http\Controllers\NegoanController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TerimaBarangController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DataUserController;
@@ -112,6 +113,8 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::get('/negoan/harga-awal', [NegoanController::class, 'getHargaAwal'])->name('negoan.harga-awal');
     Route::post('/negoan/chat', [NegoanController::class, 'storeChat'])->name('negoan.chat.store');
     Route::resource('/negoan', NegoanController::class)->middleware('auth');
+
+    Route::resource('/notification', NotificationController::class)->middleware('auth');
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {

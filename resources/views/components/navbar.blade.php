@@ -1,3 +1,8 @@
+        <style>
+          .bg-primary-light {
+                background-color: rgba(7, 101, 201, 0.1); /* Light primary color with 10% opacity */
+            }
+        </style>
         <nav class="navbar header-navbar pcoded-header">
           <div class="navbar-wrapper">
             <div class="navbar-logo">
@@ -36,52 +41,32 @@
               <ul class="nav-right">
                 <li class="header-notification">
                   <div class="dropdown-primary dropdown">
-                  <div class="dropdown-toggle" data-bs-toggle="dropdown" onclick="window.location='{{ url('/terima-barang') }}'">
+                  <div class="dropdown-toggle" data-bs-toggle="dropdown">
                       <i class="feather icon-bell"></i>
-                      <span class="badge bg-c-pink">{{ $requestCount }}</span>
+                      <span class="badge bg-c-pink">{{ $notifCount }}</span>
                   </div>
-                    <!-- <ul class="show-notification notification-view dropdown-menu" data-dropdown-in="fadeIn" data-dropdown-out="fadeOut">
+                    <ul class="show-notification notification-view dropdown-menu" data-dropdown-in="fadeIn" data-dropdown-out="fadeOut">
                       <li>
                         <h6>Notifications</h6>
                         <label class="form-label label label-danger">New</label>
                       </li>
-                      <li>
-                        <div class="d-flex">
-                          <div class="flex-shrink-0">
-                            <img class="d-flex align-self-center img-radius" src="{{ asset('files/assets/images/avatar-4.jpg')}}" alt="Generic placeholder image" />
-                          </div>
-                          <div class="flex-grow-1">
-                            <h5 class="notification-user">John Doe</h5>
-                            <p class="notification-msg">Lorem ipsum dolor sit amet, consectetuer elit.</p>
-                            <span class="notification-time">30 minutes ago</span>
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <div class="d-flex">
-                          <div class="flex-shrink-0">
-                            <img class="d-flex align-self-center img-radius" src="{{ asset('files/assets/images/avatar-3.jpg')}}" alt="Generic placeholder image" />
-                          </div>
-                          <div class="flex-grow-1">
-                            <h5 class="notification-user">Joseph William</h5>
-                            <p class="notification-msg">Lorem ipsum dolor sit amet, consectetuer elit.</p>
-                            <span class="notification-time">30 minutes ago</span>
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <div class="d-flex">
-                          <div class="flex-shrink-0">
-                            <img class="d-flex align-self-center img-radius" src="{{ asset('files/assets/images/avatar-4.jpg')}}" alt="Generic placeholder image" />
-                          </div>
-                          <div class="flex-grow-1">
-                            <h5 class="notification-user">Sara Soudein</h5>
-                            <p class="notification-msg">Lorem ipsum dolor sit amet, consectetuer elit.</p>
-                            <span class="notification-time">30 minutes ago</span>
-                          </div>
-                        </div>
-                      </li>
-                    </ul> -->
+                      @foreach ($notifications as $notif)
+                      <a href="{{ route('notification.show', $notif->id) }}">
+                          <li class="notification-item {{ $notif->status == 1 ? 'bg-white' : 'bg-primary-light' }}">
+                              <div class="d-flex">
+                                  <div class="flex-shrink-0">
+                                      <img class="d-flex align-self-center img-radius" src="{{ asset('files/assets/images/user-new.png') }}" alt="User Image" />
+                                  </div>
+                                  <div class="flex-grow-1 ms-3"> <!-- Added margin start for spacing -->
+                                      <h5 class="notification-user">{{ $notif->pengirim->name }}</h5>
+                                      <p class="notification-text">{{ $notif->isi }}</p>
+                                      <small class="notification-time">{{ $notif->created_at->diffForHumans() }}</small> <!-- Display time ago -->
+                                  </div>
+                              </div>
+                          </li>
+                      </a>
+                      @endforeach
+                    </ul>
                   </div>
                 </li>
                 <!-- <li class="header-notification">
@@ -95,7 +80,7 @@
                 <li class="user-profile header-notification">
                   <div class="dropdown-primary dropdown">
                     <div class="dropdown-toggle" data-bs-toggle="dropdown">
-                        <img src="{{ asset('files/assets/images/avatar-4.jpg') }}" class="img-radius" alt="User-Profile-Image" />
+                        <img src="{{ asset('files/assets/images/user-new.png') }}" class="img-radius" alt="User-Profile-Image" />
                         <span>{{ Auth::user()->name }}</span>
                         <i class="feather icon-chevron-down"></i>
                     </div>

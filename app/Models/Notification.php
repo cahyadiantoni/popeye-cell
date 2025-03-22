@@ -14,16 +14,21 @@ class Notification extends Model
 
     // Tentukan kolom yang bisa diisi (mass assignable)
     protected $fillable = [
-        'user_id',
+        'pengirim_id',
+        'penerima_id',
         'title',
         'isi',
         'link',
         'status',
     ];
 
+    public function pengirim()
+    {
+        return $this->belongsTo(User::class, 'pengirim_id', 'id');
+    }
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class, 'penerima_id', 'id');
     }
 
 }

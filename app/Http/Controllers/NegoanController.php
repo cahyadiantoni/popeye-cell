@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Barang;
 use App\Models\Negoan;
 use App\Models\NegoanChat;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -99,14 +100,17 @@ class NegoanController extends Controller
         // Find the Negoan record by ID
         $negoan = Negoan::findOrFail($id);
 
+        $roleUser = optional(Auth::user())->role;
+
         $chats = NegoanChat::where('t_negoan_id', $id)->with('user')->get();
 
         // Pass the Negoan record to the view
-        return view('pages.negoan.detail', compact('negoan', 'chats'));
+        return view('pages.negoan.detail', compact('negoan', 'chats', 'roleUser'));
     }
 
     public function storeChat(Request $request)
     {
+        $AuthId = Auth::id();
         // Validate the incoming request
         $request->validate([
             't_negoan_id' => 'required|exists:t_negoan,id',
@@ -114,11 +118,42 @@ class NegoanController extends Controller
         ]);
 
         // Create a new chat message
-        NegoanChat::create([
+        $saveChat = NegoanChat::create([
             't_negoan_id' => $request->t_negoan_id,
-            'user_id' => Auth::id(),
+            'user_id' => $AuthId,
             'isi' => $request->isi,
         ]);
+        
+        if ($saveChat) {
+            // Retrieve the Negoan owner
+            $negoan = Negoan::findOrFail($request->t_negoan_id);
+
+            $pengirimId = $AuthId;
+            $penerimaIds = NegoanChat::where('t_negoan_id', $request->t_negoan_id)
+            ->whereNotIn('user_id', [10, $negoan->user_id, $AuthId])
+            ->distinct()
+            ->pluck('user_id')
+            ->toArray();
+
+            if ($AuthId != $negoan->user_id) {
+                $penerimaIds[] = $negoan->user_id; 
+            } 
+            
+            if($AuthId != 10){
+                $penerimaIds[] = 10; 
+            }
+
+            foreach($penerimaIds as $penerimaId){
+                // Create the notification
+                Notification::create([
+                    'pengirim_id' => $pengirimId,
+                    'penerima_id' => $penerimaId,
+                    'title' => 'Chat Negoan',
+                    'isi' => 'Chat masuk : ' . $request->isi,
+                    'link' => url('/negoan/' . $request->t_negoan_id),
+                ]);
+            }
+        }
 
         return redirect()->back()->with('success', 'Message sent successfully!');
     }
@@ -150,16 +185,5 @@ class NegoanController extends Controller
 
         // Redirect back to the index page with a success message
         return redirect()->back()->with('success', 'Negoan updated successfully.');
-    }
-
-    public function getSuggest(Request $request)
-    {
-
-        return response()->json(['suggest_harga_asal' => '$harga_asal']);
-    }
-
-    public function addchat(Request $request)
-    {
-        
     }
 }

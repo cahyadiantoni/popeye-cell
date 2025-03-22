@@ -146,6 +146,7 @@
                     </div>
                 </div>
 
+                @if($roleUser=="admin")
                 <div class="card">
                     <div class="card-header">
                         <h5>Persetujuan Harga Negoan</h5>
@@ -183,6 +184,7 @@
                         </form>
                     </div>
                 </div>
+                @endif
 
                 <!-- Chat Negoan -->
                 <div class="card">

@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');  
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreignId('pengirim_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('penerima_id')->constrained('users')->onDelete('cascade');
             $table->text('title');
             $table->text('isi');
             $table->text('link');

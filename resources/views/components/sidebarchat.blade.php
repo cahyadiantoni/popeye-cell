@@ -34,7 +34,7 @@
                   </div>
                   <div class="media userlist-box" data-id="3" data-status="online" data-username="Alice" data-bs-toggle="tooltip" data-bs-placement="left" title="Alice">
                     <a class="media-left" href="#!">
-                      <img class="media-object img-radius" src="{{ asset('files/assets/images/avatar-4.jpg')}}" alt="Generic placeholder image" />
+                      <img class="media-object img-radius" src="{{ asset('files/assets/images/user-new.png')}}" alt="Generic placeholder image" />
                       <div class="live-status bg-success"></div>
                     </a>
                     <div class="media-body">
@@ -92,7 +92,7 @@
             <div class="flex-shrink-0">
               <div class="media-right photo-table">
                 <a href="#!">
-                  <img class="media-object img-radius img-radius m-t-5" src="{{ asset('files/assets/images/avatar-4.jpg')}}" alt="Generic placeholder image" />
+                  <img class="media-object img-radius img-radius m-t-5" src="{{ asset('files/assets/images/user-new.png')}}" alt="Generic placeholder image" />
                 </a>
               </div>
             </div>
