@@ -62,7 +62,7 @@
                 <li class="{{ Request::is('choice-gudang*') ? 'active' : '' }}">
                     <a href="{{ url('/choice-gudang') }}">
                         <span class="pcoded-micon"><i class="fas fa-boxes"></i></span>
-                        <span class="pcoded-mtext">Stok Opname Gudang</span>
+                        <span class="pcoded-mtext">Master Data Gudang</span>
                     </a>
                 </li>
                 <li class="{{ Request::is('kirim-barang*') ? 'active' : '' }}">
