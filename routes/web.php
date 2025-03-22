@@ -130,6 +130,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {
     Route::resource('adm-setting', AdmSettingController::class);
     
     Route::get('/req-tokped/export', [AdmReqTokpedController::class, 'export'])->name('req-tokped.export');
+    Route::get('/req-tokped/history', [AdmReqTokpedController::class, 'historyBarang'])->name('req-tokped.history');
     Route::get('/req-tokped', [AdmReqTokpedController::class, 'index'])->name('req-tokped.index');
     Route::get('/req-tokped/create', [AdmReqTokpedController::class, 'create'])->name('req-tokped.create');
     Route::post('/req-tokped', [AdmReqTokpedController::class, 'store'])->name('req-tokped.store');

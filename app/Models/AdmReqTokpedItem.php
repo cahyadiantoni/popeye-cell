@@ -10,7 +10,7 @@ class AdmReqTokpedItem extends Model
     use HasFactory;
 
     protected $table = 'adm_req_tokped_item';
-    protected $fillable = ['adm_req_tokped_id', 'adm_item_tokped_id', 'nama_barang', 'quantity'];
+    protected $fillable = ['adm_req_tokped_id', 'adm_item_tokped_id', 'kode_lok', 'nama_barang', 'quantity'];
 
     public function request()
     {

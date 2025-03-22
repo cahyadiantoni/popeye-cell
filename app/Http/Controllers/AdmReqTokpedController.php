@@ -180,6 +180,7 @@ class AdmReqTokpedController extends Controller
         $request->validate([
             'adm_req_tokped_id' => 'required|exists:adm_req_tokped,id',
             'adm_item_tokped_id' => 'required|exists:adm_item_tokped,id',
+            'kode_lok' => 'required',
             'nama_barang' => 'nullable',
             'quantity' => 'required',
         ]);
@@ -187,6 +188,7 @@ class AdmReqTokpedController extends Controller
         AdmReqTokpedItem::create([
             'adm_req_tokped_id' => $request->adm_req_tokped_id,
             'adm_item_tokped_id' => $request->adm_item_tokped_id,
+            'kode_lok' => $request->kode_lok,
             'nama_barang' => $request->nama_barang,
             'quantity' => $request->quantity,
         ]);
@@ -225,6 +227,29 @@ class AdmReqTokpedController extends Controller
         ];
     
         return Excel::download(new ReqTokpedExport($filters), 'req_tokped.xlsx');
-    }    
+    }   
+    
+    public function historyBarang()
+    {
+        // Retrieve the histories with the specified conditions
+        $histories = AdmReqTokped::with(['items.item', 'user'])
+            ->where('status', 5)
+            ->get()
+            ->flatMap(function ($request) {
+                return $request->items->map(function ($item) use ($request) {
+                    return (object) [
+                        'tgl' => $request->updated_at->format('Y-m-d'), // Accessing updated_at correctly
+                        'kode_lok' => $item->kode_lok,
+                        'nama_barang' => $item->item->name, // Get name from AdmItemTokped
+                        'lain_lain' => $item->nama_barang,
+                        'quantity' => $item->quantity,
+                        'status' => $request->status,
+                        'pj' => $request->user->name, // Get name from User
+                    ];
+                });
+            }); // Use flatMap to flatten the array directly
+    
+        return view('pages.req-tokped.history', compact('histories'));
+    }     
     
 }

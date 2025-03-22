@@ -109,6 +109,7 @@
                         <thead>
                             <tr>
                                 <th>No</th>
+                                <th>Kode Lok</th>
                                 <th>Barang</th>
                                 <th>Lain2</th>
                                 <th>Jumlah</th>
@@ -119,6 +120,7 @@
                             @foreach($todoTransfer->items as $item)
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
+                                <td>{{ $item->kode_lok }}</td>
                                 <td>{{ $item->item->name }}</td>
                                 <td>{{ $item->nama_barang ?? "-" }}</td>
                                 <td>{{ $item->quantity }}</td>
@@ -305,6 +307,11 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="adm_req_tokped_id" value="{{ $todoTransfer->id }}">
+
+                    <div class="mb-3" id="kodeLok">
+                        <label for="kode_lok" class="form-label">Kode Lokasi / Kode Toko (angka)</label>
+                        <input type="number" class="form-control" name="kode_lok" id="kode_lok" placeholder="Masukkan Kode Lokasi / Kode Toko (Angka)">
+                    </div>
 
                     <!-- Pilih Item -->
                     <div class="mb-3">
