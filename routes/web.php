@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\KirimBarangController;
+use App\Http\Controllers\NegoanController;
 use App\Http\Controllers\TerimaBarangController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DataUserController;
@@ -107,6 +108,10 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::post('/finish-cek-so', [CekSOController::class, 'finish'])->name('cekso.finish');
     Route::get('/finish-cek-so/{id}', [CekSOController::class, 'showFinish'])->name('cekso.showFinish');
     Route::get('/get-cek-so-finish/{id}', [CekSOController::class, 'getCekSOFinish'])->name('get-cekso.finish');
+
+    Route::get('/negoan/harga-awal', [NegoanController::class, 'getHargaAwal'])->name('negoan.harga-awal');
+    Route::post('/negoan/chat', [NegoanController::class, 'storeChat'])->name('negoan.chat.store');
+    Route::resource('/negoan', NegoanController::class)->middleware('auth');
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {

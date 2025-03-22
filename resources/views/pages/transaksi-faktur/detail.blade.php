@@ -165,6 +165,7 @@
                                 <th>Tipe Barang</th>
                                 <th>Harga</th>
                                 @if($roleUser=='admin' && $faktur->is_finish==0)
+                                <th>Harga Acc Negoan</th>
                                 <th>Aksi</th>
                                 @endif
                             </tr>
@@ -177,6 +178,7 @@
                                 <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
                                 <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
                                 @if($roleUser=='admin' && $faktur->is_finish==0)
+                                <td>Rp. {{ number_format($transaksi->harga_acc, 0, ',', '.') }}</td>
                                 <td>
                                     <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $transaksi->id }}" data-lok_spk="{{ $transaksi->lok_spk }}" data-harga="{{ $transaksi->harga }}">Edit</button>
                                     <form action="{{ route('transaksi-jual.delete', $transaksi->id) }}" method="POST" class="d-inline delete-form">

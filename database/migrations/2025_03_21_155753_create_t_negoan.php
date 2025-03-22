@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('tipe', 255);
             $table->double('harga_nego'); 
             $table->text('note_nego')->nullable();
-            $table->double('harga_acc'); 
+            $table->double('harga_acc')->nullable();
             $table->text('note_acc')->nullable();
             $table->integer('status')->default(0);
             $table->timestamps();

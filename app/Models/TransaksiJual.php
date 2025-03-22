@@ -10,7 +10,7 @@ class TransaksiJual extends Model
     use HasFactory;
 
     protected $table = 't_jual'; // Nama tabel
-    protected $fillable = ['lok_spk', 'harga', 'nomor_faktur']; // Kolom yang dapat diisi
+    protected $fillable = ['lok_spk', 'harga', 'harga_acc', 'nomor_faktur']; // Kolom yang dapat diisi
 
     public function barang()
     {

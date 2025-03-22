@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
 use App\Models\Gudang;
+use App\Models\Negoan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Kirim;
@@ -148,6 +149,15 @@ class TransaksiController extends Controller
 
             // Update Barang untuk lok_spk yang valid
             foreach ($validLokSpk as $item) {
+                $tipe = Barang::where('lok_spk', $item['lok_spk'])
+               ->pluck('tipe')
+               ->first();
+                
+                $negoan = Negoan::where('tipe', $tipe)
+                        ->where('status', 1)
+                        ->orderBy('updated_at', 'desc')
+                        ->first();
+
                 Barang::where('lok_spk', $item['lok_spk'])->update([
                     'status_barang' => 2,
                     'no_faktur' => $request->input('nomor_faktur'),
@@ -158,6 +168,7 @@ class TransaksiController extends Controller
                     'lok_spk' => $item['lok_spk'],
                     'nomor_faktur' => $request->input('nomor_faktur'),
                     'harga' => $item['harga_jual'],
+                    'harga_acc' => $negoan->harga_acc ?? 0,
                 ]);
             }
 

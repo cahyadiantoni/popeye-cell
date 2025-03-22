@@ -77,6 +77,12 @@
                         <span class="pcoded-mtext">Request Barang Masuk</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('negoan*') ? 'active' : '' }}">
+                    <a href="{{ url('/negoan') }}">
+                        <span class="pcoded-micon"><i class="fas fa-handshake"></i></span>
+                        <span class="pcoded-mtext">Negoan Harga</span>
+                    </a>
+                </li>
             </ul>
             <div class="pcoded-navigatio-lavel">Transaksi Offline</div>
             <ul class="pcoded-item pcoded-left-item">

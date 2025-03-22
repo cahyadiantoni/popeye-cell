@@ -10,14 +10,15 @@ return new class extends Migration
     {
         Schema::table('t_negoan', function (Blueprint $table) {
             $table->integer('is_manual')->default(0)->after('tipe');
-            $table->double('harga_asal')->after('is_manual'); 
+            $table->double('harga_awal')->after('is_manual'); 
         });
     }
 
     public function down(): void
     {
         Schema::table('t_negoan', function (Blueprint $table) {
-            $table->dropColumn('user_id');
+            $table->dropColumn('is_manual');
+            $table->dropColumn('harga_awal');
         });
     }
 };
