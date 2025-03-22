@@ -2,6 +2,8 @@
 
 @section('title', 'Detail Faktur')
 @section('content')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <div class="main-body">
     <div class="page-wrapper">
         <div class="page-header">
@@ -273,7 +275,8 @@
                 <div class="modal-body">
                     <input type="hidden" name="t_faktur_id" value="{{ $faktur->id }}">
                     <input type="text" class="form-control mb-2" name="keterangan" placeholder="Keterangan" required>
-                    <input type="number" class="form-control mb-2" name="nominal" placeholder="Nominal Transfer" required>
+                    <input type="number" class="form-control mb-2" id="nominal" name="nominal" placeholder="Nominal Transfer" required>
+                    <small class="form-text text-muted" id="nominal_display">{{ 'Rp. 0' }}</small>
                     <input type="file" class="form-control" name="foto" required>
                 </div>
                 <div class="modal-footer">
@@ -284,6 +287,21 @@
         </div>
     </div>
 </div>
+
+<script>
+    $(document).ready(function() {
+        // Function to format number as currency
+        function formatCurrency(value) {
+            return 'Rp. ' + new Intl.NumberFormat('id-ID').format(value);
+        }
+
+        // Update display for nominal
+        $('#nominal').on('input', function() {
+            const value = $(this).val();
+            $('#nominal_display').text(formatCurrency(value));
+        });
+    });
+</script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {

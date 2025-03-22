@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
+use App\Models\FakturBukti;
 use App\Models\Gudang;
 use App\Models\Negoan;
 use Carbon\Carbon;
@@ -137,7 +138,7 @@ class TransaksiController extends Controller
 
         // Simpan data Faktur jika ada data valid
         if (!empty($validLokSpk)) {
-            Faktur::create([
+            $newFaktur = Faktur::create([
                 'nomor_faktur' => $request->input('nomor_faktur'),
                 'pembeli' => $request->input('pembeli'),
                 'tgl_jual' => $request->input('tgl_jual'),
@@ -170,6 +171,33 @@ class TransaksiController extends Controller
                     'harga' => $item['harga_jual'],
                     'harga_acc' => $negoan->harga_acc ?? 0,
                 ]);
+            }
+
+            // Check if the 'foto' file and 'nominal' input are provided
+            if ($request->hasFile('foto') && $request->input('nominal') !== null) {
+                $path = $request->file('foto')->store('faktur_bukti', 'public');
+                
+                // Create the new FakturBukti record
+                $fakturBukti = FakturBukti::create([
+                    't_faktur_id' => $newFaktur->id,
+                    'nominal' => $request->input('nominal'),
+                    'foto' => $path
+                ]);
+                
+                // Calculate the total nominal of all FakturBukti records associated with the given t_faktur_id
+                $totalNominal = FakturBukti::where('t_faktur_id', $newFaktur->id)->sum('nominal');
+                
+                // Retrieve the Faktur record
+                $faktur = Faktur::find($newFaktur->id);
+                
+                // Check if the total nominal is equal to or greater than the total in the Faktur model
+                if ($totalNominal >= $faktur->total) {
+                    $faktur->is_lunas = 1;
+                    $faktur->update();
+                } else {
+                    $faktur->is_lunas = 0;
+                    $faktur->update();
+                }
             }
 
             // Tampilkan pesan sukses dan error

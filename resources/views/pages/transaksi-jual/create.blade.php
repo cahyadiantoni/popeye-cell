@@ -48,7 +48,7 @@
                                     <hr>
                                     <div class="mb-3 row">
                                         <div class="sub-title">Masukan file excel di bawah!</div>
-                                        <input type="file" name="filedata">
+                                        <input type="file" name="filedata" required>
                                     </div>
                                     <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Tanggal Jual</label>
@@ -107,6 +107,17 @@
                                             <textarea name="keterangan" class="form-control" placeholder="Tambahkan keterangan jika diperlukan" rows="4"></textarea>
                                         </div>
                                     </div>
+                                    <div class="mb-3 row">
+                                        <div class="sub-title">Masukan bukti transfer di bawah (opsional)!</div>
+                                        <input type="file" name="foto">
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Nominal Transfer</label>
+                                        <div class="col-sm-10">
+                                            <input type="number" id="nominal" name="nominal" class="form-control" placeholder="Ketik Nominal Transfer">
+                                            <small class="form-text text-muted" id="nominal_display">{{ 'Rp. 0' }}</small>
+                                        </div>
+                                    </div>
                                     <!-- Tambahkan tombol submit di sini -->
                                     <div class="d-flex justify-content-between">
                                         <a href="{{ route('transaksi-jual.index') }}" class="btn btn-secondary btn-round">List All Transaksi</a>
@@ -123,6 +134,20 @@
         </div>
     </div>
     <!-- Main-body end -->
+    <script>
+        $(document).ready(function() {
+            // Function to format number as currency
+            function formatCurrency(value) {
+                return 'Rp. ' + new Intl.NumberFormat('id-ID').format(value);
+            }
+
+            // Update display for nominal
+            $('#nominal').on('input', function() {
+                const value = $(this).val();
+                $('#nominal_display').text(formatCurrency(value));
+            });
+        });
+    </script>
     <script>
         $(document).ready(function() {
             function updateNomorFaktur() {
