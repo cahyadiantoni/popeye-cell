@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('nomor_return');
             $table->date('tgl_return');
-            $table->string('pedagang');
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->text('keterangan')->nullable();

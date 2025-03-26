@@ -61,10 +61,6 @@
                             <td>{{ $return->nomor_return }}</td>
                         </tr>
                         <tr>
-                            <th>Pedagang</th>
-                            <td>{{ $return->pedagang }}</td>
-                        </tr>
-                        <tr>
                             <th>Tanggal Return</th>
                             <td>{{ \Carbon\Carbon::parse($return->tgl_return)->translatedFormat('d F Y') }}</td>
                         </tr>
@@ -102,6 +98,8 @@
                                 <th>Lok SPK</th>
                                 <th>Tipe Barang</th>
                                 <th>Harga</th>
+                                <th>Pedagang</th>
+                                <th>Alasan</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -112,6 +110,7 @@
                                 <td>{{ $return->lok_spk }}</td>
                                 <td>{{ $return->barang->tipe ?? '-' }}</td>
                                 <td>Rp. {{ number_format($return->harga, 0, ',', '.') }}</td>
+                                <td>{{ $return->pedagang ?? '-' }}</td>
                                 <td>{{ $return->alasan ?? '-' }}</td>
                                 <td>
                                     <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $return->id }}" data-lok_spk="{{ $return->lok_spk }}" data-harga="{{ $return->harga }}" data-alasan="{{ $return->alasan }}">Edit</button>
@@ -183,6 +182,10 @@
                         <input type="number" class="form-control" id="editHarga" name="harga" required>
                     </div>
                     <div class="mb-3">
+                        <label for="editPedagang" class="form-label">Pedagang</label>
+                        <input type="text" class="form-control" id="editPedagang" name="pedagang" required>
+                    </div>
+                    <div class="mb-3">
                         <label for="editAlasan" class="form-label">Alasan</label>
                         <input type="text" class="form-control" id="editAlasan" name="alasan" required>
                     </div>
@@ -204,6 +207,7 @@
         const editTransaksiId = document.getElementById('editTransaksiId');
         const editTransaksiLokSpk = document.getElementById('editTransaksiLokSpk');
         const editHarga = document.getElementById('editHarga');
+        const editPedagang = document.getElementById('editPedagang');
         const editAlasan = document.getElementById('editAlasan');
 
         editButtons.forEach(button => {
@@ -211,11 +215,13 @@
                 const returnId = button.dataset.id;
                 const returnLokSpk = button.dataset.lok_spk;
                 const harga = button.dataset.harga;
+                const pedagang = button.dataset.pedagang;
                 const alasan = button.dataset.alasan;
 
                 editTransaksiId.value = returnId;
                 editTransaksiLokSpk.value = returnLokSpk;
                 editHarga.value = harga;
+                editPedagang.value = pedagang;
                 editAlasan.value = alasan;
 
                 editForm.action = '{{ route("transaksi-return-barang.update") }}';

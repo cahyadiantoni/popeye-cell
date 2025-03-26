@@ -13,7 +13,7 @@ class ReturnBarang extends Model
     protected $table = 't_return_barang';
 
     // Kolom yang dapat diisi (mass assignable)
-    protected $fillable = ['lok_spk', 't_return_id', 'harga', 'alasan'];
+    protected $fillable = ['lok_spk', 't_return_id', 'harga',  'pedagang', 'alasan'];
 
     // Definisikan relasi ke model User
     public function barang()

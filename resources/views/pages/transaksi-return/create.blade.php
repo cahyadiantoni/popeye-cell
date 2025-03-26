@@ -63,12 +63,6 @@
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
-                                        <label class="form-label col-sm-2 col-form-label">Pedagang</label>
-                                        <div class="col-sm-10">
-                                            <input type="text" name="pedagang" class="form-control" placeholder="Ketik Pedagang" required>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Petugas</label>
                                         <div class="col-sm-10">
                                             <input type="text" name="petugas" class="form-control" placeholder="Ketik Nama Petugas" required>

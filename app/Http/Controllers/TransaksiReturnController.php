@@ -75,6 +75,7 @@ class TransaksiReturnController extends Controller
                             'lok_spk' => $lokSpk,
                             'harga' => $row[5],
                             'alasan' => $row[6],
+                            'pedagang' => $row[7],
                         ];
                     } else {
                         $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
@@ -111,6 +112,7 @@ class TransaksiReturnController extends Controller
                                 'lok_spk' => $lokSpk,
                                 'harga' => $row[5],
                                 'alasan' => $row[6],
+                                'pedagang' => $row[7],
                             ];
                         }
                     } else {
@@ -129,7 +131,6 @@ class TransaksiReturnController extends Controller
             $return = ReturnModel::create([
                 'nomor_return' => $request->input('nomor_return'),
                 'tgl_return' => $request->input('tgl_return'),  // Menyimpan tanggal return
-                'pedagang' => $request->input('pedagang'), 
                 'user_id' => Auth::id(),    
                 'keterangan' => $request->input('keterangan'), 
             ]);
@@ -143,6 +144,7 @@ class TransaksiReturnController extends Controller
                     't_return_id' => $returnId, 
                     'harga' => $item['harga']*1000, 
                     'alasan' => $item['alasan'], 
+                    'pedagang' => $item['pedagang'], 
                 ]);
 
                 Barang::where('lok_spk', $item['lok_spk'])->update([
@@ -266,10 +268,11 @@ class TransaksiReturnController extends Controller
             if ($index === 0) continue;
 
             // Validasi kolom di Excel
-            if (isset($row[0]) && isset($row[5]) && isset($row[6])) {
+            if (isset($row[0]) && isset($row[5]) && isset($row[6]) && isset($row[7])) {
                 $lokSpk = $row[0]; // Lok SPK
                 $harga = $row[5] * 1000;
                 $alasan = $row[6];
+                $pedagang = $row[7];
 
                 // Cek duplikat lok_spk di dalam file Excel
                 if (in_array($lokSpk, $processedLokSpk)) {
@@ -301,6 +304,7 @@ class TransaksiReturnController extends Controller
                             'lok_spk' => $lokSpk,
                             'harga' => $harga,
                             'alasan' => $alasan,
+                            'pedagang' => $pedagang,
                         ];
                     } else {
                         $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
@@ -337,6 +341,7 @@ class TransaksiReturnController extends Controller
                                 'lok_spk' => $lokSpk,
                                 'harga' => $row[5],
                                 'alasan' => $row[6],
+                                'pedagang' => $row[7],
                             ];
                         }
                     } else {
@@ -364,6 +369,7 @@ class TransaksiReturnController extends Controller
                     't_return_id' => $request->input('t_return_id'),
                     'harga' => $item['harga'],
                     'alasan' => $item['alasan'],
+                    'pedagang' => $item['pedagang'],
                 ]);
             }
 
@@ -407,13 +413,14 @@ class TransaksiReturnController extends Controller
                 'lok_spk' => 'required|exists:t_return_barang,lok_spk',
                 'harga' => 'required|numeric|min:0',
                 'alasan' => 'string',
+                'pedagang' => 'string',
             ]);
     
             // Gunakan firstOrFail() untuk pencarian berdasarkan 'id'
             $transaksi = ReturnBarang::where('id', $validated['id'])->firstOrFail();
-            $transaksi->update(['harga' => $validated['harga'], 'alasan' => $validated['alasan']]);
+            $transaksi->update(['harga' => $validated['harga'], 'alasan' => $validated['alasan'], 'pedagang' => $validated['pedagang']]);
     
-            return redirect()->back()->with('success', 'Harga berhasil diupdate');
+            return redirect()->back()->with('success', 'Barang Return berhasil diupdate');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }

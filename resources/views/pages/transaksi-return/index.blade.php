@@ -65,7 +65,6 @@
                                             <tr>
                                                 <th>No</th>
                                                 <th>No Return</th>
-                                                <th>Pedagang</th>
                                                 <th>Tgl Return</th>
                                                 <th>Total Barang</th>
                                                 <th>Total Harga</th>
@@ -82,7 +81,6 @@
                                                         {{ $return->id }}
                                                     </a>
                                                 </td>
-                                                <td>{{ $return->pedagang }}</td>
                                                 <td>{{ $return->tgl_return }}</td>
                                                 <td>{{ $return->total_barang }}</td>
                                                 <td>{{ 'Rp. ' . number_format($return->total_harga, 0, ',', '.') }}</td>
@@ -103,7 +101,6 @@
                                             <tr>
                                                 <th>No</th>
                                                 <th>No Return</th>
-                                                <th>Pedagang</th>
                                                 <th>Tgl Return</th>
                                                 <th>Total Barang</th>
                                                 <th>Total Harga</th>

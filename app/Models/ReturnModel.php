@@ -13,7 +13,7 @@ class ReturnModel extends Model
     protected $table = 't_return';
 
     // Kolom yang dapat diisi (mass assignable)
-    protected $fillable = ['nomor_return', 'tgl_return', 'pedagang', 'user_id', 'keterangan'];
+    protected $fillable = ['nomor_return', 'tgl_return', 'user_id', 'keterangan'];
 
     // Definisikan relasi ke model User
     public function user()
