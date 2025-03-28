@@ -90,7 +90,7 @@
         </div>
     </div>
     <!-- Main-body end -->
-    <script>
+    <!-- <script>
         $(document).ready(function() {
             function updateNomorReturn() {
                 var tglReturn = $('input[name="tgl_return"]').val();
@@ -114,5 +114,5 @@
 
             $('input[name="tgl_return"]').on('change', updateNomorReturn);
         });
-    </script>
+    </script> -->
 @endsection()

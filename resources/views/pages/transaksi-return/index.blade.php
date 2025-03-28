@@ -77,8 +77,8 @@
                                             <tr>
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>
-                                                    <a href="{{ route('transaksi-return.show', $return->nomor_return) }}">
-                                                        {{ $return->id }}
+                                                    <a href="{{ route('transaksi-return.show', $return->id) }}">
+                                                        {{ $return->nomor_return }}
                                                     </a>
                                                 </td>
                                                 <td>{{ $return->tgl_return }}</td>
