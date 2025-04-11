@@ -107,7 +107,7 @@
                                                 <th>Tgl Faktur</th>
                                                 <th>jumlah Barang</th>
                                                 <th>Total Harga</th>
-                                                <th>Total Bayar</th>
+                                                <th>Sudah Dibayar</th>
                                                 <th>Pembayaran</th>
                                                 <th>Petugas</th>
                                                 <th>Grade</th>
@@ -143,7 +143,7 @@
                                                 <td>{{ $faktur->tgl_jual }}</td>
                                                 <td>{{ $faktur->total_barang }}</td>
                                                 <td>{{ 'Rp. ' . number_format($faktur->total, 0, ',', '.') }}</td>
-                                                <td>{{ 'Rp. ' . number_format($faktur->total_bayar, 0, ',', '.') }}</td>
+                                                <td>{{ 'Rp. ' . number_format($faktur->total_nominal, 0, ',', '.') }}</td>
                                                 <td>
                                                     @if ($faktur->is_lunas == 0)
                                                         <span class="badge bg-warning">Hutang</span>
