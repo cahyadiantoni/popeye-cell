@@ -84,33 +84,58 @@
                     </a>
                 </li>
             </ul>
-            <div class="pcoded-navigatio-lavel">Transaksi Offline</div>
+            @if(auth()->user()->gudang_id == 1 || auth()->user()->role == 'admin')
+            <div class="pcoded-navigatio-lavel">Transaksi Bawah</div>
+            <ul class="pcoded-item pcoded-left-item">
+                <li class="{{ Request::is('transaksi-jual-bawah/create') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-jual-bawah/create') }}">
+                        <span class="pcoded-micon"><i class="fas fa-store"></i></span>
+                        <span class="pcoded-mtext">Transaksi Jual Bawah</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('transaksi-faktur-bawah') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-faktur-bawah') }}">
+                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-mtext">Transaksi Faktur Bawah</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('transaksi-jual-bawah') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-jual-bawah') }}">
+                        <span class="pcoded-micon"><i class="fas fa-history"></i></span>
+                        <span class="pcoded-mtext">Riwayat Transaksi Bawah</span>
+                    </a>
+                </li>
+            </ul>
+            @endif
+            @if(auth()->user()->gudang_id == 2 || auth()->user()->gudang_id == 3 || auth()->user()->gudang_id == 5 || auth()->user()->role == 'admin')
+            <div class="pcoded-navigatio-lavel">Transaksi Atas</div>
             <ul class="pcoded-item pcoded-left-item">
                 <li class="{{ Request::is('transaksi-jual/create') ? 'active' : '' }}">
                     <a href="{{ url('/transaksi-jual/create') }}">
                         <span class="pcoded-micon"><i class="fas fa-store"></i></span>
-                        <span class="pcoded-mtext">Transaksi Jual Offline</span>
+                        <span class="pcoded-mtext">Transaksi Jual Atas</span>
                     </a>
                 </li>
                 <li class="{{ Request::is('transaksi-faktur') ? 'active' : '' }}">
                     <a href="{{ url('/transaksi-faktur') }}">
                         <span class="pcoded-micon"><i class="fas fa-file"></i></span>
-                        <span class="pcoded-mtext">Transaksi Faktur Offline</span>
+                        <span class="pcoded-mtext">Transaksi Faktur Atas</span>
                     </a>
                 </li>
                 <li class="{{ Request::is('transaksi-jual') ? 'active' : '' }}">
                     <a href="{{ url('/transaksi-jual') }}">
                         <span class="pcoded-micon"><i class="fas fa-history"></i></span>
-                        <span class="pcoded-mtext">Riwayat Transaksi Offline</span>
+                        <span class="pcoded-mtext">Riwayat Transaksi Atas</span>
                     </a>
                 </li>
                 <li class="{{ Request::is('transaksi-rekap') ? 'active' : '' }}">
                     <a href="{{ url('/transaksi-rekap') }}">
                         <span class="pcoded-micon"><i class="fas fa-chart-bar"></i></span>
-                        <span class="pcoded-mtext">Rekap Transaksi Offline</span>
+                        <span class="pcoded-mtext">Rekap Transaksi Atas</span>
                     </a>
                 </li>
             </ul>
+            @endif
             @if(auth()->user()->gudang_id == 3 || auth()->user()->gudang_id == 5 || auth()->user()->role == 'admin')
             <div class="pcoded-navigatio-lavel">Transaksi Online</div>
             <ul class="pcoded-item pcoded-left-item">
