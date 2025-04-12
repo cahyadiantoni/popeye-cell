@@ -165,6 +165,7 @@
                                 <th>No</th>
                                 <th>Lokasi SPK</th>
                                 <th>Tipe Barang</th>
+                                <th>Grade</th>
                                 <th>Harga</th>
                                 @if($roleUser=='admin' && $faktur->is_finish==0)
                                 <th>Harga Acc Negoan</th>
@@ -178,6 +179,7 @@
                                 <td>{{ $index + 1 }}</td>
                                 <td>{{ $transaksi->lok_spk }}</td>
                                 <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
+                                <td>{{ $faktur->grade ?? '-' }}</td>
                                 <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
                                 @if($roleUser=='admin' && $faktur->is_finish==0)
                                 <td>Rp. {{ number_format($transaksi->harga_acc, 0, ',', '.') }}</td>
@@ -219,6 +221,7 @@
                         <label for="fileExcel" class="form-label">Upload File Excel</label>
                         <input type="file" class="form-control" id="filedata" name="filedata" required>
                         <input type="hidden" class="form-control" id="nomor_faktur" name="nomor_faktur" value="<?= $faktur->nomor_faktur ?>" required>
+                        <input type="hidden" class="form-control" id="grade" name="grade" value="<?= $faktur->grade ?>" required>
                         <input type="hidden" class="form-control" id="total" name="total" value="<?= $faktur->total ?>" required>
                     </div>
                 </div>

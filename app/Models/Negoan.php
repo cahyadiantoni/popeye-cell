@@ -15,6 +15,7 @@ class Negoan extends Model
     // Tentukan kolom yang bisa diisi (mass assignable)
     protected $fillable = [
         'tipe',
+        'grade',
         'is_manual',
         'harga_asal',
         'harga_nego',

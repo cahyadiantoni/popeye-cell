@@ -65,6 +65,7 @@
                                             <tr>
                                                 <th>No</th>
                                                 <th>Tipe</th>
+                                                <th>Grade</th>
                                                 <th>Hrg Awal</th>
                                                 <th>Note</th>
                                                 <th>Hrg Nego</th>
@@ -83,6 +84,7 @@
                                                         {{ $nego->tipe }}
                                                     </a>
                                                 </td>
+                                                <td>{{ $nego->grade }}</td>
                                                 <td>{{ 'Rp. ' . number_format($nego->harga_awal, 0, ',', '.') }}</td>
                                                 <td>{{ $nego->note_nego }}</td>
                                                 <td>{{ 'Rp. ' . number_format($nego->harga_nego, 0, ',', '.') }}</td>

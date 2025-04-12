@@ -58,6 +58,16 @@
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Grade</label>
+                                        <div class="col-sm-10">
+                                            <select name="grade" id="grade" class="form-control" required>
+                                                <option value="">Pilih Grade</option>
+                                                <option value="Barang JB">Barang JB</option>
+                                                <option value="Barang 2nd">Barang 2nd</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Harga Awal</label>
                                         <div class="col-sm-10">
                                             <div>
@@ -107,11 +117,6 @@
                 return 'Rp. ' + new Intl.NumberFormat('id-ID').format(value);
             }
 
-            // Update display for harga_awal
-            $('#harga_awal').on('input', function() {
-                const value = $(this).val();
-                $('#harga_awal_display').text(formatCurrency(value));
-            });
 
             // Update display for harga_awal_manual
             $('#harga_awal_manual').on('input', function() {
@@ -125,14 +130,19 @@
                 $('#harga_nego_display').text(formatCurrency(value));
             });
 
-            // Fetch harga_awal based on selected tipe
-            $('#tipe_select').on('change', function() {
-                const selectedTipe = $(this).val();
-                if (selectedTipe) {
+            // Fetch harga_awal based on selected tipe and grade
+            $('#tipe_select, #grade').on('change', function() {
+                const selectedTipe = $('#tipe_select').val();
+                const selectedGrade = $('#grade').val();
+
+                if (selectedTipe && selectedGrade) {
                     $.ajax({
-                        url: '{{ route('negoan.harga-awal') }}', // Adjust the URL to your route
+                        url: '{{ route('negoan.harga-awal') }}',
                         method: 'GET',
-                        data: { tipe: selectedTipe },
+                        data: {
+                            tipe: selectedTipe,
+                            grade: selectedGrade
+                        },
                         success: function(response) {
                             if (response.harga_awal) {
                                 $('#harga_awal').val(response.harga_awal);

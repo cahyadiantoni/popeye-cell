@@ -154,7 +154,10 @@ class TransaksiController extends Controller
                ->pluck('tipe')
                ->first();
                 
+                $grade = $request->input('grade');
+
                 $negoan = Negoan::where('tipe', $tipe)
+                        ->where('grade', $grade)
                         ->where('status', 1)
                         ->orderBy('updated_at', 'desc')
                         ->first();

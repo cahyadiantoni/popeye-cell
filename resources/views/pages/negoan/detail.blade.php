@@ -96,6 +96,10 @@
                                     <td>{{ $negoan->tipe }}</td>
                                 </tr>
                                 <tr>
+                                    <th>Grade</th>
+                                    <td>{{ $negoan->grade }}</td>
+                                </tr>
+                                <tr>
                                     <th>Tanggal Negoan</th>
                                     <td>{{ \Carbon\Carbon::parse($negoan->created_at)->translatedFormat('d F Y') }}</td>
                                 </tr>
@@ -141,6 +145,52 @@
                                         @endif
                                     </td>
                                 </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5>History Negoan</h5>
+                    </div>
+                    <div class="card-block table-responsive">
+                        <table class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>User</th>
+                                    <th>Tanggal</th>
+                                    <th>Harga Awal</th>
+                                    <th>Harga Nego</th>
+                                    <th>Catatan Nego</th>
+                                    <th>Harga ACC</th>
+                                    <th>Catatan ACC</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($historyNego as $index => $history)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $history->user->name }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($history->updated_at)->translatedFormat('d F Y') }}</td>
+                                    <td>{{ $history->harga_awal }}</td>
+                                    <td>{{ $history->harga_nego }}</td>
+                                    <td>{{ $history->note_nego }}</td>
+                                    <td>{{ $history->harga_acc }}</td>
+                                    <td>{{ $history->note_acc }}</td>
+                                    <td>
+                                        @if ($history->status == 0)
+                                            <span class="badge bg-warning">Proses</span>
+                                        @elseif ($history->status == 1)
+                                            <span class="badge bg-success">Disetujui</span>
+                                        @elseif ($history->status == 2)
+                                            <span class="badge bg-danger">Ditolak</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>

@@ -33,7 +33,10 @@ class NegoanController extends Controller
     public function getHargaAwal(Request $request)
     {
         $tipe = $request->input('tipe');
+        $grade = $request->input('grade');
+
         $negoan = Negoan::where('tipe', $tipe)
+                        ->where('grade', $grade)
                         ->where('status', 1)
                         ->orderBy('updated_at', 'desc')
                         ->first();
@@ -66,6 +69,7 @@ class NegoanController extends Controller
         // Validate the incoming request
         $request->validate([
             'tipe' => 'required|string|max:255',
+            'grade' => 'required|string|max:255',
             'harga_awal' => 'nullable|numeric',
             'harga_nego' => 'required|numeric',
             'note_nego' => 'nullable|string',
@@ -73,9 +77,37 @@ class NegoanController extends Controller
             'harga_awal_manual' => 'nullable|numeric', // If you have a manual input field
         ]);
 
+        $tipe = $request->tipe;
+        $grade = $request->grade;
+
+        // Cek apakah sudah ada tipe dan grade yang sama dengan status == 0
+        $existsStatusZero = Negoan::where('tipe', $tipe)
+            ->where('grade', $grade)
+            ->where('status', 0)
+            ->exists();
+
+        if ($existsStatusZero) {
+            return redirect()->back()
+                ->with('error', 'Sudah ada Negoan dengan tipe dan grade yang sama yang sedang dalam status Proses.')
+                ->withInput();
+        }
+
+        // Cek apakah sudah ada tipe dan grade yang sama dalam hari yang sama
+        $existsToday = Negoan::where('tipe', $tipe)
+            ->where('grade', $grade)
+            ->whereDate('updated_at', now()->toDateString())
+            ->exists();
+
+        if ($existsToday) {
+            return redirect()->back()
+                ->with('error', 'Sudah ada Negoan dengan tipe dan grade yang sama yang dibuat hari ini.')
+                ->withInput();
+        }
+
         // Create a new Negoan instance
         $negoan = new Negoan();
         $negoan->tipe = $request->tipe;
+        $negoan->grade = $request->grade;
         $negoan->is_manual = $request->is_manual;
         if ($request->is_manual) {
             $negoan->harga_awal = $request->harga_awal_manual; // Use manual input
@@ -100,12 +132,19 @@ class NegoanController extends Controller
         // Find the Negoan record by ID
         $negoan = Negoan::findOrFail($id);
 
+        $historyNego = Negoan::where('tipe', $negoan->tipe)
+        ->where('grade', $negoan->grade)
+        ->where('id', '!=', $negoan->id) // opsional, agar tidak termasuk data yang sedang ditampilkan
+        ->with('user')
+        ->orderBy('updated_at', 'asc')
+        ->get();
+
         $roleUser = optional(Auth::user())->role;
 
         $chats = NegoanChat::where('t_negoan_id', $id)->with('user')->get();
 
         // Pass the Negoan record to the view
-        return view('pages.negoan.detail', compact('negoan', 'chats', 'roleUser'));
+        return view('pages.negoan.detail', compact('negoan', 'historyNego', 'chats', 'roleUser'));
     }
 
     public function storeChat(Request $request)
