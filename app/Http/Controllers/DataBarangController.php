@@ -23,34 +23,47 @@ class DataBarangController extends Controller
             $query = Barang::with('gudang');
             return DataTables::of($query)
                 ->addColumn('action', function ($barang) use ($roleUser) {
-                    $editButton = '
-                        <!-- Tombol Edit -->
-                        <button type="button" class="btn btn-warning btn-round edit-barang-btn" 
-                            data-lok_spk="' . htmlspecialchars($barang->lok_spk) . '" 
-                            data-jenis="' . htmlspecialchars($barang->jenis) . '" 
-                            data-tipe="' . htmlspecialchars($barang->tipe) . '" 
-                            data-grade="' . htmlspecialchars($barang->grade) . '"
-                            data-kelengkapan="' . htmlspecialchars($barang->kelengkapan) . '">
-                            Edit
-                        </button>
-                    ';
-    
                     $deleteButton = '';
-                    if ($roleUser === 'admin') {
-                        $deleteButton = '
-                            <!-- Tombol Delete -->
-                            <form action="' . route('data-barang.destroy', urlencode($barang->lok_spk)) . '" method="POST" style="display:inline;">
-                                ' . csrf_field() . '
-                                ' . method_field('DELETE') . '
-                                <button type="submit" class="btn btn-danger btn-round" 
-                                    onclick="return confirm(\'Are you sure you want to delete this barang?\')">
-                                    Delete
-                                </button>
-                            </form>
+                    $editButton = '';
+                    $terjual = '';
+                
+                    if ($barang->status_barang != 2) {
+                        $editButton = '
+                            <!-- Tombol Edit -->
+                            <button type="button" class="btn btn-warning btn-round edit-barang-btn" 
+                                data-lok_spk="' . htmlspecialchars($barang->lok_spk) . '" 
+                                data-jenis="' . htmlspecialchars($barang->jenis) . '" 
+                                data-tipe="' . htmlspecialchars($barang->tipe) . '" 
+                                data-grade="' . htmlspecialchars($barang->grade) . '"
+                                data-kelengkapan="' . htmlspecialchars($barang->kelengkapan) . '">
+                                Edit
+                            </button>
+                        ';
+
+                        if ($roleUser === 'admin') {
+                            $deleteButton = '
+                                <!-- Tombol Delete -->
+                                <form action="' . route('data-barang.destroy', urlencode($barang->lok_spk)) . '" method="POST" style="display:inline;">
+                                    ' . csrf_field() . '
+                                    ' . method_field('DELETE') . '
+                                    <button type="submit" class="btn btn-danger btn-round" 
+                                        onclick="return confirm(\'Are you sure you want to delete this barang?\')">
+                                        Delete
+                                    </button>
+                                </form>
+                            ';
+                        }
+                    }else{
+                        $terjual = '
+                            <!-- Tombol Edit -->
+                            <button type="button" class="btn btn-success btn-round">
+                                Terjual
+                            </button>
                         ';
                     }
     
-                    return $editButton . ' ' . $deleteButton;
+    
+                    return $editButton . ' ' . $deleteButton  . ' ' . $terjual;
                 })
                 ->editColumn('gudang.nama_gudang', function ($barang) {
                     return $barang->gudang->nama_gudang ?? 'N/A';

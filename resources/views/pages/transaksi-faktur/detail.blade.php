@@ -131,7 +131,7 @@
                             @foreach($faktur->bukti as $bukti)
                             <tr>
                                 <td>{{ $bukti->keterangan }}</td>
-                                <td>{{ $bukti->nominal }}</td>
+                                <td>Rp. {{ number_format($bukti->nominal, 0, ',', '.') }}</td>
                                 <td>
                                     <a href="{{ asset('storage/' . $bukti->foto) }}" target="_blank">
                                         <img src="{{ asset('storage/' . $bukti->foto) }}" alt="Bukti Transfer" class="img-thumbnail" style="width: 150px; height: auto;">
