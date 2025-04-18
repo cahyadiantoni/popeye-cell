@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('tgl_jual'); // Kolom tgl_jual dengan tipe date
             $table->string('petugas'); // Kolom petugas dengan tipe varchar
             $table->unsignedBigInteger('total'); // Kolom total dengan tipe angka (bigint tanpa tanda)
-            $table->text('keterangan'); // Kolom petugas dengan tipe varchar
+            $table->text('keterangan')->nullable(); // Kolom petugas dengan tipe varchar
             $table->integer('is_finish')->default(0);
             $table->timestamps(); // Menambahkan kolom created_at dan updated_at
         });

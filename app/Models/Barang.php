@@ -48,4 +48,9 @@ class Barang extends Model
     {
         return $this->hasMany(Barang::class, 'no_faktur', 'nomor_faktur');
     }
+
+    public function fakturBawah()
+    {
+        return $this->belongsTo(FakturBawah::class, 'no_faktur', 'nomor_faktur');
+    }
 }

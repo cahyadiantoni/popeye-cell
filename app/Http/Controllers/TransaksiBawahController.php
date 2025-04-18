@@ -115,12 +115,29 @@ class TransaksiBawahController extends Controller
                 $barang = Barang::where('lok_spk', $lokSpk)->first();
 
                 if ($barang) {
-                    // Cek apakah status_barang adalah 0 atau 1
                     if (in_array($barang->status_barang, [0, 1])) {
-                        // Tambahkan harga_jual ke total
+                        $tipe = $barang->tipe;
+                        $grade = $request->input('grade');
+                        $tglJual = $request->input('tgl_jual');
+                
+                        // Ambil harga sebelumnya pada tanggal yang sama, untuk tipe dan grade ini
+                        $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
+                            ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
+                            ->whereDate('t_faktur_bawah.tgl_jual', $tglJual)
+                            ->where('t_barang.tipe', $tipe)
+                            ->where('t_faktur_bawah.grade', $grade)
+                            ->pluck('t_jual_bawah.harga')
+                            ->unique();
+                
+                        // Jika sudah ada harga yang berbeda → tolak
+                        if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
+                            $hargaList = $hargaSebelumnya->implode(', ');
+                            $errors[] = "Row " . ($index + 1) . ": Harga jual $hargaJual berbeda dengan transaksi sebelumnya untuk tipe '$tipe', grade '$grade' pada tanggal $tglJual (harga sebelumnya: $hargaList).";
+                            continue;
+                        }
+                
+                        // Tambahkan harga_jual ke total dan simpan
                         $totalHargaJual += $hargaJual;
-
-                        // Simpan lok_spk untuk update nanti
                         $validLokSpk[] = [
                             'lok_spk' => $lokSpk,
                             'harga_jual' => $hargaJual,

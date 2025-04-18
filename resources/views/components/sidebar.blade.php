@@ -105,6 +105,12 @@
                         <span class="pcoded-mtext">Riwayat Transaksi Bawah</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('transaksi-kesimpulan') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-kesimpulan') }}">
+                        <span class="pcoded-micon"><i class="fas fa-chart-bar"></i></span>
+                        <span class="pcoded-mtext">Kesimpulan Bawah</span>
+                    </a>
+                </li>
             </ul>
             @endif
             @if(auth()->user()->gudang_id == 2 || auth()->user()->gudang_id == 3 || auth()->user()->gudang_id == 5 || auth()->user()->role == 'admin')

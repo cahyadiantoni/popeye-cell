@@ -13,6 +13,7 @@ use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\TransaksiFakturController;
 use App\Http\Controllers\TransaksiBawahController;
 use App\Http\Controllers\TransaksiFakturBawahController;
+use App\Http\Controllers\TransaksiKesimpulanController;
 use App\Http\Controllers\TransaksiOnlineController;
 use App\Http\Controllers\TransaksiFakturOnlineController;
 use App\Http\Controllers\TransaksiReturnController;
@@ -100,6 +101,16 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::put('/transaksi-jual-bawah/update', [TransaksiBawahController::class, 'update'])->name('transaksi-jual-bawah.update');
     Route::post('/transaksi-jual-bawah/addbarang', [TransaksiFakturBawahController::class, 'addbarang'])->name('transaksi-jual-bawah.addbarang');
     Route::get('/suggest-no-fak-bawah', [TransaksiBawahController::class, 'getSuggestNoFak'])->name('suggest.no.fak.bawah');
+
+    Route::resource('/transaksi-kesimpulan', TransaksiKesimpulanController::class)->middleware('auth');
+    Route::delete('/transaksi-kesimpulan/{kesimpulan_id}', [TransaksiKesimpulanController::class, 'destroy'])->name('transaksi-kesimpulan.delete');
+    Route::get('/transaksi-kesimpulan/{kesimpulan_id}', [TransaksiKesimpulanController::class, 'show'])->name('transaksi-kesimpulan.show');
+    Route::get('/transaksi-kesimpulan/{kesimpulan_id}/print', [TransaksiKesimpulanController::class, 'printPdf'])->name('transaksi-kesimpulan.print');
+    Route::put('/transaksi-kesimpulan/update/{kesimpulan_id}', [TransaksiKesimpulanController::class, 'update'])->name('transaksi-kesimpulan.update');
+    Route::post('/transaksi-kesimpulan/upload-bukti', [TransaksiKesimpulanController::class, 'uploadBukti'])->name('transaksi-kesimpulan.upload-bukti');
+    Route::put('/transaksi-kesimpulan/{id}/tandai-sudah-dicek', [TransaksiKesimpulanController::class, 'tandaiSudahDicek'])->name('transaksi-kesimpulan.tandai-sudah-dicek');
+    Route::post('/transaksi-kesimpulan/bukti', [TransaksiKesimpulanController::class, 'storeBukti'])->name('transaksi-kesimpulan.bukti.store');
+    Route::delete('/transaksi-kesimpulan/bukti/{id}', [TransaksiKesimpulanController::class, 'deleteBukti'])->name('transaksi-kesimpulan.bukti.delete');
     
     Route::get('/transaksi-jual-online/data', [TransaksiOnlineController::class, 'getData'])->name('transaksi-jual-online.data');
     Route::resource('/transaksi-jual-online', TransaksiOnlineController::class)->middleware('auth');

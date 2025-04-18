@@ -124,35 +124,38 @@ class TransaksiFakturBawahController extends Controller
             'nomor_faktur' => 'required',
         ]);
 
-        // Inisialisasi variabel
         $errors = [];
         $totalHargaJual = $request->input('total');
         $validLokSpk = [];
-        $processedLokSpk = []; // Untuk memeriksa duplikat di file Excel
+        $processedLokSpk = [];
 
-        // Membaca file Excel
         $file = $request->file('filedata');
         $data = Excel::toArray([], $file);
 
+        // Ambil data faktur terkait
+        $faktur = FakturBawah::where('nomor_faktur', $request->input('nomor_faktur'))->first();
+
+        if (!$faktur) {
+            return redirect()->back()->with('error', 'Faktur tidak ditemukan.');
+        }
+
+        $grade = $faktur->grade;
+        $tgl_jual = $faktur->tgl_jual;
+
         foreach ($data[0] as $index => $row) {
-            // Lewati baris pertama jika merupakan header
             if ($index === 0) continue;
 
-            // Validasi kolom di Excel
             if (isset($row[0]) && isset($row[1])) {
-                $lokSpk = $row[0]; // Lok SPK
-                $hargaJual = $row[1] * 1000; // Harga Jual
+                $lokSpk = $row[0];
+                $hargaJual = $row[1] * 1000;
 
-                // Cek duplikat lok_spk di dalam file Excel
                 if (in_array($lokSpk, $processedLokSpk)) {
                     $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
                     continue;
                 }
 
-                // Tambahkan lok_spk ke daftar yang sudah diproses
                 $processedLokSpk[] = $lokSpk;
 
-                // Cek duplikat kombinasi lok_spk dan nomor_faktur di database
                 $existsInDatabase = TransaksiJualBawah::where('lok_spk', $lokSpk)
                     ->where('nomor_faktur', $request->input('nomor_faktur'))
                     ->exists();
@@ -162,16 +165,26 @@ class TransaksiFakturBawahController extends Controller
                     continue;
                 }
 
-                // Cari barang berdasarkan lok_spk
                 $barang = Barang::where('lok_spk', $lokSpk)->first();
 
                 if ($barang) {
-                    // Cek apakah status_barang adalah 0 atau 1
                     if (in_array($barang->status_barang, [0, 1])) {
-                        // Tambahkan harga_jual ke total
-                        $totalHargaJual += $hargaJual;
+                        $tipe = $barang->tipe;
 
-                        // Simpan lok_spk untuk update nanti
+                        // Validasi harga berdasarkan tipe + grade + tgl_jual
+                        $existingTransaksi = TransaksiJualBawah::whereHas('barang', function ($query) use ($tipe) {
+                            $query->where('tipe', $tipe);
+                        })
+                        ->whereHas('barang.fakturBawah', function ($query) use ($grade, $tgl_jual) {
+                            $query->where('grade', $grade)->where('tgl_jual', $tgl_jual);
+                        })
+                        ->first();
+
+                        if ($existingTransaksi && $existingTransaksi->harga != $hargaJual) {
+                            $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki harga jual ($hargaJual) berbeda dari transaksi sebelumnya untuk tipe '$tipe' dan grade '$grade' di tanggal $tgl_jual (harga sebelumnya: $existingTransaksi->harga). ";
+                            continue;
+                        }
+
                         $validLokSpk[] = [
                             'lok_spk' => $lokSpk,
                             'harga_jual' => $hargaJual,
@@ -187,31 +200,25 @@ class TransaksiFakturBawahController extends Controller
             }
         }
 
-        // Simpan data FakturBawah jika ada data valid
         if (!empty($validLokSpk)) {
             FakturBawah::where('nomor_faktur', $request->input('nomor_faktur'))
                 ->update([
                     'total' => $totalHargaJual,
                 ]);
 
-            // Update Barang untuk lok_spk yang valid
             foreach ($validLokSpk as $item) {
-                $tipe = Barang::where('lok_spk', $item['lok_spk'])
-               ->pluck('tipe')
-               ->first();
-                
-                $grade = $request->input('grade');
+                $tipe = Barang::where('lok_spk', $item['lok_spk'])->pluck('tipe')->first();
 
                 $negoan = Negoan::where('tipe', $tipe)
-                        ->where('grade', $grade)
-                        ->where('status', 1)
-                        ->orderBy('updated_at', 'desc')
-                        ->first();
+                    ->where('grade', $grade)
+                    ->where('status', 1)
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
 
                 Barang::where('lok_spk', $item['lok_spk'])->update([
                     'status_barang' => 2,
                     'no_faktur' => $request->input('nomor_faktur'),
-                    'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
+                    'harga_jual' => $item['harga_jual'],
                 ]);
 
                 TransaksiJualBawah::create([
@@ -222,15 +229,12 @@ class TransaksiFakturBawahController extends Controller
                 ]);
             }
 
-            // Tampilkan pesan sukses dan error
             return redirect()->back()
                 ->with('success', 'FakturBawah berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.')
                 ->with('errors', $errors);
         }
 
-        // Jika tidak ada data valid, hanya tampilkan error
-        return redirect()->back()
-            ->with('errors', $errors);
+        return redirect()->back()->with('errors', $errors);
     }
 
     public function destroy($nomor_faktur)
@@ -271,7 +275,7 @@ class TransaksiFakturBawahController extends Controller
             $faktur->is_finish = 1;
             $faktur->save();
     
-            return redirect()->back()->with('success', 'FakturBawah ditandai sudah selesai');
+            return redirect()->back()->with('success', 'Berhasil ditandai sudah dicek');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }

@@ -14,9 +14,14 @@ return new class extends Migration
         Schema::create('t_kesimpulan_bawah', function (Blueprint $table) {
             $table->id(); // Kolom id sebagai primary key auto increment
             $table->string('nomor_kesimpulan'); 
+            $table->date('tgl_jual'); 
+            $table->unsignedBigInteger('total');
             $table->unsignedBigInteger('grand_total');
-            $table->text('keterangan'); 
+            $table->unsignedBigInteger('potongan_kondisi')->default(0);
+            $table->integer('diskon')->default(0);
+            $table->text('keterangan')->nullable(); 
             $table->integer('is_lunas')->default(0);
+            $table->integer('is_finish')->default(0);
             $table->timestamps(); 
         });
     }
