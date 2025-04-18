@@ -17,11 +17,13 @@
                     </div>
                 </div>
                 <div class="col-lg-4 text-end">
-                    <form action="{{ route('transaksi-kesimpulan.tandai-sudah-dicek', $kesimpulan->id) }}" method="POST" class="d-inline finish-form">
-                        @csrf
-                        @method('PUT')
-                        <button type="submit" class="btn btn-success finish-btn">Tandai Dicek</button>
-                    </form>
+                    @if($roleUser=='admin' && $kesimpulan->is_finish==0)
+                        <form action="{{ route('transaksi-kesimpulan.tandai-sudah-dicek', $kesimpulan->id) }}" method="POST" class="d-inline finish-form">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="btn btn-success finish-btn">Tandai Dicek</button>
+                        </form>
+                    @endif
                     <a href="{{ route('transaksi-kesimpulan.print', $kesimpulan->id) }}" class="btn btn-primary" target="_blank">Print PDF</a>
                     <a href="{{ route('transaksi-kesimpulan.index') }}" class="btn btn-secondary">Kembali</a>
                 </div>
