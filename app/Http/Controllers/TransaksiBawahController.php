@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
 use App\Models\FakturBukti;
@@ -77,130 +78,119 @@ class TransaksiBawahController extends Controller
             'grade' => 'required|string',
         ]);
 
-        // Cek apakah nomor_faktur sudah ada di tabel FakturBawah
-        $existingFaktur = FakturBawah::where('nomor_faktur', $request->input('nomor_faktur'))->exists();
-        if ($existingFaktur) {
+        // Cek apakah nomor_faktur sudah ada
+        if (FakturBawah::where('nomor_faktur', $request->nomor_faktur)->exists()) {
             return redirect()->back()->with('error', 'Gagal disimpan: Nomor FakturBawah sudah ada. Harap diganti!');
         }
 
-        // Inisialisasi variabel
         $errors = [];
         $totalHargaJual = 0;
         $validLokSpk = [];
-        $processedLokSpk = []; // Array untuk memeriksa duplikat lok_spk
+        $processedLokSpk = [];
 
-        // Membaca file Excel
         $file = $request->file('filedata');
         $data = Excel::toArray([], $file);
 
         foreach ($data[0] as $index => $row) {
-            // Lewati baris pertama jika merupakan header
-            if ($index === 0) continue;
+            if ($index === 0) continue; // skip header
 
-            // Validasi kolom di Excel
-            if (isset($row[0]) && isset($row[1])) {
-                $lokSpk = $row[0]; // Lok SPK
-                $hargaJual = $row[1] * 1000; // Harga Jual
+            $lokSpk = $row[0] ?? null;
+            $hargaJual = isset($row[1]) ? $row[1] * 1000 : null;
 
-                // Cek apakah lok_spk sudah ada di file Excel (duplikat dalam satu kali store)
-                if (in_array($lokSpk, $processedLokSpk)) {
-                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
-                    continue;
-                }
-
-                // Tambahkan lok_spk ke daftar yang sudah diproses
-                $processedLokSpk[] = $lokSpk;
-
-                // Cari barang berdasarkan lok_spk
-                $barang = Barang::where('lok_spk', $lokSpk)->first();
-
-                if ($barang) {
-                    if (in_array($barang->status_barang, [0, 1])) {
-                        $tipe = $barang->tipe;
-                        $grade = $request->input('grade');
-                        $tglJual = $request->input('tgl_jual');
-                
-                        // Ambil harga sebelumnya pada tanggal yang sama, untuk tipe dan grade ini
-                        $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
-                            ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
-                            ->whereDate('t_faktur_bawah.tgl_jual', $tglJual)
-                            ->where('t_barang.tipe', $tipe)
-                            ->where('t_faktur_bawah.grade', $grade)
-                            ->pluck('t_jual_bawah.harga')
-                            ->unique();
-                
-                        // Jika sudah ada harga yang berbeda → tolak
-                        if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
-                            $hargaList = $hargaSebelumnya->implode(', ');
-                            $errors[] = "Row " . ($index + 1) . ": Harga jual $hargaJual berbeda dengan transaksi sebelumnya untuk tipe '$tipe', grade '$grade' pada tanggal $tglJual (harga sebelumnya: $hargaList).";
-                            continue;
-                        }
-                
-                        // Tambahkan harga_jual ke total dan simpan
-                        $totalHargaJual += $hargaJual;
-                        $validLokSpk[] = [
-                            'lok_spk' => $lokSpk,
-                            'harga_jual' => $hargaJual,
-                        ];
-                    } else {
-                        $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
-                    }
-                } else {
-                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan.";
-                }
-            } else {
+            if (!$lokSpk || !$hargaJual) {
                 $errors[] = "Row " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
+                continue;
             }
+
+            if (in_array($lokSpk, $processedLokSpk)) {
+                $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
+                continue;
+            }
+
+            $processedLokSpk[] = $lokSpk;
+            $barang = Barang::where('lok_spk', $lokSpk)->first();
+
+            if (!$barang) {
+                $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan.";
+                continue;
+            }
+
+            if (!in_array($barang->status_barang, [0, 1])) {
+                $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
+                continue;
+            }
+
+            $tipe = $barang->tipe;
+            $grade = $request->grade;
+            $tglJual = $request->tgl_jual;
+
+            $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
+                ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
+                ->whereDate('t_faktur_bawah.tgl_jual', $tglJual)
+                ->where('t_barang.tipe', $tipe)
+                ->where('t_faktur_bawah.grade', $grade)
+                ->pluck('t_jual_bawah.harga')
+                ->unique();
+
+            if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
+                $hargaList = $hargaSebelumnya->implode(', ');
+                $errors[] = "Row " . ($index + 1) . ": Harga jual $hargaJual berbeda dengan transaksi sebelumnya untuk tipe '$tipe', grade '$grade' pada tanggal $tglJual (harga sebelumnya: $hargaList).";
+                continue;
+            }
+
+            $totalHargaJual += $hargaJual;
+            $validLokSpk[] = [
+                'lok_spk' => $lokSpk,
+                'harga_jual' => $hargaJual,
+            ];
         }
 
-        // Simpan data FakturBawah jika ada data valid
-        if (!empty($validLokSpk)) {
+        // Jika ada error, batalkan proses
+        if (!empty($errors)) {
+            return redirect()->back()->with('errors', $errors);
+        }
+
+        // Jalankan simpan dalam transaksi
+        DB::transaction(function () use ($request, $validLokSpk, $totalHargaJual) {
             $newFaktur = FakturBawah::create([
-                'nomor_faktur' => $request->input('nomor_faktur'),
-                'pembeli' => $request->input('pembeli'),
-                'tgl_jual' => $request->input('tgl_jual'),
-                'petugas' => $request->input('petugas'),
-                'grade' => $request->input('grade'),
-                'keterangan' => $request->input('keterangan'),
+                'nomor_faktur' => $request->nomor_faktur,
+                'pembeli' => $request->pembeli,
+                'tgl_jual' => $request->tgl_jual,
+                'petugas' => $request->petugas,
+                'grade' => $request->grade,
+                'keterangan' => $request->keterangan,
                 'total' => $totalHargaJual,
             ]);
 
-            // Update Barang untuk lok_spk yang valid
             foreach ($validLokSpk as $item) {
-                $tipe = Barang::where('lok_spk', $item['lok_spk'])
-               ->pluck('tipe')
-               ->first();
-                
-                $grade = $request->input('grade');
+                $barang = Barang::where('lok_spk', $item['lok_spk'])->first();
+                $tipe = $barang->tipe;
+                $grade = $request->grade;
 
                 $negoan = Negoan::where('tipe', $tipe)
-                        ->where('grade', $grade)
-                        ->where('status', 1)
-                        ->orderBy('updated_at', 'desc')
-                        ->first();
+                    ->where('grade', $grade)
+                    ->where('status', 1)
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
 
-                Barang::where('lok_spk', $item['lok_spk'])->update([
+                $barang->update([
                     'status_barang' => 2,
-                    'no_faktur' => $request->input('nomor_faktur'),
-                    'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
+                    'no_faktur' => $request->nomor_faktur,
+                    'harga_jual' => $item['harga_jual'],
                 ]);
 
                 TransaksiJualBawah::create([
                     'lok_spk' => $item['lok_spk'],
-                    'nomor_faktur' => $request->input('nomor_faktur'),
+                    'nomor_faktur' => $request->nomor_faktur,
                     'harga' => $item['harga_jual'],
                     'harga_acc' => $negoan->harga_acc ?? 0,
                 ]);
             }
+        });
 
-            // Tampilkan pesan sukses dan error
-            return redirect()->route('transaksi-faktur-bawah.show', ['nomor_faktur' => $request->input('nomor_faktur')])
-                ->with('success', 'FakturBawah berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.')
-                ->with('errors', $errors);
-        }
-
-        // Jika tidak ada data valid, hanya tampilkan error
-        return redirect()->back()->with('errors', $errors);
+        return redirect()->route('transaksi-faktur-bawah.show', [
+            'nomor_faktur' => $request->nomor_faktur
+        ])->with('success', 'FakturBawah berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.');
     }
     
 
