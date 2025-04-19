@@ -48,6 +48,8 @@
                                     <hr>
                                     <div class="mb-3 row">
                                         <div class="sub-title">Masukan file excel di bawah!</div>
+                                        <h5 style="color:red">SEBELUM UPLOAD HARAP DICEK ULANG AGAR TIDAK ADA HARGA YANG BERBEDA UNTUK TIPE DAN GRADE YANG SAMA.</h5>
+                                        <hr>
                                         <input type="file" name="filedata" required>
                                     </div>
                                     <div class="mb-3 row">
