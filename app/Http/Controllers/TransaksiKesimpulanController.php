@@ -247,7 +247,7 @@ class TransaksiKesimpulanController extends Controller
     public function storeBukti(Request $request)
     {
         $request->validate([
-            'kesimpulan_id' => 'required|exists:t_faktur_bawah,id',
+            'kesimpulan_id' => 'required|exists:t_kesimpulan_bawah,id',
             'keterangan' => 'string|max:255',
             'nominal' => 'required|numeric', // Changed 'number' to 'numeric' for better validation
             'foto' => 'required|image'
