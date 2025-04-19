@@ -11,6 +11,8 @@ use App\Http\Controllers\DataBarangController;
 use App\Http\Controllers\StokGudangController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\TransaksiFakturController;
+use App\Http\Controllers\TransaksiOutletController;
+use App\Http\Controllers\TransaksiFakturOutletController;
 use App\Http\Controllers\TransaksiBawahController;
 use App\Http\Controllers\TransaksiFakturBawahController;
 use App\Http\Controllers\TransaksiKesimpulanController;
@@ -127,6 +129,24 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::put('/transaksi-faktur-online/update/{nomor_faktur}', [TransaksiFakturOnlineController::class, 'update'])->name('transaksi-faktur-online.update');
     Route::post('/transaksi-faktur-online/upload-bukti', [TransaksiFakturOnlineController::class, 'uploadBukti'])->name('transaksi-faktur-online.upload-bukti');
     Route::put('/transaksi-faktur-online/{id}/tandai-sudah-dicek', [TransaksiFakturOnlineController::class, 'tandaiSudahDicek'])->name('transaksi-faktur-online.tandai-sudah-dicek');
+
+    Route::resource('/transaksi-faktur-outlet', TransaksiFakturOutletController::class)->middleware('auth');
+    Route::delete('/transaksi-faktur-outlet/{nomor_faktur}', [TransaksiFakturOutletController::class, 'destroy'])->name('transaksi-faktur-outlet.delete');
+    Route::get('/transaksi-rekap-outlet', [TransaksiFakturOutletController::class, 'rekap'])->name('transaksi-faktur-outlet.rekap');
+    Route::get('/transaksi-faktur-outlet/{nomor_faktur}', [TransaksiFakturOutletController::class, 'show'])->name('transaksi-faktur-outlet.show');
+    Route::get('/transaksi-faktur-outlet/{nomor_faktur}/print', [TransaksiFakturOutletController::class, 'printPdf'])->name('transaksi-faktur-outlet.print');
+    Route::put('/transaksi-faktur-outlet/update/{nomor_faktur}', [TransaksiFakturOutletController::class, 'update'])->name('transaksi-faktur-outlet.update');
+    Route::post('/transaksi-faktur-outlet/upload-bukti', [TransaksiFakturOutletController::class, 'uploadBukti'])->name('transaksi-faktur-outlet.upload-bukti');
+    Route::put('/transaksi-faktur-outlet/{id}/tandai-sudah-dicek', [TransaksiFakturOutletController::class, 'tandaiSudahDicek'])->name('transaksi-faktur-outlet.tandai-sudah-dicek');
+    Route::post('/transaksi-faktur-outlet/bukti', [TransaksiFakturOutletController::class, 'storeBukti'])->name('transaksi-faktur-outlet.bukti.store');
+    Route::delete('/transaksi-faktur-outlet/bukti/{id}', [TransaksiFakturOutletController::class, 'deleteBukti'])->name('transaksi-faktur-outlet.bukti.delete');
+
+    Route::get('/transaksi-jual-outlet/data', [TransaksiOutletController::class, 'getData'])->name('transaksi-jual-outlet.data');
+    Route::resource('/transaksi-jual-outlet', TransaksiOutletController::class)->middleware('auth');
+    Route::delete('/transaksi-jual-outlet/{id}', [TransaksiOutletController::class, 'destroy'])->name('transaksi-jual-outlet.delete');
+    Route::put('/transaksi-jual-outlet/update', [TransaksiOutletController::class, 'update'])->name('transaksi-jual-outlet.update');
+    Route::post('/transaksi-jual-outlet/addbarang', [TransaksiFakturOutletController::class, 'addbarang'])->name('transaksi-jual-outlet.addbarang');
+    Route::get('/suggest-no-fak-outlet', [TransaksiOutletController::class, 'getSuggestNoFak'])->name('suggest.no.fak.outlet');
     
     Route::resource('/cek-so', CekSOController::class)->middleware('auth');
     Route::get('/get-last-kode/{gudang_id}', [CekSOController::class, 'getLastKode']);

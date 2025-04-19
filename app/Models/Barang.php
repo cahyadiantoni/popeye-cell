@@ -53,4 +53,9 @@ class Barang extends Model
     {
         return $this->belongsTo(FakturBawah::class, 'no_faktur', 'nomor_faktur');
     }
+
+    public function fakturOutlet()
+    {
+        return $this->belongsTo(FakturOutlet::class, 'no_faktur', 'nomor_faktur');
+    }
 }

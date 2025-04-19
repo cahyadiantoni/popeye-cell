@@ -182,6 +182,35 @@
                 </li>
             </ul>
             @endif
+            @if(auth()->user()->gudang_id == 8 || auth()->user()->gudang_id == 9 || auth()->user()->gudang_id == 10 || auth()->user()->role == 'admin')
+            <div class="pcoded-navigatio-lavel">Transaksi Outlet</div>
+            <ul class="pcoded-item pcoded-left-item">
+                <li class="{{ Request::is('transaksi-jual-outlet/create') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-jual-outlet/create') }}">
+                        <span class="pcoded-micon"><i class="fas fa-store"></i></span>
+                        <span class="pcoded-mtext">Transaksi Jual Outlet</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('transaksi-faktur-outlet') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-faktur-outlet') }}">
+                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-mtext">Transaksi Faktur Outlet</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('transaksi-jual-outlet') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-jual-outlet') }}">
+                        <span class="pcoded-micon"><i class="fas fa-history"></i></span>
+                        <span class="pcoded-mtext">Riwayat Transaksi Outlet</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('transaksi-rekap-outlet') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-rekap-outlet') }}">
+                        <span class="pcoded-micon"><i class="fas fa-chart-bar"></i></span>
+                        <span class="pcoded-mtext">Rekap Transaksi Outlet</span>
+                    </a>
+                </li>
+            </ul>
+            @endif
         @endif
         @if(auth()->user()->adm)
             <div class="pcoded-navigatio-lavel">Administrasi</div>
