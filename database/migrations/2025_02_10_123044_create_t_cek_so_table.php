@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->string('petugas');
             $table->unsignedBigInteger('gudang_id');
             $table->integer('jumlah_scan')->nullable();
+            $table->integer('jumlah_manual')->nullable();
             $table->integer('jumlah_stok')->nullable();
             $table->dateTime('waktu_mulai');
             $table->dateTime('waktu_selesai')->nullable();

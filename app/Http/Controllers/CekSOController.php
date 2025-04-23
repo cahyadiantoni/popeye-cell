@@ -28,7 +28,8 @@ class CekSOController extends Controller
         foreach ($cekSOs as $cekSO) {
             if ($cekSO->is_finished == 0) {
                 // Hitung jumlah_scan dari banyaknya row pada CekSOBarang berdasarkan t_cek_so_id
-                $cekSO->jumlah_scan = CekSOBarang::where('t_cek_so_id', $cekSO->id)->count();
+                $cekSO->jumlah_scan = CekSOBarang::where('t_cek_so_id', $cekSO->id)->whereNot('status', 3)->count();
+                $cekSO->jumlah_manual = CekSOBarang::where('t_cek_so_id', $cekSO->id)->where('status', 3)->count();
 
                 // Hitung jumlah_stok dari banyaknya row pada Barang berdasarkan gudang_id yang sesuai
                 $cekSO->jumlah_stok = Barang::where('gudang_id', $cekSO->gudang_id)->where('status_barang', 1)->count();
@@ -100,7 +101,8 @@ class CekSOController extends Controller
     
         // Jika is_finished == 0, hitung jumlah_scan dan jumlah_stok
         if ($cekso->is_finished == 0) {
-            $cekso->jumlah_scan = CekSOBarang::where('t_cek_so_id', $cekso->id)->count();
+            $cekso->jumlah_scan = CekSOBarang::where('t_cek_so_id', $cekso->id)->whereNot('status', 3)->count();
+            $cekso->jumlah_manual = CekSOBarang::where('t_cek_so_id', $cekso->id)->where('status', 3)->count();
             $cekso->jumlah_stok = Barang::where('gudang_id', $cekso->gudang_id)->where('status_barang',1)->count();
             $cekso->waktu_selesai = "-";
         }
@@ -163,7 +165,11 @@ class CekSOController extends Controller
             ->select(
                 't_barang.*',
                 't_cek_so_barang.updated_at as scan_time', // Ambil waktu terakhir scan
-                \DB::raw('IF(t_cek_so_barang.lok_spk IS NOT NULL, 1, 0) as is_scanned')
+                \DB::raw('CASE
+                                WHEN t_cek_so_barang.status = 3 THEN 3
+                                WHEN t_cek_so_barang.lok_spk IS NOT NULL THEN 1
+                                ELSE 0
+                            END AS is_scanned')
             );
 
         // **Filter berdasarkan status scan**
@@ -229,6 +235,8 @@ class CekSOController extends Controller
                         return '<span class="badge bg-success">Sudah Discan</span>';
                     case 2:
                         return '<span class="badge bg-danger">Tidak Ada di Database</span>';
+                    case 3:
+                        return '<span class="badge bg-info">Manual Upload</span>';
                     default:
                         return '<span class="badge bg-secondary">Tidak Diketahui</span>';
                 }
@@ -257,14 +265,16 @@ class CekSOController extends Controller
             // Simpan data scan baru
             CekSOBarang::create([
                 't_cek_so_id' => $request->t_cek_so_id,
-                'lok_spk' => $request->lok_spk
+                'lok_spk' => $request->lok_spk,
+                'status' => 1
             ]);
     
             // Ambil data CekSO
             $cekso = CekSO::findOrFail($request->t_cek_so_id);
     
             // Hitung jumlah scan dan jumlah stok
-            $jumlahScan = CekSOBarang::where('t_cek_so_id', $cekso->id)->count();
+            $jumlahScan = CekSOBarang::where('t_cek_so_id', $cekso->id)->whereNot('status', 3)->count();
+            $jumlahManual = CekSOBarang::where('t_cek_so_id', $cekso->id)->where('status', 3)->count();
             $jumlahStok = Barang::where('gudang_id', $cekso->gudang_id)->where('status_barang', 1)->count();
     
             // Cek barang yang tidak ada di database
@@ -289,6 +299,7 @@ class CekSOController extends Controller
             // Update nilai di model CekSO
             $cekso->update([
                 'jumlah_scan' => $jumlahScan,
+                'jumlah_manual' => $jumlahManual,
                 'jumlah_stok' => $jumlahStok,
                 'hasil' => $hasil
             ]);
@@ -310,97 +321,157 @@ class CekSOController extends Controller
         try {
             $cekso = CekSO::findOrFail($request->t_cek_so_id);
     
-            // Ambil semua lok_spk yang sudah ada di CekSOFinished agar tidak ada duplikasi
-            $existingLokSpk = CekSOFinished::where('t_cek_so_id', $cekso->id)
-                ->pluck('lok_spk')
-                ->map(fn($lok_spk) => strtolower($lok_spk)) // Ubah ke huruf kecil
-                ->toArray();
+            // Ambil semua item yang sudah discan dan map berdasarkan lok_spk (lowercase)
+            // Sertakan status dari CekSOBarang untuk pengecekan status 3
+            $scannedItemsCollection = CekSOBarang::where('t_cek_so_id', $cekso->id)->get();
+            $scannedItemsMap = $scannedItemsCollection->keyBy(function($item) {
+                return strtolower($item->lok_spk);
+            });
     
-            // Ambil semua lok_spk yang sudah discan
-            $scannedItems = CekSOBarang::where('t_cek_so_id', $cekso->id)
-                ->pluck('lok_spk')
-                ->map(fn($lok_spk) => strtolower($lok_spk)) // Ubah ke huruf kecil
-                ->toArray();
-    
-            // Ambil semua lok_spk dari tabel t_barang berdasarkan gudang_id dan status_barang = 1
-            $warehouseItems = Barang::where('gudang_id', $cekso->gudang_id)
+            // Ambil semua item di warehouse (status 1) dan map berdasarkan lok_spk (lowercase)
+            $warehouseItemsCollection = Barang::where('gudang_id', $cekso->gudang_id)
                 ->where('status_barang', 1)
-                ->pluck('lok_spk')
-                ->map(fn($lok_spk) => strtolower($lok_spk)) // Ubah ke huruf kecil
-                ->toArray();
+                ->get();
+            $warehouseItemsMap = $warehouseItemsCollection->keyBy(function($item) {
+                return strtolower($item->lok_spk);
+            });
+    
+            // Ambil semua lok_spk unik (lowercased) dari kedua sumber
+            $allLokSpk_lower_unique = array_unique(
+                array_merge(
+                    $scannedItemsMap->keys()->all(),
+                    $warehouseItemsMap->keys()->all()
+                )
+            );
     
             $dataToInsert = [];
+            // Ambil semua lok_spk yang sudah ada di CekSOFinished agar tidak ada duplikasi (case-insensitive)
+            $existingLokSpk_lower = CekSOFinished::where('t_cek_so_id', $cekso->id)
+                ->pluck('lok_spk')
+                ->map(fn($lok_spk) => strtolower($lok_spk))
+                ->toArray();
     
-            // Gabungkan semua barang yang bisa muncul, lalu ubah ke huruf kecil
-            $allLokSpk = array_unique(array_merge($scannedItems, $warehouseItems));
+            // Hitung jumlah scan dan jumlah manual dari scannedItemsMap
+            $jumlahScan = 0;
+            $jumlah_manual = 0;
+            foreach ($scannedItemsMap as $lok_spk_lower => $scannedItem) {
+                 if ($scannedItem->status == 3) {
+                     $jumlah_manual++;
+                 } else {
+                     $jumlahScan++;
+                 }
+            }
     
-            foreach ($allLokSpk as $lok_spk) {
+    
+            foreach ($allLokSpk_lower_unique as $lok_spk_lower) {
                 // Lewati jika lok_spk sudah ada di CekSOFinished
-                if (in_array(strtolower($lok_spk), $existingLokSpk)) {
+                if (in_array($lok_spk_lower, $existingLokSpk_lower)) {
                     continue;
                 }
     
+                $scannedItem = $scannedItemsMap->get($lok_spk_lower);
+                $warehouseItem = $warehouseItemsMap->get($lok_spk_lower);
+    
+                $status = null; // Inisialisasi status
+                $originalLokSpk = $lok_spk_lower; // Default, akan diupdate dengan casing asli
+    
                 // Tentukan status berdasarkan aturan:
-                if (in_array($lok_spk, $warehouseItems) && !in_array($lok_spk, $scannedItems)) {
-                    $status = 0; // Barang ada di warehouse tapi belum discan
-                } elseif (in_array($lok_spk, $scannedItems) && in_array($lok_spk, $warehouseItems)) {
-                    $status = 1; // Barang ada di warehouse dan sudah discan
-                } elseif (in_array($lok_spk, $scannedItems) && !in_array($lok_spk, $warehouseItems)) {
-                    $status = 2; // Barang sudah discan tapi tidak ada di warehouse
+                // Prioritaskan status 3 dari CekSOBarang jika ada
+                if ($scannedItem && $scannedItem->status == 3) {
+                    $status = 3;
+                    $originalLokSpk = $scannedItem->lok_spk; // Gunakan casing asli dari scanned item
+                }
+                // Logika status 0, 1, 2 jika status CekSOBarang bukan 3 atau tidak ada di CekSOBarang
+                elseif ($warehouseItem && $scannedItem) {
+                    $status = 1; // Ada di warehouse dan discan (status di CekSOBarang bukan 3)
+                    // Gunakan casing asli dari salah satu sumber, diasumsikan sama jika keduanya ada
+                    $originalLokSpk = $warehouseItem->lok_spk; // Atau $scannedItem->lok_spk;
+                } elseif ($warehouseItem && !$scannedItem) {
+                    $status = 0; // Ada di warehouse tapi belum discan
+                    $originalLokSpk = $warehouseItem->lok_spk; // Gunakan casing asli dari warehouse item
+                } elseif (!$warehouseItem && $scannedItem) {
+                    $status = 2; // Sudah discan tapi tidak ada di warehouse (status di CekSOBarang bukan 3)
+                     $originalLokSpk = $scannedItem->lok_spk; // Gunakan casing asli dari scanned item
                 }
     
-                $dataToInsert[] = [
-                    't_cek_so_id' => $cekso->id,
-                    'lok_spk' => $lok_spk, // Simpan dalam bentuk asli
-                    'status' => $status,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ];
+                // Pastikan status sudah ditentukan sebelum dimasukkan
+                if ($status !== null) {
+                     $dataToInsert[] = [
+                        't_cek_so_id' => $cekso->id,
+                        'lok_spk' => $originalLokSpk, // Simpan dalam bentuk asli
+                        'status' => $status,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ];
+                }
             }
     
             // Insert semua data ke CekSOFinished jika ada data baru
             if (!empty($dataToInsert)) {
-                CekSOFinished::insert($dataToInsert);
+                // Gunakan chunking jika data bisa sangat banyak
+                $chunkSize = 1000; // Sesuaikan ukuran chunk sesuai kebutuhan
+                foreach (array_chunk($dataToInsert, $chunkSize) as $chunk) {
+                     CekSOFinished::insert($chunk);
+                }
             }
     
-            // Hitung jumlah scan dan jumlah stok
-            $jumlahScan = count($scannedItems);
-            $jumlahStok = count($warehouseItems);
+            // Hitung jumlah stok dari map yang sudah ada
+            $jumlahStok = $warehouseItemsMap->count();
     
-            // Cek barang yang tidak ada di database
-            $ceksoBarangnas = CekSOBarang::where('t_cek_so_id', $cekso->id)
-                ->whereNotIn('lok_spk', function ($query) use ($cekso) {
-                    $query->select('lok_spk')
-                        ->from('t_barang')
-                        ->where('gudang_id', $cekso->gudang_id)
-                        ->where('status_barang', 1);
-                })
-                ->exists(); // Gunakan exists() untuk efisiensi
+            // Cek barang yang tidak ada di database (menggunakan map yang sudah ada)
+            // Ini adalah item yang discan (ada di scannedItemsMap) tetapi tidak ada di warehouse (tidak ada di warehouseItemsMap)
+            $ceksoBarangnasExists = $scannedItemsMap->keys()->diff($warehouseItemsMap->keys())->isNotEmpty();
     
-            // Tentukan hasil berdasarkan aturan
-            if ($jumlahScan !== $jumlahStok) {
-                $hasil = 0;
-            } elseif ($jumlahScan === $jumlahStok && !$ceksoBarangnas) {
-                $hasil = 1;
-            } elseif ($jumlahScan === $jumlahStok && $ceksoBarangnas) {
-                $hasil = 2;
+            // Tentukan hasil berdasarkan aturan yang diperbarui
+            $hasil = null;
+            // Logika hasil tetap sama, menggunakan total jumlah scan (scan non-manual + manual)
+            // untuk perbandingan dengan jumlah stok.
+            // Jika Anda ingin logika hasil dipengaruhi hanya oleh scan non-manual,
+            // Anda perlu menyesuaikannya di sini.
+            // Saat ini, jumlahScan di sini adalah total scan (status 1 dan 2) + jumlah_manual (status 3)
+            $totalScanned = $jumlahScan + $jumlah_manual; // Hitung total item yang ada di t_cek_so_barang
+    
+            if ($totalScanned !== $jumlahStok) {
+                 $hasil = 0; // Belum Sesuai (jumlah total item yang discan berbeda dengan jumlah stok)
+            } elseif ($totalScanned === $jumlahStok && !$ceksoBarangnasExists) {
+                 $hasil = 1; // Sesuai (jumlah total item yang discan sama dengan jumlah stok, dan semua yang discan ada di stok)
+            } elseif ($totalScanned === $jumlahStok && $ceksoBarangnasExists) {
+                // Jika jumlah total item yang discan sama dengan stok, tapi ada barang yang discan tidak ada di stok
+                 $hasil = 2; // Lok_SPK Belum Sesuai (ada item discan yang tidak ada di master stok)
+            } else {
+                // Tambahkan penanganan jika ada kasus lain yang tidak terduga
+                 $hasil = 0; // Default ke Belum Sesuai
             }
     
-            // Update tabel t_cek_so dengan jumlah_scan, jumlah_stok, hasil, is_finished, waktu_selesai, dan catatan
+    
+            // Update tabel t_cek_so dengan jumlah_scan, jumlah_manual, jumlah_stok, hasil, is_finished, waktu_selesai, dan catatan
             $cekso->update([
-                'jumlah_scan' => $jumlahScan,
+                'jumlah_scan' => $jumlahScan, // Sekarang hanya hitungan scan non-manual (status 1 & 2)
+                'jumlah_manual' => $jumlah_manual, // Hitungan scan manual (status 3)
                 'jumlah_stok' => $jumlahStok,
-                'hasil' => $hasil,
+                'hasil' => $hasil, // Hasil ditentukan dari logika di atas
                 'is_finished' => 1,
                 'waktu_selesai' => now(),
                 'catatan' => $request->catatan
             ]);
     
-            return response()->json(['status' => 'success', 'message' => 'Data berhasil dikirim!']);
+            // Bentuk URL redirect
+            $redirectUrl = route('cekso.showFinish', $cekso->id);
+
+            // Kembalikan respons JSON yang berisi URL redirect
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Stok opname berhasil diselesaikan!',
+                'redirect_url' => $redirectUrl
+            ]);
+
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+            // Log error untuk debugging
+            \Log::error('Error finishing CekSO: ' . $e->getMessage(), ['cek_so_id' => $request->t_cek_so_id]);
+    
+            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan saat mengakhiri stok opname.']);
         }
-    } 
+    }
     
     public function upload(Request $request)
     {
@@ -449,7 +520,8 @@ class CekSOController extends Controller
             foreach ($lokSpks as $lok_spk) {
                 CekSOBarang::create([
                     't_cek_so_id' => $t_cek_so_id,
-                    'lok_spk' => $lok_spk
+                    'lok_spk' => $lok_spk,
+                    'status' => 3
                 ]);
             }
     

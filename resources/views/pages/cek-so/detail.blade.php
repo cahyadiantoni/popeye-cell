@@ -59,7 +59,9 @@
                             <tr>
                                 <th>Kode SO</th>
                                 <th>Gudang / Petugas</th>
-                                <th>Jumlah Scan / Stok</th>
+                                <th>Scan</th>
+                                <th>Manual</th>
+                                <th>Jumlah Barang / Stok</th>
                                 <th>Waktu Mulai / Waktu Berakhir</th>
                                 <th>Durasi</th>
                                 <th>Hasil SO</th>
@@ -70,7 +72,9 @@
                             <tr>
                                 <td>{{ $cekso->kode }}</td>
                                 <td>{{ $cekso->nama_gudang }} / {{ $cekso->petugas }}</td>
-                                <td>{{ $cekso->jumlah_scan }} / {{ $cekso->jumlah_stok }}</td>
+                                <td>{{ $cekso->jumlah_scan ?? 0 }}</td>
+                                <td>{{ $cekso->jumlah_manual ?? 0 }}</td>
+                                <td>{{ $cekso->jumlah_scan + $cekso->jumlah_manual }} / {{ $cekso->jumlah_stok }}</td>
                                 <td>{{ $cekso->waktu_mulai }} / {{ $cekso->waktu_selesai }}</td>
                                 <td>{{ $cekso->durasi }}</td>
                                 <td>
@@ -144,6 +148,7 @@
                             <tr>
                                 <th>No</th>
                                 <th>Lok SPK</th>
+                                <th>Keterangan</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -151,6 +156,13 @@
                             <tr>
                                 <td>{{ $index + 1 }}</td>
                                 <td>{{ $barangna->lok_spk }}</td>
+                                <td>
+                                    @if ($barangna->status == 1)
+                                        <span class="badge bg-success">Sudah Discan</span>  
+                                    @else
+                                        <span class="badge bg-info">Upload Manual</span>
+                                    @endif
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -231,9 +243,13 @@
                     orderable: false, 
                     searchable: false,
                     render: function(data, type, row) {
-                        return data == 1 
-                            ? '<span class="badge bg-success">Sudah Discan</span>' 
-                            : '<span class="badge bg-danger">Belum Discan</span>';
+                        if (data == 3) {
+                            return '<span class="badge bg-info">Upload Manual</span>'; // Ganti dengan badge yang Anda inginkan
+                        } else if (data == 1) {
+                            return '<span class="badge bg-success">Sudah Discan</span>';
+                        } else {
+                            return '<span class="badge bg-danger">Belum Discan</span>';
+                        }
                     }
                 }
             ]
@@ -246,17 +262,69 @@
     });
 
     $(document).ready(function () {
-        $('#scanInput').focus(); // Pastikan input selalu aktif
+        let lastInputTime = 0;
+        // Threshold untuk Enter dari scanner (biasanya sangat cepat setelah karakter terakhir)
+        const SCANNER_ENTER_THRESHOLD = 50;
+        const SCANNER_INPUT_THRESHOLD = 75;
 
-        $(document).on('keypress', function (e) {
+        $('#scanInput').focus();
+
+        $('#scanInput').on('keydown', function (e) {
+            let currentTime = Date.now();
+            let timeDiff = currentTime - lastInputTime;
+            let currentValue = $(this).val();
+
+            // 1. Handle Tombol Enter
             if (e.key === 'Enter') {
-                let scanValue = $('#scanInput').val().trim();
-                if (scanValue !== '') {
-                    $('#loading').removeClass('d-none'); // Tampilkan animasi loading
-                    submitScan(scanValue);
-                    $('#scanInput').val(''); // Kosongkan input setelah scan
+                e.preventDefault(); // Selalu cegah default action Enter
+                let scanValue = currentValue.trim();
+
+                // Hanya proses jika ada nilai DAN jeda dari input terakhir sangat singkat
+                if (scanValue !== '' && timeDiff < SCANNER_ENTER_THRESHOLD) {
+                    $('#loading').removeClass('d-none');
+                    submitScan(scanValue); // Panggil fungsi submit
+                    $(this).val(''); // Kosongkan setelah submit
+                    lastInputTime = 0; // Reset timer
+                } else {
+                    // Jika ada teks hasil ketikan lambat, mungkin kita mau hapus?
+                    if (scanValue !== '') $(this).val(''); // Opsional: Hapus jika enter manual
+                    lastInputTime = 0; // Reset timer
                 }
+                return; // Selesai untuk tombol Enter
             }
+
+            // 2. Handle Tombol Lain (Cegah Pengetikan Manual)
+            // Kita hanya peduli pada tombol yang menghasilkan karakter atau mengubah nilai (seperti backspace)
+            let isPotentiallyManualInputKey = e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete';
+
+            if (isPotentiallyManualInputKey) {
+                // Cek apakah ini input pertama (lastInputTime == 0) ATAU jeda terlalu lama
+                if (lastInputTime !== 0 && timeDiff > SCANNER_INPUT_THRESHOLD) {
+                    e.preventDefault(); // BLOKIR input manual (terlalu lambat)
+                    $(this).val('');
+                    lastInputTime = 0; // Reset timer
+
+                    // Jangan update lastInputTime karena input diblokir
+                    return; // Hentikan proses lebih lanjut untuk key ini
+                }
+                // Jika lolos (input pertama atau cukup cepat), Lanjutkan ke langkah 3
+            } else {
+                return; // Tidak perlu update waktu untuk kunci ini
+            }
+
+
+            // 3. Update Waktu Input Terakhir (HANYA jika input diizinkan)
+            // Jika kode sampai di sini, berarti input tidak diblokir oleh logika di atas
+            lastInputTime = currentTime;
+
+        });
+
+        // 4. Cegah Paste
+        $('#scanInput').on('paste', function (e) {
+            e.preventDefault();
+            lastInputTime = 0;
+            // Opsional: beri tahu pengguna
+            alert("Paste tidak diizinkan. Silakan gunakan scanner.");
         });
     });
 
@@ -369,11 +437,15 @@
                             Swal.fire({
                                 icon: response.status === 'success' ? 'success' : 'error',
                                 title: response.message,
-                                timer: 3000,
+                                timer: 2000, // Timer yang lebih singkat karena akan redirect
                                 showConfirmButton: false
                             }).then(() => {
-                                if (response.status === 'success') {
-                                    location.reload(); // Refresh halaman jika sukses
+                                if (response.status === 'success' && response.redirect_url) {
+                                    window.location.href = response.redirect_url; // Lakukan redirect
+                                } else {
+                                    // Jika ada error atau tidak ada redirect_url
+                                    // Mungkin refresh halaman atau lakukan tindakan lain sesuai kebutuhan
+                                    location.reload();
                                 }
                             });
                         },

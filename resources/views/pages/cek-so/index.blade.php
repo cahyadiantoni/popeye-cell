@@ -64,7 +64,9 @@
                                                 <th>Kode</th>
                                                 <th>Gudang</th>
                                                 <th>Petugas</th>
-                                                <th>Jumlah Scan/Stok</th>
+                                                <th>Scan</th>
+                                                <th>Manual</th>
+                                                <th>Jumlah Barang/Stok</th>
                                                 <th>Tgl Mulai</th>
                                                 <th>Hasil</th>
                                                 <th>Status</th>
@@ -79,7 +81,9 @@
                                                 <td>{{ $cekso->kode }}</td>
                                                 <td>{{ $cekso->nama_gudang ?? 'N/A' }}</td>
                                                 <td>{{ $cekso->petugas }}</td>
-                                                <td>{{ $cekso->jumlah_scan }}/{{ $cekso->jumlah_stok }}</td>
+                                                <td>{{ $cekso->jumlah_scan ?? 0 }}</td>
+                                                <td>{{ $cekso->jumlah_manual ?? 0 }}</td>
+                                                <td>{{ $cekso->jumlah_scan + $cekso->jumlah_manual }}/{{ $cekso->jumlah_stok }}</td>
                                                 <td>{{ $cekso->waktu_mulai }}</td>
                                                 <td>
                                                     @switch($cekso->hasil)

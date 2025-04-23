@@ -28,7 +28,9 @@
                             <tr>
                                 <th>Kode SO</th>
                                 <th>Gudang / Petugas</th>
-                                <th>Jumlah Scan / Stok</th>
+                                <th>Scan</th>
+                                <th>Manual</th>
+                                <th>Jumlah Barang / Stok</th>
                                 <th>Waktu Mulai / Waktu Berakhir</th>
                                 <th>Durasi</th>
                                 <th>Hasil SO</th>
@@ -39,7 +41,9 @@
                             <tr>
                                 <td>{{ $cekso->kode }}</td>
                                 <td>{{ $cekso->nama_gudang }} / {{ $cekso->petugas }}</td>
-                                <td>{{ $cekso->jumlah_scan }} / {{ $cekso->jumlah_stok }}</td>
+                                <td>{{ $cekso->jumlah_scan ?? 0 }}</td>
+                                <td>{{ $cekso->jumlah_manual ?? 0 }}</td>
+                                <td>{{ $cekso->jumlah_scan + $cekso->jumlah_manual }} / {{ $cekso->jumlah_stok }}</td>
                                 <td>{{ $cekso->waktu_mulai }} / {{ $cekso->waktu_selesai }}</td>
                                 <td>{{ $cekso->durasi }}</td>
                                 <td>
@@ -70,6 +74,7 @@
                     <select id="filterScan" class="form-select w-auto">
                         <option value="">Semua</option>
                         <option value="1">Sudah Discan</option>
+                        <option value="3">Manual Upload</option>
                         <option value="0">Belum Discan</option>
                         <option value="2">Tidak Ada di Database</option>
                     </select>

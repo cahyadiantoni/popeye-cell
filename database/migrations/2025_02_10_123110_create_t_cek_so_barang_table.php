@@ -11,6 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->unsignedBigInteger('t_cek_so_id');
             $table->string('lok_spk');
+            $table->integer('status');
             $table->foreign('t_cek_so_id')->references('id')->on('t_cek_so')->onDelete('cascade');
             $table->timestamps();
         });
