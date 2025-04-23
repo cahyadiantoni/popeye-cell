@@ -84,6 +84,7 @@
                                                 <option value="Barang JB">Barang JB</option>
                                                 <option value="Barang 2nd">Barang 2nd</option>
                                                 <option value="Batangan">Batangan</option>
+                                                <option value="Pengambilan AM">Pengambilan AM</option>
                                                 <option value="Lain Lain">Lain Lain</option>
                                             </select>
                                         </div>

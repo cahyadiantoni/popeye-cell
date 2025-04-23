@@ -176,17 +176,11 @@ class DataBarangController extends Controller
             // Lewati baris pertama jika merupakan header
             if ($index === 0) continue;
     
-            // Ambil dan format tanggal
-            $dt_beli = Carbon::createFromFormat('Y-m-d', '1900-01-01')->addDays($row[15] - 2)->format('Y-m-d');
-            $dt_lelang = Carbon::createFromFormat('Y-m-d', '1900-01-01')->addDays($row[16] - 2)->format('Y-m-d');
-            $dt_jatuh_tempo = Carbon::createFromFormat('Y-m-d', '1900-01-01')->addDays($row[17] - 2)->format('Y-m-d');
-    
             // Validasi tipe data tiap kolom
             if (
-                is_string($row[0]) && // lok_spk
-                is_string($row[1]) && // jenis
-                is_string($row[3]) && // tipe
-                is_string($row[14]) // nama_petugas
+                is_string($row[0]) && 
+                is_string($row[1]) && 
+                is_string($row[2]) 
             ) {
                 // Cek apakah lok_spk sudah ada di database
                 if (Barang::where('lok_spk', $row[0])->exists()) {
@@ -199,22 +193,9 @@ class DataBarangController extends Controller
                 Barang::create([
                     'lok_spk' => $row[0],
                     'jenis' => $row[1],
-                    'merek' => $row[2],
-                    'tipe' => $row[3],
-                    'imei' => $row[4],
-                    'kelengkapan' => $row[5],
-                    'kerusakan' => $row[6],
-                    'grade' => $row[7],
-                    'qt_bunga' => $row[8],
-                    'harga_jual' => $row[9],
-                    'harga_beli' => $row[10],
-                    'keterangan1' => $row[11],
-                    'keterangan2' => $row[12],
-                    'keterangan3' => $row[13],
-                    'nama_petugas' => $row[14],
-                    'dt_beli' => $dt_beli,
-                    'dt_lelang' => $dt_lelang,
-                    'dt_jatuh_tempo' => $dt_jatuh_tempo,
+                    'tipe' => $row[2],
+                    'imei' => $row[3],
+                    'kelengkapan' => $row[4],
                     'dt_input' => Carbon::now(),
                     'user_id' => Auth::id(),
                     'gudang_id' => $gudang_id,

@@ -178,7 +178,7 @@
                             <input type="file" class="form-control" id="filedata" name="filedata" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label col-sm-2 col-form-label">Select Gudang</label>
+                            <label class="form-label">Pilih Gudang Tujuan</label>
                             <div class="col-sm-10">
                                 <select name="penerima_gudang_id" class="form-select form-control" required>
                                     <option value="">-- Pilih Gudang --</option>

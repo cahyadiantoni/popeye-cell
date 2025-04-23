@@ -32,8 +32,8 @@
             </tr>
             <tr>
                 <td><strong>Petugas</strong><br>{{ $faktur->petugas }}</td>
-                <td class="center-align"><strong>Keterangan</strong><br>{{ $faktur->keterangan }}</td>
-                <td></td>
+                <td class="center-align"><strong>Grade</strong><br>{{ $faktur->grade }}</td>
+                <td class="right-align"><strong>Keterangan</strong><br>{{ $faktur->keterangan }}</td>
             </tr>
         </table>
     </div>
@@ -42,7 +42,7 @@
         <thead>
             <tr>
                 <th>No</th>
-                <th>ID</th>
+                <th>Lok Spk</th>
                 <th>Merk Tipe</th>
                 <th>Harga</th>
                 <th>Sub Total</th>

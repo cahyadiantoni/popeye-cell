@@ -78,6 +78,10 @@
                             <td>{{ $faktur->petugas }}</td>
                         </tr>
                         <tr>
+                            <th>Grade</th>
+                            <td>{{ $faktur->grade }}</td>
+                        </tr>
+                        <tr>
                             <th>Total Harga</th>
                             <td>Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>
                         </tr>

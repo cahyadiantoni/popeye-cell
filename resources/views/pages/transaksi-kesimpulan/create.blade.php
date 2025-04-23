@@ -102,12 +102,12 @@
                                     </div>
                                     <div class="mb-3 row">
                                         <div class="col-md-6">
-                                            <label class="form-label">Potongan Kondisi</label>
+                                            <label class="form-label">Potongan Kondisi (Dalam Rp.)</label>
                                             <input type="number" id="potongan_kondisi" name="potongan_kondisi" class="form-control">
                                             <small class="form-text text-muted" id="potongan_kondisi_display">{{ 'Rp. 0' }}</small>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label">Diskon</label>
+                                            <label class="form-label">Diskon (Dalam %)</label>
                                             <input type="number" id="diskon" name="diskon" class="form-control">
                                             <small class="form-text text-muted" id="diskon_display">{{ 'Rp. 0' }}</small>
                                         </div>
