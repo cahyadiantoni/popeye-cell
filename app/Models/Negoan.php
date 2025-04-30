@@ -17,7 +17,7 @@ class Negoan extends Model
         'tipe',
         'grade',
         'is_manual',
-        'harga_asal',
+        'harga_awal',
         'harga_nego',
         'note_nego',
         'harga_acc',

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\View;
 use App\Models\Kirim;
 use App\Models\Notification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\App;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,5 +46,7 @@ class AppServiceProvider extends ServiceProvider
                                 
             $view->with(compact('notifCount', 'notifications'));
         });
+        Carbon::setLocale('id');
+        App::setLocale('id');
     }
 }

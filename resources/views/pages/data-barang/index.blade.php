@@ -73,6 +73,7 @@
                                     <thead>
                                         <tr>
                                             <th>LOK_SPK</th>
+                                            <th>Tgl Upload</th>
                                             <th>Jenis</th>
                                             <th>Tipe</th>
                                             <th>Grade</th>
@@ -84,6 +85,7 @@
                                     <tfoot>
                                         <tr>
                                             <th>LOK_SPK</th>
+                                            <th>Tgl Upload</th>
                                             <th>Jenis</th>
                                             <th>Tipe</th>
                                             <th>Grade</th>
@@ -157,6 +159,7 @@
             ajax: "{{ route('data-barang.index') }}", // Pastikan rute ini mengarah ke metode `index` di controller
             columns: [
                 { data: 'lok_spk', name: 'lok_spk' },
+                { data: 'created_at', name: 'created_at' },
                 { data: 'jenis', name: 'jenis' },
                 { data: 'tipe', name: 'tipe' },
                 { data: 'grade', name: 'grade' },

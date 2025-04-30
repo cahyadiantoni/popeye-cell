@@ -9,18 +9,41 @@ use App\Models\NegoanChat;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
 
 class NegoanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $negoans = Negoan::with('user')
-        ->orderBy('status', 'asc')
-        ->orderBy('updated_at', 'desc')
-        ->get();
-    
+        // Subquery: ambil ID terbaru untuk kombinasi unik
+        $subQuery = Negoan::select(DB::raw('MAX(id) as id'))
+            ->groupBy('tipe', 'grade', 'status');
+
+        // Gunakan hasil subquery untuk ambil record lengkap
+        $query = Negoan::whereIn('id', $subQuery);
+
+        // Filter berdasarkan input
+        if ($request->filled('grade')) {
+            $query->where('grade', $request->grade);
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('updated_at', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('updated_at', '<=', $request->end_date);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $negoans = $query->orderBy('status', 'asc')->orderBy('updated_at', 'desc')->get();
+
         return view('pages.negoan.index', compact('negoans'));
-    }    
+    }
 
     public function create()
     {
@@ -124,6 +147,108 @@ class NegoanController extends Controller
             return redirect()->route('negoan.index')->with('success', 'Negoan berhasil dibuat.');
         } else {
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan Negoan.')->withInput();
+        }
+    }
+
+    public function storeUpload(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+            'grade' => 'required|string|max:255',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $grade = $request->grade;
+            $rows = Excel::toArray([], $file)[0]; // ambil sheet pertama
+
+            if (count($rows) <= 1) {
+                return redirect()->back()->with('error', 'File Excel kosong atau tidak memiliki data.');
+            }
+
+            $header = array_map('strtolower', $rows[0]);
+            unset($rows[0]);
+
+            $requiredColumns = ['tipe', 'harga_awal', 'harga_nego', 'note_nego'];
+            foreach ($requiredColumns as $column) {
+                if (!in_array($column, $header)) {
+                    return redirect()->back()->with('error', "Kolom '{$column}' tidak ditemukan di file.");
+                }
+            }
+
+            $count = 0;
+            $errorMessages = [];
+            $processedTipes = [];
+            $excelTipes = [];
+
+            foreach ($rows as $index => $row) {
+                $data = array_combine($header, $row);
+                $rowNumber = $index + 2; // +2 karena baris pertama header
+
+                $tipe = trim($data['tipe'] ?? '');
+                $hargaNego = $data['harga_nego'] ?? null;
+
+                // Validasi baris kosong
+                if ($tipe === '' || $hargaNego === null) {
+                    $errorMessages[] = "Baris {$rowNumber}: Kolom 'tipe' dan 'harga_nego' wajib diisi.";
+                    continue;
+                }
+
+                // Cek duplikat dalam file Excel
+                if (in_array($tipe, $excelTipes)) {
+                    $errorMessages[] = "Baris {$rowNumber}: Tipe '{$tipe}' duplikat dalam file Excel.";
+                    continue;
+                }
+                $excelTipes[] = $tipe;
+
+                // Cek duplikat di database (status = 0)
+                $existsStatusZero = Negoan::where('tipe', $tipe)
+                    ->where('grade', $grade)
+                    ->where('status', 0)
+                    ->exists();
+                if ($existsStatusZero) {
+                    $errorMessages[] = "Baris {$rowNumber}: Tipe '{$tipe}' sudah ada dengan status 'Proses'.";
+                    continue;
+                }
+
+                // Cek duplikat hari ini
+                $existsToday = Negoan::where('tipe', $tipe)
+                    ->where('grade', $grade)
+                    ->whereDate('updated_at', now()->toDateString())
+                    ->exists();
+                if ($existsToday) {
+                    $errorMessages[] = "Baris {$rowNumber}: Tipe '{$tipe}' sudah diupload hari ini.";
+                    continue;
+                }
+
+                // Simpan data
+                Negoan::create([
+                    'tipe' => $tipe,
+                    'grade' => $grade,
+                    'harga_awal' => isset($data['harga_awal']) ? $data['harga_awal'] * 1000 : null,
+                    'harga_nego' => $hargaNego * 1000,
+                    'note_nego' => $data['note_nego'] ?? null,
+                    'status' => 0,
+                    'is_manual' => 1,
+                    'user_id' => auth()->id(),
+                ]);
+
+                $count++;
+            }
+
+            // Respon akhir
+            if ($count > 0 && count($errorMessages) === 0) {
+                return redirect()->route('negoan.index')->with('success', "Berhasil upload {$count} data.");
+            } elseif ($count > 0 && count($errorMessages) > 0) {
+                return redirect()->route('negoan.index')->with([
+                    'success' => "Sebagian berhasil upload {$count} data.",
+                    'error' => implode('<br>', $errorMessages),
+                ]);
+            } else {
+                return redirect()->back()->with('error', 'Gagal upload. Tidak ada data yang valid.<br>' . implode('<br>', $errorMessages));
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memproses file: ' . $e->getMessage());
         }
     }
 

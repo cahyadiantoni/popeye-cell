@@ -159,6 +159,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
 
     Route::get('/negoan/harga-awal', [NegoanController::class, 'getHargaAwal'])->name('negoan.harga-awal');
     Route::post('/negoan/chat', [NegoanController::class, 'storeChat'])->name('negoan.chat.store');
+    Route::post('/negoan/upload', [NegoanController::class, 'storeUpload'])->name('negoan.upload');
     Route::resource('/negoan', NegoanController::class)->middleware('auth');
 
     Route::resource('/notification', NotificationController::class)->middleware('auth');

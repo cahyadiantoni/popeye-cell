@@ -22,6 +22,9 @@ class DataBarangController extends Controller
         if ($request->ajax()) {
             $query = Barang::with('gudang');
             return DataTables::of($query)
+                ->editColumn('created_at', function ($row) {
+                    return Carbon::parse($row->created_at)->translatedFormat('d F Y');
+                })
                 ->addColumn('action', function ($barang) use ($roleUser) {
                     $deleteButton = '';
                     $editButton = '';
