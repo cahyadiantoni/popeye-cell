@@ -31,7 +31,7 @@
                                         <tr>
                                             <th>LOK_SPK</th>
                                             <th>Tipe</th>
-                                            <th>Title</th>
+                                            <th>No Faktur</th>
                                             <th>Toko</th>
                                             <th>Tgl Jual</th>
                                             <th>Harga Jual</th>
@@ -43,7 +43,7 @@
                                         <tr>
                                             <th>LOK_SPK</th>
                                             <th>Tipe</th>
-                                            <th>Title</th>
+                                            <th>No Faktur</th>
                                             <th>Toko</th>
                                             <th>Tgl Jual</th>
                                             <th>Harga Jual</th>

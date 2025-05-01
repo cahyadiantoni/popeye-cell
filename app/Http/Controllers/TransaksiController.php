@@ -46,6 +46,10 @@ class TransaksiController extends Controller
                 ->addColumn('harga_jual', function ($barang) {
                     return 'Rp. ' . number_format($barang->harga_jual, 0, ',', '.'); // Format harga ke Rupiah
                 })
+                ->addColumn('nomor_faktur', function ($barang) {
+                    $url = route('transaksi-faktur.show', $barang->nomor_faktur);
+                    return '<a href="' . $url . '" class="btn btn-info btn-sm" target="_blank">' . $barang->nomor_faktur . '</a>';
+                })                
                 ->filterColumn('pembeli', function ($query, $keyword) {
                     $query->where('t_faktur.pembeli', 'like', "%{$keyword}%");
                 })
@@ -55,6 +59,7 @@ class TransaksiController extends Controller
                 ->filterColumn('nomor_faktur', function ($query, $keyword) {
                     $query->where('t_faktur.nomor_faktur', 'like', "%{$keyword}%");
                 })
+                ->rawColumns(['nomor_faktur'])
                 ->make(true);
         }
     }   
