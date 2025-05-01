@@ -215,6 +215,14 @@ class StokGudangController extends Controller
 
     public function choice_gudang()
     {
+        $roleUser = optional(Auth::user())->role;
+        
+        // Jika bukan admin, redirect langsung ke stok_opname dengan gudang_id user
+        if ($roleUser !== 'admin') {
+            $userGudangId = optional(Auth::user())->gudang_id;
+            return redirect()->route('stokOpname', ['gudang_id' => $userGudangId]);
+        }
+
         $allgudangs = Gudang::all();
 
         // Mengirim data gudangs dan barangs ke view
