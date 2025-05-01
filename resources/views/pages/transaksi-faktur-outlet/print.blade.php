@@ -1,68 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Faktur Penjualan</title>
+    <title>Struk Penjualan</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; }
-        .title { text-align: center; font-weight: bold; font-size: 16px; }
-        .subtitle { text-align: center; font-size: 14px; margin-bottom: 10px}
-        .line { border-bottom: 1px solid black; margin-bottom: 10px; margin-top: 10px; }
-        .info-table { width: 100%; margin-bottom: 10px; }
-        .info-table td { padding: 5px; vertical-align: top; }
-        .table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        .table th, .table td { border: 1px solid black; padding: 5px; text-align: center; }
-        .info-table .right-align { text-align: right; }
-        .info-table .center-align { text-align: center; }
-        .total { font-weight: bold; }
-        .footer { font-style: italic; text-align: center; margin-top: 20px; }
+        @page {
+            size: 58mm auto;
+            margin: 0;
+        }
+        body {
+            width: 58mm;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 10px;
+            margin: 0;
+            padding: 5px;
+        }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .line { border-top: 1px dashed #000; margin: 5px 0; }
+        .row { display: flex; justify-content: space-between; }
+        .total { font-weight: bold; text-align: right; margin-top: 5px; }
+        .footer { text-align: center; font-style: italic; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="title">PT INDO GADAI PRIMA</div>
-    <div class="subtitle">Jl. KH Hasyim Ashari 112BB, Jakarta Pusat | Telp : 0856-9312-4547</div>
-    <div class="title">Faktur Penjualan</div>
+
+    <div class="center bold">PT INDO GADAI PRIMA</div>
+    <div class="center">Jl. KH Hasyim Ashari 112BB</div>
+    <div class="center">Jakarta Pusat</div>
+    <div class="center">Telp: 0856-9312-4547</div>
+    <div class="line"></div>
+    <div class="center bold">STRUK PENJUALAN</div>
     <div class="line"></div>
 
-    <div class="info">
-        <table class="info-table">
-            <tr>
-                <td><strong>Nomor Faktur</strong><br>{{ $faktur->nomor_faktur }}</td>
-                <td class="center-align"><strong>Kepada</strong><br>{{ $faktur->pembeli }}</td>
-                <td class="right-align"><strong>Tanggal Penjualan</strong><br>{{ \Carbon\Carbon::parse($faktur->tgl_jual)->translatedFormat('d F Y') }}</td>
-            </tr>
-            <tr>
-                <td><strong>Petugas</strong><br>{{ $faktur->petugas }}</td>
-                <td class="center-align"><strong>Keterangan</strong><br>{{ $faktur->keterangan }}</td>
-                <td></td>
-            </tr>
-        </table>
-    </div>
+    <div>No: {{ $faktur->nomor_faktur }}</div>
+    <div>Pembeli: {{ $faktur->pembeli }}</div>
+    <div>Tgl: {{ \Carbon\Carbon::parse($faktur->tgl_jual)->format('d/m/Y') }}</div>
+    <div>Petugas: {{ $faktur->petugas }}</div>
+    @if($faktur->keterangan)
+    <div>Keterangan: {{ $faktur->keterangan }}</div>
+    @endif
+    <div class="line"></div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>ID</th>
-                <th>Merk Tipe</th>
-                <th>Harga</th>
-                <th>Sub Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($transaksiJuals as $index => $transaksi)
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $transaksi->lok_spk }}</td>
-                <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
-                <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
-                <td>Rp. {{ number_format($transaksi->subtotal, 0, ',', '.') }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    @foreach($transaksiJuals as $index => $transaksi)
+        <div class="bold">{{ $transaksi->barang->tipe ?? '-' }}</div>
+        <div class="row">
+            <div>{{ $transaksi->lok_spk }}</div>
+            <div>Rp {{ number_format($transaksi->harga, 0, ',', '.') }}</div>
+        </div>
+    @endforeach
 
-    <div class="total">Total Harga Keseluruhan: Rp. {{ number_format($totalHarga, 0, ',', '.') }}</div>
+    <div class="line"></div>
+    <div class="total">Total: Rp {{ number_format($totalHarga, 0, ',', '.') }}</div>
+    <div class="line"></div>
 
-    <div class="footer">Terima Kasih telah Berbelanja dengan Kami!</div>
+    <div class="footer">Terima kasih telah berbelanja!</div>
 </body>
 </html>
