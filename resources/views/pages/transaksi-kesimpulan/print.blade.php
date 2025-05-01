@@ -28,31 +28,33 @@
             <tr>
                 <td><strong>Nomor Kesimpulan</strong><br>{{ $kesimpulan->nomor_kesimpulan }}</td>
                 <td class="center-align"><strong>Tanggal Penjualan</strong><br>{{ \Carbon\Carbon::parse($kesimpulan->tgl_jual)->translatedFormat('d F Y') }}</td>
-                <td class="right-align"><strong>Jumlah Barang</strong><br>{{ $kesimpulan->total_barang }}</td>
+                <td class="right-align"><strong>Potongan Kondisi</strong><br>Rp. {{ number_format($kesimpulan->potongan_kondisi, 0, ',', '.') }}</td>
             </tr>
             <tr>
-                <td><strong>Potongan Kondisi</strong><br>Rp. {{ number_format($kesimpulan->potongan_kondisi, 0, ',', '.') }}</td>
-                <td class="center-align"><strong>Diskon</strong><br>{{ $kesimpulan->diskon }}%</td>
-                <td class="right-align"><strong>Potongan (Diskon)</strong><br>Rp. {{ number_format($kesimpulan->total_diskon = ($kesimpulan->total - $kesimpulan->potongan_kondisi) * ($kesimpulan->diskon/100), 0, ',', '.') }}</td>
+                <td><strong>Diskon</strong><br>{{ $kesimpulan->diskon }}%</td>
+                <td class="center-align"><strong>Potongan (Diskon)</strong><br>Rp. {{ number_format($kesimpulan->total_diskon = ($kesimpulan->total - $kesimpulan->potongan_kondisi) * ($kesimpulan->diskon/100), 0, ',', '.') }}</td>
+                <td class="right-align"><strong>Total Potongan</strong><br>Rp. {{ number_format($kesimpulan->total_diskon + $kesimpulan->potongan_kondisi, 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td><strong>Total Harga</strong><br>Rp. {{ number_format($kesimpulan->total, 0, ',', '.') }}</td>
-                <td class="center-align"><strong>Total Potongan</strong><br>Rp. {{ number_format($kesimpulan->total_diskon + $kesimpulan->potongan_kondisi, 0, ',', '.') }}</td>
-                <td class="right-align"><strong>Grand Total</strong><br>Rp. {{ number_format($kesimpulan->grand_total, 0, ',', '.') }}</td>
+                <td class="center-align"><strong>Sudah Dibayar</strong><br>Rp. {{ number_format($kesimpulan->total_nominal, 0, ',', '.') }}</td>
+                <td class="right-align"><strong>Sisa Hutang</strong><br>Rp. {{ number_format($kesimpulan->grand_total - $kesimpulan->total_nominal, 0, ',', '.') }}</td>
             </tr>
             <tr>
-                <td><strong>Sudah Dibayar</strong><br>Rp. {{ number_format($kesimpulan->total_nominal, 0, ',', '.') }}</td>
-                <td class="center-align"><strong>Sisa Hutang</strong><br>Rp. {{ number_format($kesimpulan->grand_total - $kesimpulan->total_nominal, 0, ',', '.') }}</td>
-                <td class="right-align"><strong>Status Pembayaran</strong><br>
+                <td><strong>Status Pembayaran</strong><br>
                 @if ($kesimpulan->is_lunas == 0)
                     <span class="badge bg-warning">Hutang</span>
                 @else
                     <span class="badge bg-success">Lunas</span>
                 @endif
                 </td>
-            </tr>
-            <tr>
-                <td><strong>Keterangan</strong><br>{{ $kesimpulan->keterangan }}</td>
+                @if ($kesimpulan->keterangan)
+                    <td class="center-align"><strong>Keterangan</strong><br>{{ $kesimpulan->keterangan }}</td>
+                @else
+                    <td class="center-align"></td>
+                @endif
+                <td class="right-align">
+                </td>
             </tr>
         </table>
     </div>
@@ -88,7 +90,8 @@
         </tbody>
     </table>
 
-    <div class="total">Grand Total: Rp. {{ number_format($kesimpulan->grand_total, 0, ',', '.') }}</div>
+    <div class="total">Total Barang: {{ $kesimpulan->total_barang }}</div>
+    <div class="total">Grand Total Harga: Rp. {{ number_format($kesimpulan->grand_total, 0, ',', '.') }}</div>
 
     <div class="footer">Terima Kasih telah Berbelanja dengan Kami!</div>
 </body>

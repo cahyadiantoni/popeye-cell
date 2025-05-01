@@ -25,6 +25,7 @@
                         </form>
                     @endif
                     <a href="{{ route('transaksi-kesimpulan.print', $kesimpulan->id) }}" class="btn btn-primary" target="_blank">Print PDF</a>
+                    <a href="{{ route('transaksi-kesimpulan.print-all', $kesimpulan->id) }}" class="btn btn-primary" target="_blank">Print All PDF</a>
                     <a href="{{ route('transaksi-kesimpulan.index') }}" class="btn btn-secondary">Kembali</a>
                 </div>
             </div>

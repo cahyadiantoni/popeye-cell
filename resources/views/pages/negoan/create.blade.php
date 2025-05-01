@@ -64,6 +64,8 @@
                                                 <option value="">Pilih Grade</option>
                                                 <option value="Barang JB">Barang JB</option>
                                                 <option value="Barang 2nd">Barang 2nd</option>
+                                                <option value="IP JB">IP JB</option>
+                                                <option value="IP 2nd">IP 2nd</option>
                                             </select>
                                         </div>
                                     </div>

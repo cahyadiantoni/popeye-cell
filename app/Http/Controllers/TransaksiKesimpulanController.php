@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 use App\Models\KesimpulanBawah;
 use App\Models\FakturKesimpulan;
 use App\Models\BuktiTfBawah;
-use App\Models\TransaksiJual;
+use App\Models\TransaksiJualBawah;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
@@ -187,6 +187,49 @@ class TransaksiKesimpulanController extends Controller
         $roleUser = optional(Auth::user())->role;
 
         return view('pages.transaksi-kesimpulan.detail', compact('kesimpulan', 'fakturs', 'roleUser'));
+    }
+
+    public function printAllPdf($kesimpulan_id)
+    {
+        // 1. Ambil data Kesimpulan dengan relasi Bukti dan FakturKesimpulan
+        $kesimpulan = KesimpulanBawah::with(['bukti', 'fakturKesimpulans.faktur'])
+            ->where('id', $kesimpulan_id)
+            ->firstOrFail();
+
+        // 2. Ambil data TransaksiJualBawah untuk setiap Faktur yang terkait
+        $faktursDataForView = [];
+        $nomorFakturs = $kesimpulan->fakturKesimpulans->pluck('faktur.nomor_faktur')->filter()->unique(); // Ambil nomor faktur unik
+
+        foreach ($nomorFakturs as $nomor_faktur) {
+            $faktur = $kesimpulan->fakturKesimpulans->where('faktur.nomor_faktur', $nomor_faktur)->first()->faktur;
+
+            $transaksiJuals = TransaksiJualBawah::with('barang')
+                ->where('nomor_faktur', $nomor_faktur)
+                ->get();
+
+            // Hitung subtotal kumulatif dan total harga untuk faktur ini (sesuai logika print faktur asli)
+            $subtotalKumulatif = 0;
+            $transaksiJuals = $transaksiJuals->map(function ($transaksi) use (&$subtotalKumulatif) {
+                $subtotalKumulatif += $transaksi->harga;
+                $transaksi->subtotal = $subtotalKumulatif; // Tambahkan field subtotal kumulatif
+                return $transaksi;
+            });
+            $totalHargaFaktur = $transaksiJuals->sum('harga'); // Total harga per faktur
+
+            $faktursDataForView[] = [
+                'faktur' => $faktur,
+                'transaksiJuals' => $transaksiJuals,
+                'totalHarga' => $totalHargaFaktur,
+            ];
+        }
+
+        $roleUser = optional(Auth::user())->role; // Jika masih dibutuhkan di view
+
+        // 3. Kirim semua data ke template PDF gabungan
+        $pdf = \Pdf::loadView('pages.transaksi-kesimpulan.print-all', compact('kesimpulan', 'faktursDataForView', 'roleUser'));
+
+        // 4. Unduh atau tampilkan PDF
+        return $pdf->stream('Kesimpulan_Faktur_Bukti_' . $kesimpulan->nomor_kesimpulan . '.pdf');
     }
 
     public function printPdf($kesimpulan_id)
