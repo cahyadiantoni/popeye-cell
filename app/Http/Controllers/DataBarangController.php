@@ -77,7 +77,6 @@ class DataBarangController extends Controller
     
         return view('pages.data-barang.index');
     }    
-    
 
     public function edit($lok_spk)
     {
@@ -341,5 +340,113 @@ class DataBarangController extends Controller
         return redirect()->route('data-barang.index')->with('success', 'Tidak ada baris yang diperbarui.');
     }
 
+    public function pendingan(Request $request)
+    {
+        $roleUser = optional(Auth::user())->role;
+    
+        if ($request->ajax()) {
+            $query = Barang::with('gudang')
+                ->where('status_barang', 4)
+                ->orderBy('updated_at', 'desc')
+                ->get();
+            return DataTables::of($query)
+                ->editColumn('created_at', function ($row) {
+                    return Carbon::parse($row->created_at)->translatedFormat('d F Y');
+                })
+                ->addColumn('action', function ($barang) use ($roleUser) {
+                    $deleteButton = '';
+                
+                    $deleteButton = '
+                        <!-- Tombol Delete -->
+                        <form action="' . route('data-barang-pendingan.delete', urlencode($barang->lok_spk)) . '" method="POST" style="display:inline;">
+                            ' . csrf_field() . '
+                            ' . method_field('DELETE') . '
+                            <button type="submit" class="btn btn-danger btn-round" 
+                                onclick="return confirm(\'Are you sure you want to delete this barang?\')">
+                                Delete
+                            </button>
+                        </form>
+                    ';
+    
+    
+                    return $deleteButton;
+                })
+                ->editColumn('gudang.nama_gudang', function ($barang) {
+                    return $barang->gudang->nama_gudang ?? 'N/A';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+    
+        return view('pages.data-barang.pendingan');
+    }  
+    
+    public function storePendingan(Request $request)
+    {
+        $request->validate([
+            'filedata' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        $file = $request->file('filedata');
+        $data = Excel::toArray([], $file);
+
+        $errors = [];
+        $updatedRows = [];
+
+        foreach ($data[0] as $index => $row) {
+            // Lewati header
+            if ($index === 0) continue;
+
+            $lokSpk = $row[0] ?? null;
+
+            if (is_null($lokSpk) || !is_string($lokSpk)) {
+                $errors[] = "Row " . ($index + 1) . " has invalid or empty lok_spk.";
+                continue;
+            }
+
+            $barang = Barang::where('lok_spk', $lokSpk)->first();
+
+            if (!$barang) {
+                $errors[] = "Row " . ($index + 1) . " lok_spk not found in database: $lokSpk";
+                continue;
+            }
+
+            if (in_array($barang->status_barang, [0, 1])) {
+                $barang->update(['status_barang' => 4]);
+                $updatedRows[] = $index + 1;
+            } else {
+                $errors[] = "Row " . ($index + 1) . " has status_barang not eligible for update (status: {$barang->status_barang})";
+            }
+        }
+
+        // Redirect dengan notifikasi seperti metode store biasa
+        if (count($errors) > 0 || count($updatedRows) > 0) {
+            $successMessage = count($updatedRows) > 0 ? 
+                'Rows successfully updated: ' . implode(', ', $updatedRows) : 
+                '';
+
+            return redirect()->route('data-barang-pendingan.index')->with([
+                'errors' => $errors,
+                'success' => $successMessage
+            ]);
+        }
+
+        return redirect()->route('data-barang-pendingan.index')->with('success', 'No rows were processed successfully.');
+    }
+
+    public function deletePendingan($lokSpk)
+    {
+        // Cari barang berdasarkan lok_spk
+        $barang = Barang::where('lok_spk', $lokSpk)->first();
+
+        if (!$barang) {
+            return redirect()->route('data-barang.index')->with('error', 'Barang not found!');
+        }
+
+        // Ubah status_barang menjadi 1
+        $barang->update(['status_barang' => 1]);
+
+        return redirect()->route('data-barang-pendingan.index')->with('success', 'Status barang berhasil diubah menjadi 1!');
+    }
 
 }

@@ -121,9 +121,11 @@ class TransaksiBawahController extends Controller
             }
 
             if (!in_array($barang->status_barang, [0, 1])) {
-                $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
-                continue;
-            }
+                if (!($barang->status_barang == 4 && $request->grade == 'Pengambilan AM')) {
+                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
+                    continue;
+                }
+            }            
 
             $tipe = $barang->tipe;
             $grade = $request->grade;

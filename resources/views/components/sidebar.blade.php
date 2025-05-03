@@ -32,6 +32,12 @@
                         <span class="pcoded-mtext">Data Barang</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('data-barang-pendingan') ? 'active' : '' }}">
+                    <a href="{{ url('/data-barang-pendingan') }}">
+                        <span class="pcoded-micon"><i class="fas fa-box"></i></span>
+                        <span class="pcoded-mtext">Data Pendingan</span>
+                    </a>
+                </li>
                 <li class="{{ Request::is('data-barang/create*') ? 'active' : '' }}">
                     <a href="{{ url('/data-barang/create') }}">
                         <span class="pcoded-micon"><i class="fas fa-upload"></i></span>

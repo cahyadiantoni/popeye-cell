@@ -164,6 +164,10 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::resource('/negoan', NegoanController::class)->middleware('auth');
 
     Route::resource('/notification', NotificationController::class)->middleware('auth');
+
+    Route::get('/data-barang-pendingan', [DataBarangController::class, 'pendingan'])->name('data-barang-pendingan.index');
+    Route::post('/data-barang-pendingan', [DataBarangController::class, 'storePendingan'])->name('data-barang-pendingan.store');
+    Route::delete('/data-barang-pendingan/{id}', [DataBarangController::class, 'deletePendingan'])->name('data-barang-pendingan.delete');
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {
