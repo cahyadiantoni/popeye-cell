@@ -34,4 +34,9 @@ class Faktur extends Model
         return $this->hasMany(FakturBukti::class, 't_faktur_id');
     }
 
+    public function transaksiJuals()
+    {
+        return $this->hasMany(TransaksiJual::class, 'nomor_faktur', 'nomor_faktur');
+    }
+
 }

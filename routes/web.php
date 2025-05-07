@@ -72,6 +72,8 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
         return Excel::download(new BarangExport($id), 'stok_barang_' . $id . '.xlsx');
     })->name('export.barang');
 
+    Route::get('/transaksi-faktur/print-multiple', [TransaksiFakturController::class, 'printMultiple'])->name('transaksi-faktur.printMultiple');
+    Route::get('/transaksi-faktur/export', [TransaksiFakturController::class, 'exportMultiple'])->name('transaksi-faktur.exportMultiple');
     Route::resource('/transaksi-faktur', TransaksiFakturController::class)->middleware('auth');
     Route::delete('/transaksi-faktur/{nomor_faktur}', [TransaksiFakturController::class, 'destroy'])->name('transaksi-faktur.delete');
     Route::get('/transaksi-rekap', [TransaksiFakturController::class, 'rekap'])->name('transaksi-faktur.rekap');
@@ -90,6 +92,8 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::post('/transaksi-jual/addbarang', [TransaksiFakturController::class, 'addbarang'])->name('transaksi-jual.addbarang');
     Route::get('/suggest-no-fak', [TransaksiController::class, 'getSuggestNoFak'])->name('suggest.no.fak');
 
+    Route::get('/transaksi-faktur-bawah/print-multiple', [TransaksiFakturBawahController::class, 'printMultiple'])->name('transaksi-faktur-bawah.printMultiple');
+    Route::get('/transaksi-faktur-bawah/export', [TransaksiFakturBawahController::class, 'exportMultiple'])->name('transaksi-faktur-bawah.exportMultiple');
     Route::resource('/transaksi-faktur-bawah', TransaksiFakturBawahController::class)->middleware('auth');
     Route::delete('/transaksi-faktur-bawah/{nomor_faktur}', [TransaksiFakturBawahController::class, 'destroy'])->name('transaksi-faktur-bawah.delete');
     Route::get('/transaksi-faktur-bawah/{nomor_faktur}', [TransaksiFakturBawahController::class, 'show'])->name('transaksi-faktur-bawah.show');

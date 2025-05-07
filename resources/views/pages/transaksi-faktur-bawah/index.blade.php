@@ -70,6 +70,18 @@
                                     <div class="d-flex justify-content-end mt-3">
                                         <button type="submit" class="btn btn-primary">Filter</button>
                                         <a href="{{ route('transaksi-faktur-bawah.index') }}" class="btn btn-secondary mx-2">Reset</a>
+
+                                        @if($roleUser == 'admin')
+                                        <!-- Tombol Print PDF -->
+                                        <a href="{{ route('transaksi-faktur-bawah.printMultiple', request()->query()) }}" class="btn btn-info" target="_blank">
+                                            Print PDF
+                                        </a>
+
+                                        <!-- Tombol Export Excel -->
+                                        <a href="{{ route('transaksi-faktur-bawah.exportMultiple', request()->query()) }}" class="btn btn-success mx-2">
+                                            Export Excel
+                                        </a>
+                                        @endif
                                     </div>
                                 </form>
                             </div>

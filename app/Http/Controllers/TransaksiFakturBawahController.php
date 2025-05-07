@@ -15,6 +15,7 @@ use App\Models\TransaksiJualBawah;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
+use App\Exports\FakturBawahExport;
 
 class TransaksiFakturBawahController extends Controller
 {
@@ -279,5 +280,70 @@ class TransaksiFakturBawahController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    public function printMultiple(Request $request)
+    {
+        $query = FakturBawah::with(['barangs', 'transaksiJuals.barang'])->orderBy('tgl_jual', 'desc');
+
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
+        $fakturs = $query->get();
+
+        // Ambil transaksi jual masing-masing faktur
+        foreach ($fakturs as $faktur) {
+            $faktur->transaksiJuals = TransaksiJualBawah::with('barang')
+                ->where('nomor_faktur', $faktur->nomor_faktur)
+                ->get();
+
+            $subtotalKumulatif = 0;
+            $faktur->transaksiJuals->map(function ($transaksi) use (&$subtotalKumulatif) {
+                $subtotalKumulatif += $transaksi->harga;
+                $transaksi->subtotal = $subtotalKumulatif;
+                return $transaksi;
+            });
+
+            $faktur->totalHarga = $faktur->transaksiJuals->sum('harga');
+        }
+
+        $pdf = \PDF::loadView('pages.transaksi-faktur-bawah.print-multiple', compact('fakturs'))
+            ->setPaper('A4', 'portrait');
+
+        return $pdf->stream('Daftar_Faktur.pdf');
+    }
+
+    public function exportMultiple(Request $request)
+    {
+        // Mulai query untuk mendapatkan faktur dan relasi yang dibutuhkan
+        $query = FakturBawah::with(['barangs', 'transaksiJuals.barang'])->orderBy('tgl_jual', 'desc');
+
+        // Filter berdasarkan tanggal jika ada
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
+        // Ambil data faktur sesuai query
+        $fakturs = $query->get();
+
+        // Ambil transaksi jual dan hitung subtotal
+        foreach ($fakturs as $faktur) {
+            $faktur->transaksiJuals = TransaksiJualBAwah::with('barang')
+                ->where('nomor_faktur', $faktur->nomor_faktur)
+                ->get();
+
+            $subtotalKumulatif = 0;
+            $faktur->transaksiJuals->map(function ($transaksi) use (&$subtotalKumulatif) {
+                $subtotalKumulatif += $transaksi->harga;
+                $transaksi->subtotal = $subtotalKumulatif;
+                return $transaksi;
+            });
+
+            $faktur->totalHarga = $faktur->transaksiJuals->sum('harga');
+        }
+
+        // Ekspor ke Excel
+        return Excel::download(new FakturBawahExport($fakturs), 'faktur_bawah.xlsx');
     }
 }

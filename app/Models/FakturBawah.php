@@ -35,4 +35,9 @@ class FakturBawah extends Model
         return $this->hasOne(FakturKesimpulan::class, 'faktur_id');
     }
 
+    public function transaksiJuals()
+    {
+        return $this->hasMany(TransaksiJualBawah::class, 'nomor_faktur', 'nomor_faktur');
+    }
+
 }

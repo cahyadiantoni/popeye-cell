@@ -15,6 +15,7 @@ use App\Models\TransaksiJual;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
+use App\Exports\FakturExport;
 
 class TransaksiFakturController extends Controller
 {
@@ -498,4 +499,131 @@ class TransaksiFakturController extends Controller
     
         return view('pages.transaksi-faktur.rekap', compact('rekaps', 'daftarGudang', 'filterGudang', 'filterBulan'));
     }    
+    
+    public function printMultiple(Request $request)
+    {
+        $query = Faktur::with(['barangs', 'bukti', 'transaksiJuals.barang'])->orderBy('tgl_jual', 'desc');
+
+        $roleUser = optional(Auth::user())->role;
+        $gudangId = optional(Auth::user())->gudang_id;
+
+        if ($roleUser == 'admin') {
+            $daftarGudang = ['AT', 'TKP', 'VR', 'BW'];
+            if ($request->filled('kode_faktur')) {
+                $kodeFaktur = $request->kode_faktur;
+                if (in_array($kodeFaktur, $daftarGudang)) {
+                    $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
+                } else {
+                    $query->where(function ($q) use ($daftarGudang) {
+                        foreach ($daftarGudang as $kode) {
+                            $q->where('nomor_faktur', 'not like', "$kode-%");
+                        }
+                    });
+                }
+            }
+        } else {
+            switch ($gudangId) {
+                case 1: $query->where('nomor_faktur', 'like', "BW-%"); break;
+                case 2: $query->where('nomor_faktur', 'like', "AT-%"); break;
+                case 3: $query->where('nomor_faktur', 'like', "TKP-%"); break;
+                case 5: $query->where('nomor_faktur', 'like', "VR-%"); break;
+            }
+        }
+
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('is_lunas', $request->status == 'Lunas' ? 1 : 0);
+        }
+
+        $fakturs = $query->get();
+
+        // Ambil transaksi jual masing-masing faktur
+        foreach ($fakturs as $faktur) {
+            $faktur->transaksiJuals = TransaksiJual::with('barang')
+                ->where('nomor_faktur', $faktur->nomor_faktur)
+                ->get();
+
+            $subtotalKumulatif = 0;
+            $faktur->transaksiJuals->map(function ($transaksi) use (&$subtotalKumulatif) {
+                $subtotalKumulatif += $transaksi->harga;
+                $transaksi->subtotal = $subtotalKumulatif;
+                return $transaksi;
+            });
+
+            $faktur->totalHarga = $faktur->transaksiJuals->sum('harga');
+        }
+
+        $pdf = \PDF::loadView('pages.transaksi-faktur.print-multiple', compact('fakturs'))
+            ->setPaper('A4', 'portrait');
+
+        return $pdf->stream('Daftar_Faktur.pdf');
+    }
+
+    public function exportMultiple(Request $request)
+    {
+        // Mulai query untuk mendapatkan faktur dan relasi yang dibutuhkan
+        $query = Faktur::with(['barangs', 'bukti', 'transaksiJuals.barang'])->orderBy('tgl_jual', 'desc');
+
+        $roleUser = optional(Auth::user())->role;
+        $gudangId = optional(Auth::user())->gudang_id;
+
+        // Filter berdasarkan role user
+        if ($roleUser == 'admin') {
+            $daftarGudang = ['AT', 'TKP', 'VR', 'BW'];
+            if ($request->filled('kode_faktur')) {
+                $kodeFaktur = $request->kode_faktur;
+                if (in_array($kodeFaktur, $daftarGudang)) {
+                    $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
+                } else {
+                    $query->where(function ($q) use ($daftarGudang) {
+                        foreach ($daftarGudang as $kode) {
+                            $q->where('nomor_faktur', 'not like', "$kode-%");
+                        }
+                    });
+                }
+            }
+        } else {
+            switch ($gudangId) {
+                case 1: $query->where('nomor_faktur', 'like', "BW-%"); break;
+                case 2: $query->where('nomor_faktur', 'like', "AT-%"); break;
+                case 3: $query->where('nomor_faktur', 'like', "TKP-%"); break;
+                case 5: $query->where('nomor_faktur', 'like', "VR-%"); break;
+            }
+        }
+
+        // Filter berdasarkan tanggal jika ada
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
+        // Filter berdasarkan status (Lunas/Hutang)
+        if ($request->filled('status')) {
+            $query->where('is_lunas', $request->status == 'Lunas' ? 1 : 0);
+        }
+
+        // Ambil data faktur sesuai query
+        $fakturs = $query->get();
+
+        // Ambil transaksi jual dan hitung subtotal
+        foreach ($fakturs as $faktur) {
+            $faktur->transaksiJuals = TransaksiJual::with('barang')
+                ->where('nomor_faktur', $faktur->nomor_faktur)
+                ->get();
+
+            $subtotalKumulatif = 0;
+            $faktur->transaksiJuals->map(function ($transaksi) use (&$subtotalKumulatif) {
+                $subtotalKumulatif += $transaksi->harga;
+                $transaksi->subtotal = $subtotalKumulatif;
+                return $transaksi;
+            });
+
+            $faktur->totalHarga = $faktur->transaksiJuals->sum('harga');
+        }
+
+        // Ekspor ke Excel
+        return Excel::download(new FakturExport($fakturs), 'faktur_atas.xlsx');
+    }
 }
