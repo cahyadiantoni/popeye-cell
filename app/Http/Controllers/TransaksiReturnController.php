@@ -19,7 +19,7 @@ class TransaksiReturnController extends Controller
     public function index()
     {
         // Mengambil semua transaksi return barang
-        $returns = ReturnModel::with(['returnBarang'])->get()->map(function ($return) {
+        $returns = ReturnModel::with(['returnBarang'])->orderBy('created_at', 'desc')->get()->map(function ($return) {
             // Hitung total barang
             $total_barang = $return->returnBarang->count();
     
