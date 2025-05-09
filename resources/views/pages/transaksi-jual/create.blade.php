@@ -97,6 +97,9 @@
                                                 <option value="Grade B">Grade B</option>
                                                 <option value="Grade C">Grade C</option>
                                                 <option value="Batangan">Batangan</option>
+                                                <option value="Batangan">Iphone</option>
+                                                <option value="Batangan">Borongan Minus</option>
+                                                <option value="Batangan">Pengambilan AM</option>
                                                 <option value="Lain Lain">Lain Lain</option>
                                             </select>
                                         </div>
