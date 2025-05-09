@@ -24,7 +24,9 @@ use App\Http\Controllers\AdmTodoTransferController;
 use App\Http\Controllers\AdmSettingController;
 use App\Http\Controllers\AdmItemTokpedController;
 use App\Http\Controllers\AdmReqTokpedController;
+use App\Http\Controllers\MacCheckController;
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\CheckMacAccess;
 use App\Exports\BarangExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -32,9 +34,17 @@ use Maatwebsite\Excel\Facades\Excel;
 Auth::routes();
 Auth::routes(['register' => false]);
 
-Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->middleware('auth');
+Route::get('/mac-launcher', function (\Illuminate\Http\Request $request) {
+    $mac = $request->query('mac');
+    return view('mac-launcher', ['mac' => $mac]);
+});
 
-Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function () {
+Route::post('/check-mac', [MacCheckController::class, 'check'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
+Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->middleware('auth', CheckMacAccess::class);
+
+Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sales'])->group(function () {
     Route::resource('/data-user', DataUSerController::class)->middleware('auth');
     Route::resource('/data-gudang', DataGudangController::class)->middleware('auth');
     Route::resource('/data-barang', DataBarangController::class)->middleware('auth');
@@ -172,6 +182,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':sales'])->group(function ()
     Route::get('/data-barang-pendingan', [DataBarangController::class, 'pendingan'])->name('data-barang-pendingan.index');
     Route::post('/data-barang-pendingan', [DataBarangController::class, 'storePendingan'])->name('data-barang-pendingan.store');
     Route::delete('/data-barang-pendingan/{id}', [DataBarangController::class, 'deletePendingan'])->name('data-barang-pendingan.delete');
+    Route::resource('/mac-address', MacCheckController::class)->middleware('auth');
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {
