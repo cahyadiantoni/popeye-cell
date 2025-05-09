@@ -19,6 +19,12 @@
                             <span class="pcoded-mtext">Data User</span>
                         </a>
                     </li>
+                    <li class="{{ Request::is('mac-address*') ? 'active' : '' }}">
+                        <a href="{{ url('/mac-address') }}">
+                            <span class="pcoded-micon"><i class="fas fa-desktop"></i></span>
+                            <span class="pcoded-mtext">Data Mac Address</span>
+                        </a>
+                    </li>
                     <li class="{{ Request::is('data-gudang*') ? 'active' : '' }}">
                         <a href="{{ url('/data-gudang') }}">
                             <span class="pcoded-micon"><i class="fas fa-warehouse"></i></span>

@@ -173,6 +173,8 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::resource('/negoan', NegoanController::class)->middleware('auth');
 
     Route::resource('/notification', NotificationController::class)->middleware('auth');
+
+    Route::resource('/mac-address', MacCheckController::class)->middleware('auth');
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {

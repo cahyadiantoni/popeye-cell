@@ -10,6 +10,43 @@ use App\Models\MacAddress;
 
 class MacCheckController extends Controller
 {
+    public function index()
+    {
+        $macs = MacAddress::orderBy('updated_at', 'desc')->get();
+        return view('pages.mac-address.index', compact('macs'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'mac' => 'required|string|max:255|unique:mac_addresses,mac',
+            'status' => 'required|integer'
+        ]);
+
+        MacAddress::create($request->all());
+        return redirect()->back()->with('success', 'MAC address berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'mac' => 'required|string|max:255|unique:mac_addresses,mac,' . $id,
+            'status' => 'required|integer'
+        ]);
+
+        $mac = MacAddress::findOrFail($id);
+        $mac->update($request->all());
+
+        return redirect()->back()->with('success', 'MAC address berhasil diperbarui.');
+    }
+
+    public function destroy($id)
+    {
+        $mac = MacAddress::findOrFail($id);
+        $mac->delete();
+
+        return redirect()->back()->with('success', 'MAC address berhasil dihapus.');
+    }
 
     public function check(Request $request)
     {
