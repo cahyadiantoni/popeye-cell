@@ -42,6 +42,9 @@ class TransaksiFakturOnlineController extends Controller
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
             $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
         }
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
 
         $fakturs = $query->get();
         $roleUser = optional(Auth::user())->role;
@@ -218,7 +221,6 @@ class TransaksiFakturOnlineController extends Controller
             // Update Barang untuk lok_spk yang valid
             foreach ($validLokSpk as $item) {
                 Barang::where('lok_spk', $item['lok_spk'])->update([
-                    'status_barang' => 2,
                     'no_faktur' => $request->input('faktur_online_id'),
                     'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
                 ]);
@@ -303,13 +305,22 @@ class TransaksiFakturOnlineController extends Controller
     public function tandaiSudahDicek($id)
     {
         try {
-            // Cari faktur berdasarkan nomor_faktur
-            $faktur = FakturOnline::where('id', $id)->firstOrFail();
+            // Ambil faktur beserta transaksi jual dan barang-nya
+            $faktur = FakturOnline::with('transaksiJuals.barang')->where('id', $id)->firstOrFail();
 
+            // Update is_finish
             $faktur->is_finish = 1;
             $faktur->save();
-    
-            return redirect()->back()->with('success', 'Faktur ditandai sudah selesai');
+
+            // Loop semua transaksi jual
+            foreach ($faktur->transaksiJuals as $transaksi) {
+                if ($transaksi->barang) {
+                    $transaksi->barang->status_barang = 2;
+                    $transaksi->barang->save();
+                }
+            }
+
+            return redirect()->back()->with('success', 'Faktur ditandai sudah selesai dan barang diperbarui.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }

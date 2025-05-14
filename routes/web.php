@@ -5,6 +5,7 @@ use App\Http\Controllers\NegoanController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TerimaBarangController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\DataUserController;
 use App\Http\Controllers\DataGudangController;
 use App\Http\Controllers\DataBarangController;
@@ -78,8 +79,9 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::put('/transaksi-return-barang', [TransaksiReturnController::class, 'updateBarang'])->name('transaksi-return-barang.update');
     Route::post('/transaksi-return-barang/addbarang', [TransaksiReturnController::class, 'addBarang'])->name('transaksi-return-barang.addbarang');
 
-    Route::get('/export-barang/{id}', function ($id) {
-        return Excel::download(new BarangExport($id), 'stok_barang_' . $id . '.xlsx');
+    Route::get('/export-barang/{id}', function (Request $request, $id) {
+        $jenis = $request->query('jenis');
+        return Excel::download(new BarangExport($id, $jenis), 'stok_barang_' . $id . '.xlsx');
     })->name('export.barang');
 
     Route::get('/transaksi-faktur/print-multiple', [TransaksiFakturController::class, 'printMultiple'])->name('transaksi-faktur.printMultiple');

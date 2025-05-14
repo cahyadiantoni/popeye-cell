@@ -15,11 +15,15 @@
                     </div>
                 </div>
                 <div class="col-lg-4 text-end">
+                    @if($roleUser=='admin' && $faktur->is_finish==0)
+                        <form action="{{ route('transaksi-faktur-online.tandai-sudah-dicek', $faktur->id) }}" method="POST" class="d-inline finish-form">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="btn btn-primary finish-btn">Tandai Dicek</button>
+                        </form>
+                    @endif
                     <a href="{{ route('transaksi-faktur-online.print', $faktur->id) }}" class="btn btn-primary" target="_blank">Print PDF</a>
                     <a href="{{ route('transaksi-faktur-online.index') }}" class="btn btn-secondary">Kembali</a>
-                    @if($roleUser=='admin' && $faktur->is_finish==0)
-                    <button class="btn btn-success" id="addBarangBtn">Add Barang</button>
-                    @endif
                 </div>
             </div>
         </div>
@@ -90,8 +94,11 @@
 
             <!-- Tabel Barang -->
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between">
                     <h5>Daftar Barang</h5>
+                    @if($roleUser=='admin' && $faktur->is_finish==0)
+                        <button class="btn btn-success" id="addBarangBtn">Add Barang</button>
+                    @endif
                 </div>
                 <div class="card-block table-responsive">
                     <table class="table table-striped table-bordered">

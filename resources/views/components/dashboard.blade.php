@@ -83,9 +83,11 @@
                                     <div class="col-8">
                                         <h4 class="text-white">Gudang Vira</h4>
                                         <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[5]->total ?? 0 }} </h5>
-                                        <h6 class="text-white m-b-0">Box : {{ $stokBox[5]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[5]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[5]->total ?? 0 }} </h6>
+                                        @forelse ($stokJenisGudang5 as $item)
+                                            <h6 class="text-white m-b-0">{{ $item->jenis }} : {{ $item->total ?? 0}} </h6>
+                                        @empty
+                                            <h6 class="text-white m-b-0">NA</h6>
+                                        @endforelse
                                     </div>
                                     <div class="col-4 text-end">
                                         <canvas id="update-chart-4" height="50"></canvas>

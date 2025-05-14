@@ -60,7 +60,7 @@ class KirimBarangController extends Controller
     
                 if ($barang) {
                     // Cek apakah status_barang adalah 0 atau 1
-                    if (in_array($barang->status_barang, [0, 1])) {
+                    if (in_array($barang->status_barang, [0, 1, 2])) {
                         // Simpan lok_spk untuk update nanti
                         $validLokSpk[] = [
                             'lok_spk' => $lokSpk,

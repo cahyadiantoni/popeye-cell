@@ -155,7 +155,6 @@ class TransaksiOnlineController extends Controller
             // Update Barang untuk lok_spk yang valid
             foreach ($validLokSpk as $item) {
                 Barang::where('lok_spk', $item['lok_spk'])->update([
-                    'status_barang' => 2,
                     'no_faktur' => $fakturOnlineId,
                     'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
                 ]);

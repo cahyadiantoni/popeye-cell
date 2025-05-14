@@ -66,6 +66,14 @@
                                             <label for="tanggal_selesai">Tanggal Selesai</label>
                                             <input type="date" name="tanggal_selesai" class="form-control" value="{{ request('tanggal_selesai') }}">
                                         </div>
+                                        <div class="col-md-3">
+                                            <label for="cek">Cek</label>
+                                            <select name="cek" class="form-control">
+                                                <option value="">-- Semua cek --</option>
+                                                <option value="Sudah_Dicek" {{ request('cek') == 'Sudah_Dicek' ? 'selected' : '' }}>Sudah Dicek</option>
+                                                <option value="Belum_Dicek" {{ request('cek') == 'Belum_Dicek' ? 'selected' : '' }}>Belum Dicek</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="d-flex justify-content-end mt-3">
                                         <button type="submit" class="btn btn-primary">Filter</button>

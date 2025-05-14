@@ -72,6 +72,10 @@ class TransaksiFakturOutletController extends Controller
                 $query->where('is_lunas', 0);
             }
         }
+
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
     
         $fakturs = $query->get();
     
@@ -284,7 +288,6 @@ class TransaksiFakturOutletController extends Controller
                         ->first();
 
                 Barang::where('lok_spk', $item['lok_spk'])->update([
-                    'status_barang' => 2,
                     'no_faktur' => $request->input('nomor_faktur'),
                     'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
                 ]);
@@ -429,13 +432,22 @@ class TransaksiFakturOutletController extends Controller
     public function tandaiSudahDicek($id)
     {
         try {
-            // Cari faktur berdasarkan nomor_faktur
-            $faktur = FakturOutlet::where('id', $id)->firstOrFail();
+            // Ambil faktur beserta transaksi jual dan barang-nya
+            $faktur = FakturOutlet::with('transaksiJuals.barang')->where('id', $id)->firstOrFail();
 
+            // Update is_finish
             $faktur->is_finish = 1;
             $faktur->save();
-    
-            return redirect()->back()->with('success', 'FakturOutlet ditandai sudah selesai');
+
+            // Loop semua transaksi jual
+            foreach ($faktur->transaksiJuals as $transaksi) {
+                if ($transaksi->barang) {
+                    $transaksi->barang->status_barang = 2;
+                    $transaksi->barang->save();
+                }
+            }
+
+            return redirect()->back()->with('success', 'Faktur ditandai sudah selesai dan barang diperbarui.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }

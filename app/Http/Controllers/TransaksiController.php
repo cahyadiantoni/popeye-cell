@@ -168,7 +168,6 @@ class TransaksiController extends Controller
                         ->first();
 
                 Barang::where('lok_spk', $item['lok_spk'])->update([
-                    'status_barang' => 2,
                     'no_faktur' => $request->input('nomor_faktur'),
                     'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
                 ]);

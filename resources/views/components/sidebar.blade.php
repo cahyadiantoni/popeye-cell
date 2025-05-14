@@ -183,17 +183,6 @@
                 </li>
             </ul>
             @endif
-            @if(auth()->user()->role=="admin")
-            <div class="pcoded-navigatio-lavel">Transaksi Return</div>
-            <ul class="pcoded-item pcoded-left-item">
-                <li class="{{ Request::is('transaksi-return*') ? 'active' : '' }}">
-                    <a href="{{ url('/transaksi-return') }}">
-                        <span class="pcoded-micon"><i class="fas fa-undo"></i></span>
-                        <span class="pcoded-mtext">Transaksi Return</span>
-                    </a>
-                </li>
-            </ul>
-            @endif
             @if(auth()->user()->gudang_id == 8 || auth()->user()->gudang_id == 9 || auth()->user()->gudang_id == 10 || auth()->user()->role == 'admin')
             <div class="pcoded-navigatio-lavel">Transaksi Outlet</div>
             <ul class="pcoded-item pcoded-left-item">
@@ -219,6 +208,17 @@
                     <a href="{{ url('/transaksi-rekap-outlet') }}">
                         <span class="pcoded-micon"><i class="fas fa-chart-bar"></i></span>
                         <span class="pcoded-mtext">Rekap Transaksi Outlet</span>
+                    </a>
+                </li>
+            </ul>
+            @endif
+            @if(auth()->user()->role=="admin")
+            <div class="pcoded-navigatio-lavel">Transaksi Return</div>
+            <ul class="pcoded-item pcoded-left-item">
+                <li class="{{ Request::is('transaksi-return*') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-return') }}">
+                        <span class="pcoded-micon"><i class="fas fa-undo"></i></span>
+                        <span class="pcoded-mtext">Transaksi Return</span>
                     </a>
                 </li>
             </ul>

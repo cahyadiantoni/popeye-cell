@@ -54,7 +54,13 @@ class HomeController extends Controller
             ->get()
             ->keyBy('gudang_id'); // Mempermudah akses data berdasarkan gudang_id
 
-        return view('pages.dashboard', compact('stokGudangs', 'stokBox', 'stokBtg', 'stokNa'));
+        $stokJenisGudang5 = Barang::selectRaw('jenis, COUNT(*) as total')
+            ->where('gudang_id', 5)
+            ->whereIn('status_barang', [0, 1]) // Ambil status 0 dan 1
+            ->groupBy('jenis')
+            ->get();
+
+        return view('pages.dashboard', compact('stokGudangs', 'stokBox', 'stokBtg', 'stokNa', 'stokJenisGudang5'));
     }
 
 }

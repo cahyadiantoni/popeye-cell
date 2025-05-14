@@ -85,6 +85,14 @@
                                                 <option value="Hutang" {{ request('status') == 'Hutang' ? 'selected' : '' }}>Hutang</option>
                                             </select>
                                         </div>
+                                        <div class="col-md-3">
+                                            <label for="cek">Cek</label>
+                                            <select name="cek" class="form-control">
+                                                <option value="">-- Semua cek --</option>
+                                                <option value="Sudah_Dicek" {{ request('cek') == 'Sudah_Dicek' ? 'selected' : '' }}>Sudah Dicek</option>
+                                                <option value="Belum_Dicek" {{ request('cek') == 'Belum_Dicek' ? 'selected' : '' }}>Belum Dicek</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="d-flex justify-content-end mt-3">
                                         <button type="submit" class="btn btn-primary">Filter</button>

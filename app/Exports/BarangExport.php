@@ -13,28 +13,36 @@ class BarangExport implements FromCollection, WithHeadings, WithStyles, ShouldAu
 {
     protected $id;
 
-    public function __construct($id)
+    public function __construct($id, $jenis = null)
     {
         $this->id = $id;
+        $this->jenis = $jenis;
     }
 
     public function collection()
     {
-        return Barang::with('gudang')
-            ->where('gudang_id', $this->id)
-            ->where('status_barang', 1)
-            ->get()
-            ->map(function ($barang, $index) {
-                return [
-                    'no' => $index + 1, // Tambahkan nomor urut
-                    'lok_spk' => $barang->lok_spk,
-                    'jenis' => $barang->jenis,
-                    'tipe' => $barang->tipe,
-                    'grade' => $barang->grade,
-                    'kelengkapan' => $barang->kelengkapan,
-                    'gudang' => $barang->gudang->nama_gudang ?? 'N/A',
-                ];
-            });
+        $query = Barang::with('gudang')
+            ->where('status_barang', 1);
+
+        if ($this->id !== 'all') {
+            $query->where('gudang_id', $this->id);
+        }
+
+        if ($this->jenis) {
+            $query->where('jenis', $this->jenis);
+        }
+
+        return $query->get()->map(function ($barang, $index) {
+            return [
+                'no' => $index + 1,
+                'lok_spk' => $barang->lok_spk,
+                'jenis' => $barang->jenis,
+                'tipe' => $barang->tipe,
+                'grade' => $barang->grade,
+                'kelengkapan' => $barang->kelengkapan,
+                'gudang' => $barang->gudang->nama_gudang ?? 'N/A',
+            ];
+        });
     }
 
     public function headings(): array

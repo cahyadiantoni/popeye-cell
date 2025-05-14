@@ -35,6 +35,33 @@
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="card">
+                            <div class="card-header">
+                                <form action="{{ route('stokOpname') }}" method="GET">
+                                    <input type="hidden" name="gudang_id" value="{{ $selectedGudang->id }}">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label for="jenis">Jenis</label>
+                                            <select name="jenis" class="form-control">
+                                                <option value="">-- Semua jenis --</option>
+                                                <option value="HP" {{ request('jenis') == 'HP' ? 'selected' : '' }}>HP</option>
+                                                <option value="LAPTOP" {{ request('jenis') == 'LAPTOP' ? 'selected' : '' }}>LAPTOP</option>
+                                                <option value="DSLR" {{ request('jenis') == 'DSLR' ? 'selected' : '' }}>DSLR</option>
+                                                <option value="TV" {{ request('jenis') == 'TV' ? 'selected' : '' }}>TV</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end mt-3">
+                                        <button type="submit" class="btn btn-primary">Filter</button>
+                                        <a href="{{ route('stokOpname', ['gudang_id' => $selectedGudang->id]) }}" class="btn btn-secondary mx-2">Reset</a>
+
+                                        <a href="{{ route('export.barang', ['id' => $selectedGudang->id, 'jenis' => request('jenis')]) }}" class="btn btn-success mx-2">
+                                            Export Excel
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="card">
                             @if(session('success'))
                                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                                     {{ session('success') }}
@@ -42,12 +69,6 @@
                                 </div>
                             @endif
                             <div class="card-block">
-                                <div class="mb-3">
-                                    <a href="{{ route('choiceGudang') }}" class="btn btn-secondary">Kembali Pilih Gudang</a>
-                                </div>
-                                <div class="mb-3">
-                                    <a href="{{ route('export.barang', ['id' => $selectedGudang->id]) }}" class="btn btn-primary">Download Excel</a>
-                                </div>
                                 <div class="dt-responsive table-responsive">
                                         <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                             <thead>

@@ -50,7 +50,10 @@ class TransaksiFakturController extends Controller
                     $query->where('nomor_faktur', 'like', "BW-%");
                     break;
                 case 2:
-                    $query->where('nomor_faktur', 'like', "AT-%");
+                    $query->where(function ($q) {
+                        $q->where('nomor_faktur', 'like', 'AT-%')
+                        ->orWhere('nomor_faktur', 'like', 'LN-%');
+                    });
                     break;
                 case 3:
                     $query->where('nomor_faktur', 'like', "TKP-%");
@@ -60,7 +63,7 @@ class TransaksiFakturController extends Controller
                     break;
                 default:
                     break;
-            }            
+            }
         }
     
         // Filter berdasarkan rentang tanggal
@@ -75,6 +78,10 @@ class TransaksiFakturController extends Controller
             } elseif ($request->status == 'Hutang') {
                 $query->where('is_lunas', 0);
             }
+        }
+        
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
         }
     
         $fakturs = $query->get();
@@ -288,7 +295,6 @@ class TransaksiFakturController extends Controller
                         ->first();
 
                 Barang::where('lok_spk', $item['lok_spk'])->update([
-                    'status_barang' => 2,
                     'no_faktur' => $request->input('nomor_faktur'),
                     'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
                 ]);
@@ -433,13 +439,22 @@ class TransaksiFakturController extends Controller
     public function tandaiSudahDicek($id)
     {
         try {
-            // Cari faktur berdasarkan nomor_faktur
-            $faktur = Faktur::where('id', $id)->firstOrFail();
+            // Ambil faktur beserta transaksi jual dan barang-nya
+            $faktur = Faktur::with('transaksiJuals.barang')->where('id', $id)->firstOrFail();
 
+            // Update is_finish
             $faktur->is_finish = 1;
             $faktur->save();
-    
-            return redirect()->back()->with('success', 'Faktur ditandai sudah selesai');
+
+            // Loop semua transaksi jual
+            foreach ($faktur->transaksiJuals as $transaksi) {
+                if ($transaksi->barang) {
+                    $transaksi->barang->status_barang = 2;
+                    $transaksi->barang->save();
+                }
+            }
+
+            return redirect()->back()->with('success', 'Faktur ditandai sudah selesai dan barang diperbarui.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -538,6 +553,10 @@ class TransaksiFakturController extends Controller
             $query->where('is_lunas', $request->status == 'Lunas' ? 1 : 0);
         }
 
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
+
         $fakturs = $query->get();
 
         // Ambil transaksi jual masing-masing faktur
@@ -602,6 +621,10 @@ class TransaksiFakturController extends Controller
         // Filter berdasarkan status (Lunas/Hutang)
         if ($request->filled('status')) {
             $query->where('is_lunas', $request->status == 'Lunas' ? 1 : 0);
+        }
+
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
         }
 
         // Ambil data faktur sesuai query

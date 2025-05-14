@@ -231,31 +231,29 @@ class StokGudangController extends Controller
 
     public function stok_opname(Request $request)
     {
-        // Ambil ID gudang dari query string, default 'all' jika tidak ada
         $gudangId = $request->query('gudang_id', 'all');
-    
-        // Ambil semua gudang
+        $jenis = $request->query('jenis'); // Ambil query filter jenis
+
         $allgudangs = Gudang::all();
-    
+
         if ($gudangId === 'all') {
-            $selectedGudang = (object) ['nama_gudang' => 'Semua Gudang'];
-            $barangs = Barang::with('gudang')
-                ->where('status_barang', 1) // Menambahkan kondisi untuk status
-                ->get();
+            $selectedGudang = (object) ['nama_gudang' => 'Semua Gudang', 'id' => 'all'];
+            $query = Barang::with('gudang')->where('status_barang', 1);
         } else {
-            // Validasi dan ambil data gudang yang dipilih
             $selectedGudang = Gudang::findOrFail($gudangId);
-    
-            // Ambil data barang terkait gudang
-            $barangs = Barang::with('gudang')
+            $query = Barang::with('gudang')
                 ->where('gudang_id', $gudangId)
-                ->where('status_barang', 1)
-                ->get();
+                ->where('status_barang', 1);
         }
-    
-        // Kirim data ke view
-        return view('pages.stok-gudang.stok_opname', compact('selectedGudang', 'barangs', 'allgudangs'));
-    }    
+
+        if ($jenis) {
+            $query->whereRaw('LOWER(jenis) = ?', [strtolower($jenis)]);
+        }
+
+        $barangs = $query->get();
+
+        return view('pages.stok-gudang.stok_opname', compact('selectedGudang', 'barangs', 'allgudangs', 'jenis'));
+    }
     
 
     public function handleRequest(Request $request)

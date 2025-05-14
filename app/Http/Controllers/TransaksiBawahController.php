@@ -181,7 +181,6 @@ class TransaksiBawahController extends Controller
                     ->first();
 
                 $barang->update([
-                    'status_barang' => 2,
                     'no_faktur' => $request->nomor_faktur,
                     'harga_jual' => $item['harga_jual'],
                 ]);

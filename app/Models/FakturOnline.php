@@ -29,4 +29,8 @@ class FakturOnline extends Model
         return $this->hasMany(TransaksiJualOnline::class, 'faktur_online_id', 'id');
     }
 
+    public function transaksiJuals()
+    {
+        return $this->hasMany(TransaksiJualOnline::class, 'faktur_online_id', 'id');
+    }
 }

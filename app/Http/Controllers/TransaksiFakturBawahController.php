@@ -31,6 +31,10 @@ class TransaksiFakturBawahController extends Controller
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
             $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
         }
+
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
     
         $fakturs = $query->get();
     
@@ -217,7 +221,6 @@ class TransaksiFakturBawahController extends Controller
                     ->first();
 
                 Barang::where('lok_spk', $item['lok_spk'])->update([
-                    'status_barang' => 2,
                     'no_faktur' => $request->input('nomor_faktur'),
                     'harga_jual' => $item['harga_jual'],
                 ]);
@@ -270,13 +273,22 @@ class TransaksiFakturBawahController extends Controller
     public function tandaiSudahDicek($id)
     {
         try {
-            // Cari faktur berdasarkan nomor_faktur
-            $faktur = FakturBawah::where('id', $id)->firstOrFail();
+            // Ambil faktur beserta transaksi jual dan barang-nya
+            $faktur = FakturBawah::with('transaksiJuals.barang')->where('id', $id)->firstOrFail();
 
+            // Update is_finish
             $faktur->is_finish = 1;
             $faktur->save();
-    
-            return redirect()->back()->with('success', 'Berhasil ditandai sudah dicek');
+
+            // Loop semua transaksi jual
+            foreach ($faktur->transaksiJuals as $transaksi) {
+                if ($transaksi->barang) {
+                    $transaksi->barang->status_barang = 2;
+                    $transaksi->barang->save();
+                }
+            }
+
+            return redirect()->back()->with('success', 'Faktur ditandai sudah selesai dan barang diperbarui.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -288,6 +300,10 @@ class TransaksiFakturBawahController extends Controller
 
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
             $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
         }
 
         $fakturs = $query->get();
@@ -322,6 +338,10 @@ class TransaksiFakturBawahController extends Controller
         // Filter berdasarkan tanggal jika ada
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
             $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
         }
 
         // Ambil data faktur sesuai query
