@@ -161,6 +161,69 @@
                 </div>
             </div>
 
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <h5>List Pembayaran Midtrans</h5>
+                    @if($faktur->is_finish == 0)
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">Tambah Pembayaran</button>
+                    @endif
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Channel</th>
+                                <th>Status</th>
+                                <th>Nominal</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($faktur->payments->sortByDesc('created_at') as $payment)
+                            @php
+                                // Mapping status ke badge class bootstrap
+                                switch ($payment->status) {
+                                    case 'settlement':
+                                    case 'capture':
+                                        $badgeClass = 'badge bg-success';
+                                        break;
+                                    case 'pending':
+                                    case 'in_process':
+                                        $badgeClass = 'badge bg-warning text-dark';
+                                        break;
+                                    case 'deny':
+                                    case 'cancel':
+                                    case 'expire':
+                                    case 'failure':
+                                        $badgeClass = 'badge bg-danger';
+                                        break;
+                                    default:
+                                        $badgeClass = 'badge bg-secondary';
+                                }
+                            @endphp
+                            <tr>
+                                <td>{{ $payment->order_id }}</td>
+                                <td>{{ $payment->channel ?? '-' }}</td>
+                                <td><span class="{{ $badgeClass }}">{{ ucfirst($payment->status) }}</span></td>
+                                <td>Rp. {{ number_format($payment->amount, 0, ',', '.') }}</td>
+                                <td>{{ $payment->created_at->format('d/m/Y H:i') }}</td>
+                                <td>
+                                    {{-- Tombol Bayar hanya untuk pending/in_process --}}
+                                    @if(in_array($payment->status, ['pending', 'in_process']))
+                                        <button class="btn btn-primary btn-sm btn-pay" data-order-id="{{ $payment->order_id }}" data-amount="{{ $payment->amount }}">
+                                            Bayar
+                                        </button>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Tabel Barang -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
@@ -302,6 +365,120 @@
     </div>
 </div>
 
+<div class="modal fade" id="addPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="midtrans-payment-form">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Tambah Pembayaran</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="t_faktur_id" value="{{ $faktur->id }}">
+                    <input type="number" class="form-control mb-2" id="amount" name="amount" placeholder="Nominal Pembayaran" required>
+                    <small class="form-text text-muted" id="amount_display">{{ 'Rp. 0' }}</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Bayar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
+<script>
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+
+    $('#midtrans-payment-form').submit(function(e) {
+        e.preventDefault();
+        let form = $(this)[0];
+        let formData = new FormData(form);
+        let submitBtn = $(this).find('button[type="submit"]');
+
+        submitBtn.prop('disabled', true);
+
+        $.ajax({
+            url: "{{ route('payment.store') }}",
+            method: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(data) {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('addPaymentModal'));
+                if(modal) modal.hide();
+
+                snap.pay(data.token, {
+                    onSuccess: function(result) {
+                        location.reload();
+                    },
+                    onPending: function(result) {
+                        alert("Menunggu pembayaran selesai.");
+                        location.reload();
+                    },
+                    onError: function(result) {
+                        alert("Gagal memproses pembayaran.");
+                        submitBtn.prop('disabled', false);
+                    }
+                });
+            },
+            error: function(xhr) {
+                alert("Gagal menghubungi server.");
+                submitBtn.prop('disabled', false);
+            }
+        });
+    });
+</script>
+
+<script>
+    $(document).on('click', '.btn-pay', function() {
+        let orderId = $(this).data('order-id');
+        let amount = $(this).data('amount');
+        let btn = $(this);
+        
+        btn.prop('disabled', true);
+
+        // Kirim request ke server untuk dapat token Snap berdasarkan orderId
+        $.ajax({
+            url: '/payment/retry', // route baru untuk generate snap token bayar ulang
+            method: 'POST',
+            data: {
+                order_id: orderId,
+                amount: amount,
+                _token: $('meta[name="csrf-token"]').attr('content'),
+            },
+            success: function(res) {
+                snap.pay(res.token, 
+                {
+                    onSuccess: function(result) {
+                        location.reload();
+                    },
+                    onPending: function(result) {
+                        alert('Menunggu pembayaran selesai.');
+                        location.reload();
+                    },
+                    onError: function(result) {
+                        alert('Gagal memproses pembayaran.');
+                        btn.prop('disabled', false);
+                    }
+                });
+            },
+            error: function() {
+                alert('Gagal menghubungi server.');
+                btn.prop('disabled', false);
+            }
+        });
+    });
+</script>
+
 <script>
     $(document).ready(function() {
         // Function to format number as currency
@@ -313,6 +490,11 @@
         $('#nominal').on('input', function() {
             const value = $(this).val();
             $('#nominal_display').text(formatCurrency(value));
+        });
+
+        $('#amount').on('input', function() {
+            const value = $(this).val();
+            $('#amount_display').text(formatCurrency(value));
         });
     });
 </script>

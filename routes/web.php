@@ -26,6 +26,7 @@ use App\Http\Controllers\AdmSettingController;
 use App\Http\Controllers\AdmItemTokpedController;
 use App\Http\Controllers\AdmReqTokpedController;
 use App\Http\Controllers\MacCheckController;
+use App\Http\Controllers\FakturPaymentController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckMacAccess;
 use App\Exports\BarangExport;
@@ -34,6 +35,10 @@ use Maatwebsite\Excel\Facades\Excel;
 
 Auth::routes();
 Auth::routes(['register' => false]);
+
+Route::post('/payment/create', [FakturPaymentController::class, 'store'])->name('payment.store');
+Route::post('/payment/retry', [FakturPaymentController::class, 'retry'])->name('payment.retry');
+Route::post('/payment/callback', [FakturPaymentController::class, 'callback'])->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])->name('payment.callback');
 
 Route::get('/mac-launcher', function (\Illuminate\Http\Request $request) {
     $mac = $request->query('mac');
