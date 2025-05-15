@@ -284,7 +284,7 @@ class TransaksiOutletController extends Controller
 
         // Ambil faktur terakhir dengan format yang sesuai
         $lastFaktur = FakturOutlet::where('nomor_faktur', 'like', "$kodeFaktur-$currentMonthYear-%")
-            ->orderByRaw("CAST(SUBSTRING(nomor_faktur, 10, LENGTH(nomor_faktur) - 9) AS UNSIGNED) DESC")
+            ->orderByRaw("CAST(SUBSTRING_INDEX(nomor_faktur, '-', -1) AS UNSIGNED) DESC")
             ->first();
 
         // Tentukan nomor urut
