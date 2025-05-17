@@ -30,7 +30,7 @@
                                             <select name="gudang_id" class="form-select form-control" required>
                                                 <option value="">-- Pilih Gudang --</option>
                                                 @foreach($gudangs as $gudang)
-                                                    <option value="{{ $gudang->id }}">{{ $gudang->nama_gudang }}</option>
+                                                    <option value="{{ $gudang->id }}" {{ $gudangId == $gudang->id ? 'selected' : '' }}>{{ $gudang->nama_gudang }}</option>
                                                 @endforeach
                                             </select>
                                         </div>

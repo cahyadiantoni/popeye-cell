@@ -148,7 +148,9 @@ class DataBarangController extends Controller
     {
         // Mengambil semua data gudang dari database
         $gudangs = Gudang::all();
-        return view('pages.data-barang.create', compact('gudangs'));
+        $gudangId = optional(Auth::user())->gudang_id;
+
+        return view('pages.data-barang.create', compact('gudangs', 'gudangId'));
     }
 
     public function massedit()

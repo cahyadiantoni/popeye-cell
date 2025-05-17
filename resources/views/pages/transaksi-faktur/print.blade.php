@@ -15,6 +15,7 @@
         .info-table .center-align { text-align: center; }
         .total { font-weight: bold; }
         .footer { font-style: italic; text-align: center; margin-top: 20px; }
+        .page-break { page-break-after: always; }
     </style>
 </head>
 <body>
@@ -34,6 +35,25 @@
                 <td><strong>Petugas</strong><br>{{ $faktur->petugas }}</td>
                 <td class="center-align"><strong>Grade</strong><br>{{ $faktur->grade }}</td>
                 <td class="right-align"><strong>Keterangan</strong><br>{{ $faktur->keterangan }}</td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>Pembayaran</strong><br>
+                    @if($faktur->is_lunas == 1)
+                        <span style="color: green; font-weight: bold;">Sudah Lunas</span>
+                    @else
+                        <span style="color: red; font-weight: bold;">Belum Lunas</span>
+                    @endif
+                </td>
+                <td class="center-align">
+                    <strong>Cek</strong><br>
+                    @if($faktur->is_finish == 1)
+                        <span style="color: green; font-weight: bold;">Sudah Dicek</span>
+                    @else
+                        <span style="color: red; font-weight: bold;">Belum Dicek</span>
+                    @endif
+                </td>
+                <td class="right-align"><strong></strong><br></td>
             </tr>
         </table>
     </div>
@@ -64,5 +84,19 @@
     <div class="total">Total Harga Keseluruhan: Rp. {{ number_format($totalHarga, 0, ',', '.') }}</div>
 
     <div class="footer">Terima Kasih telah Berbelanja dengan Kami!</div>
+
+    @if(!$faktur->bukti->isEmpty())
+        @foreach($faktur->bukti as $index => $bukti)
+            <div class="page-break"></div> {{-- Pisahkan sebelum bukti --}}
+            <div>
+                <div class="title">Bukti Transfer</div>
+                <p><strong>Keterangan:</strong> {{ $bukti->keterangan ?? '-' }}</p>
+                <p><strong>Nominal:</strong> Rp. {{ number_format($bukti->nominal ?? 0, 0, ',', '.') }}</p>
+                <div style="text-align: center; margin-top: 10px;">
+                    <img src="{{ storage_path('app/public/' . $bukti->foto) }}" alt="Bukti Transfer {{ $index + 1 }}" style="max-width: 100%; max-height: 800px; object-fit: contain;">
+                </div>
+            </div>
+        @endforeach
+    @endif
 </body>
 </html>

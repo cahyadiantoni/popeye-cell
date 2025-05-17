@@ -139,7 +139,7 @@ class TransaksiFakturController extends Controller
     public function printPdf($nomor_faktur)
     {
         // Ambil data faktur dan transaksi jual
-        $faktur = Faktur::with('barangs')
+        $faktur = Faktur::with('barangs', 'bukti')
             ->where('nomor_faktur', $nomor_faktur)
             ->firstOrFail();
 
