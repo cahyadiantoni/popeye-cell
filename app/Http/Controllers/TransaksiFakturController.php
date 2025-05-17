@@ -95,15 +95,14 @@ class TransaksiFakturController extends Controller
             $totalPaymentMidtrans = $faktur->payments->sum('amount');
             $totalNominal = $totalBuktiManual + $totalPaymentMidtrans;
 
-            // Set property virtual agar bisa diakses di view
-            $faktur->total_nominal = $totalNominal;
-
-            // Update is_lunas jika perlu
             $newIsLunas = ($totalNominal >= $faktur->total) ? 1 : 0;
+            
             if ($faktur->is_lunas !== $newIsLunas) {
                 $faktur->is_lunas = $newIsLunas;
                 $faktur->save();
             }
+
+            $faktur->total_nominal = $totalNominal;
         }
 
         return view('pages.transaksi-faktur.index', compact('fakturs', 'roleUser'));
