@@ -46,12 +46,7 @@
                     @endif
                 </td>
                 <td class="center-align">
-                    <strong>Cek</strong><br>
-                    @if($faktur->is_finish == 1)
-                        <span style="color: green; font-weight: bold;">Sudah Dicek</span>
-                    @else
-                        <span style="color: red; font-weight: bold;">Belum Dicek</span>
-                    @endif
+                    <strong></strong><br>
                 </td>
                 <td class="right-align"><strong></strong><br></td>
             </tr>
