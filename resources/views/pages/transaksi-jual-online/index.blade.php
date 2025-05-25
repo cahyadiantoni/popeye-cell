@@ -32,6 +32,7 @@
                                             <th>LOK_SPK</th>
                                             <th>Tipe</th>
                                             <th>No Faktur</th>
+                                            <th>Invoice</th>
                                             <th>Toko</th>
                                             <th>Tgl Jual</th>
                                             <th>Harga Jual</th>
@@ -44,6 +45,7 @@
                                             <th>LOK_SPK</th>
                                             <th>Tipe</th>
                                             <th>No Faktur</th>
+                                            <th>Invoice</th>
                                             <th>Toko</th>
                                             <th>Tgl Jual</th>
                                             <th>Harga Jual</th>
@@ -70,6 +72,7 @@
                 { data: 'lok_spk', name: 'lok_spk' },
                 { data: 'tipe', name: 'tipe' },
                 { data: 'title_faktur', name: 'title' },
+                { data: 'invoice', name: 'invoice' },
                 { data: 'toko_faktur', name: 'toko' },
                 { data: 'tgl_jual', name: 'tgl_jual', orderable: false, searchable: false },
                 { data: 'harga_jual', name: 'harga_jual', orderable: false, searchable: false },

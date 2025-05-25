@@ -2,6 +2,19 @@
 
 @section('title', 'Detail Faktur Online')
 @section('content')
+@php use Carbon\Carbon; @endphp
+<style>
+    table td, table th {
+        vertical-align: middle !important;
+    }
+
+    table.custom-bordered th,
+    table.custom-bordered td {
+        border: 2px solid #000 !important; /* hitam dan tebal */
+    }
+</style>
+
+
 <div class="main-body">
     <div class="page-wrapper">
         <div class="page-header">
@@ -22,6 +35,9 @@
                             <button type="submit" class="btn btn-primary finish-btn">Tandai Dicek</button>
                         </form>
                     @endif
+                    <a href="{{ route('transaksi-faktur-online.export', $faktur->id) }}" class="btn btn-primary">
+                        Export Excel
+                    </a>
                     <a href="{{ route('transaksi-faktur-online.print', $faktur->id) }}" class="btn btn-primary" target="_blank">Print PDF</a>
                     <a href="{{ route('transaksi-faktur-online.index') }}" class="btn btn-secondary">Kembali</a>
                 </div>
@@ -101,7 +117,7 @@
                     @endif
                 </div>
                 <div class="card-block table-responsive">
-                    <table class="table table-striped table-bordered">
+                    <table class="table table-bordered custom-bordered">
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -110,33 +126,124 @@
                                 <th>Tipe Barang</th>
                                 <th>Harga</th>
                                 <th>PJ</th>
+                                <th>Selisih</th>
+                                <th>Uang Masuk</th>
+                                <th>Tanggal Masuk</th>
+                                <th>Tgl Return</th>
                                 @if($roleUser=='admin' && $faktur->is_finish==0)
-                                <th>Aksi</th>
+                                    <th>Aksi</th>
                                 @endif
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($transaksiJuals as $index => $transaksi)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ $transaksi->invoice }}</td>
-                                <td>{{ $transaksi->lok_spk }}</td>
-                                <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
-                                <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
-                                <td>Rp. {{ number_format($transaksi->pj, 0, ',', '.') }}</td>
-                                @if($roleUser=='admin' && $faktur->is_finish==0)
-                                <td>
-                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $transaksi->id }}" data-lok_spk="{{ $transaksi->lok_spk }}" data-invoice="{{ $transaksi->invoice }}" data-harga="{{ $transaksi->harga }}" data-pj="{{ $transaksi->pj }}">Edit</button>
-                                    <form action="{{ route('transaksi-jual-online.delete', $transaksi->id) }}" method="POST" class="d-inline delete-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
-                                    </form>
-                                </td>
-                                @endif
-                            </tr>
+                            </thead>
+                            <tbody>
+                            @php
+                                $invoicesGrouped = $transaksiJuals->groupBy('invoice');
+                                $no = 1;
+                            @endphp
+
+                            @foreach($invoicesGrouped as $invoice => $items)
+                                @php
+                                    $rowspan = count($items);
+                                    $uangMasuk = $uangMasukPerInvoice[$invoice] ?? null;
+                                @endphp
+
+                                @foreach($items as $i => $transaksi)
+                                    <tr>
+                                        <td>{{ $no++ }}</td>
+
+                                        {{-- Invoice hanya ditampilkan di baris pertama --}}
+                                        @if($i === 0)
+                                            <td rowspan="{{ $rowspan }}">{{ $invoice }}</td>
+                                        @endif
+
+                                        <td>{{ $transaksi->lok_spk }}</td>
+                                        <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
+                                        <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
+                                        <td>Rp. {{ number_format($transaksi->pj, 0, ',', '.') }}</td>
+
+                                        {{-- Selisih --}}
+                                        <td>
+                                            @if($transaksi->pj == 0)
+                                                <span style="color:black">-</span>
+                                            @else
+                                                @php $selisih = $transaksi->harga - $transaksi->pj; @endphp
+                                                <span style="color:{{ $selisih < 0 ? 'red' : 'green' }}">
+                                                    Rp. {{ number_format($selisih, 0, ',', '.') }}
+                                                </span>
+                                            @endif
+                                        </td>
+
+                                        {{-- Uang Masuk & Tanggal hanya di baris pertama invoice --}}
+                                        @if($i === 0)
+                                            <td rowspan="{{ $rowspan }}">
+                                                @if(isset($uangMasukPerInvoice[$invoice]))
+                                                    Rp. {{ number_format($uangMasukPerInvoice[$invoice]->total_uang_masuk, 0, ',', '.') }}
+                                                @else
+                                                    <span style="color: red;">-</span>
+                                                @endif
+                                            </td>
+
+                                            <td rowspan="{{ $rowspan }}">
+                                                @if(isset($uangMasukPerInvoice[$invoice]))
+                                                    @php
+                                                        $tanggal = \Carbon\Carbon::parse($uangMasukPerInvoice[$invoice]->tanggal_masuk);
+                                                        $formattedTanggal = $tanggal->translatedFormat('j F Y');
+                                                    @endphp
+                                                    {{ $formattedTanggal }}
+                                                @else
+                                                    <span style="color: red;">Belum ada Invoice</span>
+                                                @endif
+                                            </td>
+                                        @endif
+
+                                        <td>
+                                            @if($transaksi->tgl_return)
+                                                {{ \Carbon\Carbon::parse($transaksi->tgl_return)->translatedFormat('j F Y') }}
+                                            @else
+                                                <span style="color: gray;">-</span>
+                                            @endif
+                                        </td>
+
+
+                                        {{-- Aksi --}}
+                                        @if($roleUser=='admin' && $faktur->is_finish==0)
+                                            <td>
+                                                <button class="btn btn-warning btn-sm edit-btn"
+                                                        data-id="{{ $transaksi->id }}"
+                                                        data-lok_spk="{{ $transaksi->lok_spk }}"
+                                                        data-invoice="{{ $transaksi->invoice }}"
+                                                        data-harga="{{ $transaksi->harga }}"
+                                                        data-pj="{{ $transaksi->pj }}">Edit</button>
+
+                                                <form action="{{ route('transaksi-jual-online.delete', $transaksi->id) }}"
+                                                    method="POST" class="d-inline delete-form">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
+                                                </form>
+                                            </td>
+                                        @endif
+                                    </tr>
+                                @endforeach
                             @endforeach
-                        </tbody>
+                                @php
+                                    $totalHarga = $transaksiJuals->sum('harga');
+                                    $totalPj = $transaksiJuals->sum('pj');
+                                    $totalSelisih = $transaksiJuals->sum(function($item) {
+                                        return $item->pj > 0 ? $item->harga - $item->pj : 0;
+                                    });
+
+                                    $totalUangMasuk = $uangMasukPerInvoice->sum('total_uang_masuk');
+                                @endphp
+
+                                <tr style="background-color: #e0e0e0;">
+                                    <td colspan="4" style="text-align: center; font-weight: bold;">TOTAL</td>
+                                    <td style="font-weight: bold;">Rp. {{ number_format($totalHarga, 0, ',', '.') }}</td>
+                                    <td style="font-weight: bold;">Rp. {{ number_format($totalPj, 0, ',', '.') }}</td>
+                                    <td style="font-weight: bold;">Rp. {{ number_format($totalSelisih, 0, ',', '.') }}</td>
+                                    <td style="font-weight: bold;">Rp. {{ number_format($totalUangMasuk, 0, ',', '.') }}</td>
+                                </tr>
+                            </tbody>
                     </table>
                     <h4><strong>Total:</strong> Rp. {{ number_format($faktur->total, 0, ',', '.') }}</h4>
                 </div>

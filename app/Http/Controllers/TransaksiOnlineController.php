@@ -34,6 +34,7 @@ class TransaksiOnlineController extends Controller
                     't_barang.status_barang',
                     't_faktur_online.id as id_faktur_online',
                     't_faktur_online.title as title_faktur',
+                    't_jual_online.invoice as invoice',
                     't_faktur_online.toko as toko_faktur',
                     't_faktur_online.tgl_jual',
                     't_faktur_online.petugas as petugas_faktur'
@@ -49,6 +50,9 @@ class TransaksiOnlineController extends Controller
                     $url = route('transaksi-faktur-online.show', $barang->id_faktur_online);
                     return '<a href="' . $url . '" class="btn btn-info btn-sm" target="_blank" rel="noopener noreferrer">' . $barang->title_faktur . '</a>';
                 })
+                ->filterColumn('invoice', function ($query, $keyword) {
+                    $query->where('t_jual_online.invoice', 'like', "%{$keyword}%");
+                })
                 ->filterColumn('title', function ($query, $keyword) {
                     $query->where('t_faktur_online.title', 'like', "%{$keyword}%");
                 })
@@ -58,7 +62,7 @@ class TransaksiOnlineController extends Controller
                 ->filterColumn('petugas', function ($query, $keyword) {
                     $query->where('t_faktur_online.petugas', 'like', "%{$keyword}%");
                 })
-                ->rawColumns(['nomor_faktur'])
+                ->rawColumns(['title_faktur'])
                 ->make(true);
         }
     }    

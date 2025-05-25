@@ -25,4 +25,9 @@ class ReturnBarang extends Model
     {
         return $this->belongsTo(ReturnModel::class, 't_return_id', 'id');
     }
+
+    public function returnModel()
+    {
+        return $this->belongsTo(ReturnModel::class, 't_return_id', 'id');
+    }
 }

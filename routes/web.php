@@ -27,9 +27,11 @@ use App\Http\Controllers\AdmItemTokpedController;
 use App\Http\Controllers\AdmReqTokpedController;
 use App\Http\Controllers\MacCheckController;
 use App\Http\Controllers\FakturPaymentController;
+use App\Http\Controllers\TokpedDepositController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckMacAccess;
 use App\Exports\BarangExport;
+use App\Exports\FakturOnlineExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 
@@ -190,6 +192,15 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::post('/data-barang-pendingan', [DataBarangController::class, 'storePendingan'])->name('data-barang-pendingan.store');
     Route::delete('/data-barang-pendingan/{id}', [DataBarangController::class, 'deletePendingan'])->name('data-barang-pendingan.delete');
     Route::resource('/mac-address', MacCheckController::class)->middleware('auth');
+    
+    Route::get('/tokped-deposit/rekap', [TokpedDepositController::class, 'rekap'])->name('tokped-deposit.rekap');
+    Route::get('/tokped-deposit/export', [TokpedDepositController::class, 'export'])->name('tokped-deposit.export');
+    Route::resource('/tokped-deposit', TokpedDepositController::class)->middleware('auth');
+    
+    Route::get('/transaksi-faktur-online/{id}/export', function ($id) {
+        return Excel::download(new FakturOnlineExport($id), 'faktur-online-'.$id.'.xlsx');
+    })->name('transaksi-faktur-online.export');
+
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {

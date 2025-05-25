@@ -213,12 +213,24 @@
             </ul>
             @endif
             @if(auth()->user()->role=="admin")
-            <div class="pcoded-navigatio-lavel">Transaksi Return</div>
+            <div class="pcoded-navigatio-lavel">Admin Menu</div>
             <ul class="pcoded-item pcoded-left-item">
                 <li class="{{ Request::is('transaksi-return*') ? 'active' : '' }}">
                     <a href="{{ url('/transaksi-return') }}">
                         <span class="pcoded-micon"><i class="fas fa-undo"></i></span>
                         <span class="pcoded-mtext">Transaksi Return</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('tokped-deposit') ? 'active' : '' }}">
+                    <a href="{{ url('/tokped-deposit') }}">
+                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-mtext">Tokped Deposit</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('tokped-deposit/rekap') ? 'active' : '' }}">
+                    <a href="{{ url('/tokped-deposit/rekap') }}">
+                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-mtext">Tokped Rekap</span>
                     </a>
                 </li>
             </ul>

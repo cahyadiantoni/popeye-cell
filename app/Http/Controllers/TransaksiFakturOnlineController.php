@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
 use App\Models\Gudang;
+use App\Models\ReturnBarang;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use App\Models\Kirim;
 use App\Models\FakturOnline;
 use App\Models\TransaksiJualOnline;
+use App\Models\TokpedDataDeposit;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
@@ -54,19 +55,51 @@ class TransaksiFakturOnlineController extends Controller
 
     public function show($nomor_faktur)
     {
-        // Ambil data faktur berdasarkan nomor faktur
         $faktur = FakturOnline::with('barangs')
             ->where('id', $nomor_faktur)
             ->firstOrFail();
 
-        // Ambil data barang yang berhubungan dengan transaksi jual
+        // Urutkan berdasarkan invoice ASC
         $transaksiJuals = TransaksiJualOnline::with('barang')
             ->where('faktur_online_id', $nomor_faktur)
+            ->orderBy('invoice')
             ->get();
+
+        // Ambil semua invoice unik
+        $invoiceList = $transaksiJuals->pluck('invoice')->unique();
+
+        // Hitung uang masuk per invoice dari TokpedDataDeposit
+        $uangMasukPerInvoice = TokpedDataDeposit::whereIn('invoice_end', $invoiceList)
+            ->selectRaw('invoice_end, SUM(nominal) as total_uang_masuk, MIN(date) as tanggal_masuk')
+            ->groupBy('invoice_end')
+            ->get()
+            ->keyBy('invoice_end'); // supaya bisa akses $data->total_uang_masuk dan $data->tanggal_masuk
+
+        $transaksiJuals = $transaksiJuals->sortBy(function ($item) use ($uangMasukPerInvoice) {
+            $tanggal = $uangMasukPerInvoice[$item->invoice]->tanggal_masuk ?? now()->addYears(100); // invoice tanpa data diletakkan di bawah
+            return $tanggal;
+        })->values(); // reset index agar urut
+
+        $transaksiJuals = $transaksiJuals->map(function ($trx) {
+            $returnBarang = ReturnBarang::where('lok_spk', $trx->lok_spk)
+                ->with('returnModel') // pakai relasi
+                ->orderByDesc('id')
+                ->first();
+
+            if ($returnBarang && $returnBarang->returnModel && $returnBarang->returnModel->tgl_return > $trx->t_jual) {
+                $trx->tgl_return = $returnBarang->returnModel->tgl_return;
+            } else {
+                $trx->tgl_return = null;
+            }
+
+            return $trx;
+        });
 
         $roleUser = optional(Auth::user())->role;
 
-        return view('pages.transaksi-faktur-online.detail', compact('faktur', 'transaksiJuals', 'roleUser'));
+        return view('pages.transaksi-faktur-online.detail', compact(
+            'faktur', 'transaksiJuals', 'roleUser', 'uangMasukPerInvoice'
+        ));
     }
 
     public function printPdf($nomor_faktur)
