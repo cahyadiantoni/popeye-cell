@@ -191,7 +191,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
                     <h5>List Bukti Transfer</h5>
-                    @if($kesimpulan->is_finish == 0)
+                    @if($kesimpulan->is_finish == 0 || $kesimpulan->is_lunas == 0)
                         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addBuktiModal">Tambah Bukti</button>
                     @endif
                 </div>
@@ -202,7 +202,7 @@
                                 <th>Keterangan</th>
                                 <th>Nominal</th>
                                 <th>Foto</th>
-                                @if($kesimpulan->is_finish == 0)
+                                @if($kesimpulan->is_finish == 0 || $kesimpulan->is_lunas == 0)
                                 <th>Aksi</th>
                                 @endif
                             </tr>
@@ -217,7 +217,7 @@
                                         <img src="{{ asset('storage/' . $bukti->foto) }}" alt="Bukti Transfer" class="img-thumbnail" style="width: 150px; height: auto;">
                                     </a>
                                 </td>
-                                @if($kesimpulan->is_finish == 0)
+                                @if($kesimpulan->is_finish == 0 || $kesimpulan->is_lunas == 0)
                                 <td>
                                     <form action="{{ route('transaksi-kesimpulan.bukti.delete', $bukti->id) }}" method="POST">
                                         @csrf

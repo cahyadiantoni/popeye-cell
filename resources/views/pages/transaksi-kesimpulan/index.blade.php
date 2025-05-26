@@ -123,7 +123,7 @@
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <a href="{{ route('transaksi-kesimpulan.show', $kesimpulan->nomor_kesimpulan) }}">
+                                                    <a href="{{ route('transaksi-kesimpulan.show', $kesimpulan->id) }}">
                                                         {{ $kesimpulan->nomor_kesimpulan }}
                                                     </a>
                                                 </td>
