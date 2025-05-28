@@ -13,6 +13,7 @@ use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 use App\Exports\RekapTokpedExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class TokpedDepositController extends Controller
@@ -87,6 +88,7 @@ class TokpedDepositController extends Controller
 
                 $mutation = $row[1] ?? null;
                 $description = $row[2] ?? null;
+                $description = trim(preg_replace('/\s+/', ' ', $description));
                 $nominal = isset($row[3]) ? (int) str_replace(',', '', $row[3]) : null;
                 $balance = isset($row[4]) ? (int) str_replace(',', '', $row[4]) : null;
 
@@ -195,8 +197,23 @@ class TokpedDepositController extends Controller
             $total_unit_faktur = $faktur->transaksiJuals->count();
             $total_nominal_faktur = $faktur->total;
 
-            $invoices = $faktur->transaksiJuals->pluck('invoice')->filter()->unique();
-            $matchedInvoices = TokpedDataDeposit::whereIn('invoice_end', $invoices)->pluck('invoice_end')->toArray();
+            $invoices = $faktur->transaksiJuals->pluck('invoice')
+                ->filter()
+                ->unique()
+                ->map(function ($invoice) {
+                    // Hapus semua non-angka
+                    $clean = preg_replace('/\D/', '', $invoice);
+                    // Ambil 7 digit terakhir
+                    return Str::substr($clean, -7);
+                })
+                ->toArray();
+
+            $matchedInvoices = TokpedDataDeposit::where(function ($query) use ($invoices) {
+                foreach ($invoices as $inv) {
+                    $query->orWhereRaw("RIGHT(REGEXP_REPLACE(invoice_end, '[^0-9]', ''), 7) = ?", [$inv]);
+                }
+            })->pluck('invoice_end')->toArray();
+
             $total_unit_invoice = $faktur->transaksiJuals->filter(fn($item) => in_array($item->invoice, $matchedInvoices))->count();
             $total_uang_masuk = TokpedDataDeposit::whereIn('invoice_end', $invoices)->sum('nominal');
             $selisih = $total_nominal_faktur - $total_uang_masuk;

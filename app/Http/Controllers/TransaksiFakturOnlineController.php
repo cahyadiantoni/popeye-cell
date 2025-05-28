@@ -14,6 +14,7 @@ use App\Models\TokpedDataDeposit;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class TransaksiFakturOnlineController extends Controller
 {
@@ -58,47 +59,74 @@ class TransaksiFakturOnlineController extends Controller
         $faktur = FakturOnline::with('barangs')
             ->where('id', $nomor_faktur)
             ->firstOrFail();
-
+    
         // Urutkan berdasarkan invoice ASC
-        $transaksiJuals = TransaksiJualOnline::with('barang')
+        $transaksiJualsOriginal = TransaksiJualOnline::with('barang')
             ->where('faktur_online_id', $nomor_faktur)
-            ->orderBy('invoice')
+            ->orderBy('invoice') // Pengurutan awal bisa dipertahankan atau dihilangkan jika pengurutan akhir lebih dominan
             ->get();
-
-        // Ambil semua invoice unik
-        $invoiceList = $transaksiJuals->pluck('invoice')->unique();
-
+    
+        // Ambil semua invoice unik (7 digit terakhir yang sudah dibersihkan)
+        $uniqueCleanedInvoices = $transaksiJualsOriginal->pluck('invoice')
+            ->filter()
+            ->map(function ($invoice) {
+                $clean = preg_replace('/\D/', '', trim($invoice));
+                return Str::substr($clean, -7);
+            })
+            ->unique()
+            ->toArray();
+    
         // Hitung uang masuk per invoice dari TokpedDataDeposit
-        $uangMasukPerInvoice = TokpedDataDeposit::whereIn('invoice_end', $invoiceList)
+        // Kunci koleksi $uangMasukPerInvoice dengan 7 digit terakhir invoice_end yang sudah dibersihkan
+        $uangMasukPerInvoice = TokpedDataDeposit::where(function ($query) use ($uniqueCleanedInvoices) {
+                foreach ($uniqueCleanedInvoices as $inv) {
+                    // Pastikan $inv adalah string yang bersih (7 digit)
+                    $query->orWhereRaw("RIGHT(REGEXP_REPLACE(TRIM(invoice_end), '[^0-9]', ''), 7) = ?", [$inv]);
+                }
+            })
             ->selectRaw('invoice_end, SUM(nominal) as total_uang_masuk, MIN(date) as tanggal_masuk')
-            ->groupBy('invoice_end')
+            ->groupBy('invoice_end') // Group by original invoice_end dulu, baru kita re-key
             ->get()
-            ->keyBy('invoice_end'); // supaya bisa akses $data->total_uang_masuk dan $data->tanggal_masuk
-
-        $transaksiJuals = $transaksiJuals->sortBy(function ($item) use ($uangMasukPerInvoice) {
-            $tanggal = $uangMasukPerInvoice[$item->invoice]->tanggal_masuk ?? now()->addYears(100); // invoice tanpa data diletakkan di bawah
+            ->mapWithKeys(function ($item) {
+                // Buat kunci berdasarkan 7 digit terakhir dari invoice_end yang sudah dibersihkan
+                $cleanInvoiceEnd = preg_replace('/\D/', '', trim($item->invoice_end));
+                $last7DigitsKey = Str::substr($cleanInvoiceEnd, -7);
+                return [$last7DigitsKey => $item]; // Kunci baru adalah 7 digit terakhir
+            });
+    
+        // Urutkan transaksiJuals berdasarkan tanggal_masuk dari uangMasukPerInvoice
+        $transaksiJuals = $transaksiJualsOriginal->sortBy(function ($item) use ($uangMasukPerInvoice) {
+            // Dapatkan 7 digit terakhir dari invoice transaksi untuk lookup
+            $cleanInvoice = preg_replace('/\D/', '', trim($item->invoice));
+            $lookupKey = Str::substr($cleanInvoice, -7);
+    
+            // Cari tanggal masuk menggunakan lookupKey yang sudah dinormalisasi
+            $tanggal = $uangMasukPerInvoice[$lookupKey]->tanggal_masuk ?? now()->addYears(100);
             return $tanggal;
         })->values(); // reset index agar urut
-
+    
         $transaksiJuals = $transaksiJuals->map(function ($trx) {
             $returnBarang = ReturnBarang::where('lok_spk', $trx->lok_spk)
                 ->with('returnModel') // pakai relasi
                 ->orderByDesc('id')
                 ->first();
-
+    
             if ($returnBarang && $returnBarang->returnModel && $returnBarang->returnModel->tgl_return > $trx->t_jual) {
                 $trx->tgl_return = $returnBarang->returnModel->tgl_return;
             } else {
                 $trx->tgl_return = null;
             }
-
+    
             return $trx;
         });
-
+    
         $roleUser = optional(Auth::user())->role;
-
+    
         return view('pages.transaksi-faktur-online.detail', compact(
-            'faktur', 'transaksiJuals', 'roleUser', 'uangMasukPerInvoice'
+            'faktur',
+            'transaksiJuals',
+            'roleUser',
+            'uangMasukPerInvoice' // $uangMasukPerInvoice sekarang dikunci dengan 7 digit bersih
         ));
     }
 
