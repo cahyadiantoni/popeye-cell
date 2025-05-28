@@ -125,6 +125,10 @@
                                 @endswitch
                             </td>
                         </tr>
+                        <tr>
+                            <th>Keterangan</th>
+                            <td>{{ $kirim->keterangan }}</td>
+                        </tr>
                     </tbody>
                 </table>
                 </div>

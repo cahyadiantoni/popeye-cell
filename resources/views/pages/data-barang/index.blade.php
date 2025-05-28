@@ -76,6 +76,7 @@
                                             <th>Tgl Upload</th>
                                             <th>Jenis</th>
                                             <th>Tipe</th>
+                                            <th>Imei</th>
                                             <th>Grade</th>
                                             <th>Kel</th>
                                             <th>Gudang</th>
@@ -88,6 +89,7 @@
                                             <th>Tgl Upload</th>
                                             <th>Jenis</th>
                                             <th>Tipe</th>
+                                            <th>Imei</th>
                                             <th>Grade</th>
                                             <th>Kel</th>
                                             <th>Gudang</th>
@@ -162,6 +164,7 @@
                 { data: 'created_at', name: 'created_at' },
                 { data: 'jenis', name: 'jenis' },
                 { data: 'tipe', name: 'tipe' },
+                { data: 'imei', name: 'imei' },
                 { data: 'grade', name: 'grade' },
                 { data: 'kelengkapan', name: 'kelengkapan' },
                 { data: 'gudang.nama_gudang', name: 'gudang.nama_gudang' },

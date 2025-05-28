@@ -38,6 +38,7 @@ class BarangExport implements FromCollection, WithHeadings, WithStyles, ShouldAu
                 'lok_spk' => $barang->lok_spk,
                 'jenis' => $barang->jenis,
                 'tipe' => $barang->tipe,
+                'imei' => $barang->imei,
                 'grade' => $barang->grade,
                 'kelengkapan' => $barang->kelengkapan,
                 'gudang' => $barang->gudang->nama_gudang ?? 'N/A',
@@ -47,13 +48,13 @@ class BarangExport implements FromCollection, WithHeadings, WithStyles, ShouldAu
 
     public function headings(): array
     {
-        return ['No', 'LOK_SPK', 'Jenis', 'Tipe', 'Grade', 'Kelengkapan', 'Gudang'];
+        return ['No', 'LOK_SPK', 'Jenis', 'Tipe', 'Imei', 'Grade', 'Kelengkapan', 'Gudang'];
     }
 
     public function styles(Worksheet $sheet)
     {
         $rowCount = Barang::where('gudang_id', $this->id)->where('status_barang', 1)->count() + 1;
-        $dataRange = "A1:G{$rowCount}";
+        $dataRange = "A1:H{$rowCount}";
 
         return [
             1 => [

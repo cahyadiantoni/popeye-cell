@@ -32,4 +32,36 @@
 
     {{-- Custom head --}}
     @yield('heads')
+
+    <style>
+      /* Styling untuk kotak pencarian menu */
+      .pcoded-search-box {
+          padding: 10px 15px; /* Sesuaikan padding */
+          border-bottom: 1px solid #e0e0e0; /* Garis pemisah opsional */
+      }
+
+      #menuSearch {
+          width: 100%;
+          padding: 8px 10px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          box-sizing: border-box; /* Agar padding tidak menambah lebar total */
+      }
+
+      /* Opsional: Styling untuk menyembunyikan item menu yang tidak cocok */
+      .pcoded-item.hidden-by-search {
+          display: none !important;
+      }
+      .pcoded-navigatio-lavel.hidden-by-search {
+          display: none !important;
+      }
+
+      .pcoded-navbar {
+          /* ... properti lain yang sudah ada ... */
+          /* Pastikan pcoded-navbar bisa membatasi tinggi anaknya jika perlu */
+          display: flex; /* Jika belum, ini bisa membantu dalam beberapa layout */
+          flex-direction: column; /* Jika belum */
+          overflow: hidden; /* Untuk memastikan tidak ada yang meluber keluar dari nav utama */
+      }
+    </style>
   </head>

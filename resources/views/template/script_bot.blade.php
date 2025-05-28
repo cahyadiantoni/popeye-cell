@@ -43,5 +43,69 @@
 
     {{-- Custom Script --}}
     @yield('scripts')
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        const menuSearchInput = document.getElementById('menuSearch');
+        const sidebarMainMenu = document.querySelector('.pcoded-inner-navbar.main-menu');
+
+        // Fungsi untuk pencarian menu
+        if (menuSearchInput && sidebarMainMenu) {
+            menuSearchInput.addEventListener('keyup', function () {
+                const searchTerm = this.value.toLowerCase().trim();
+                const menuItems = sidebarMainMenu.querySelectorAll('.pcoded-item.pcoded-left-item > li'); // Target <li> langsung di bawah .pcoded-item
+                const navLabels = sidebarMainMenu.querySelectorAll('.pcoded-navigatio-lavel');
+
+                // Sembunyikan semua label dulu, akan ditampilkan jika ada item di bawahnya yang cocok
+                navLabels.forEach(label => {
+                    label.classList.add('hidden-by-search');
+                });
+
+                let anyItemVisibleUnderLabel = {}; // Untuk melacak apakah ada item yang terlihat di bawah label
+
+                menuItems.forEach(function (item) {
+                    const menuTextElement = item.querySelector('.pcoded-mtext');
+                    if (menuTextElement) {
+                        const menuText = menuTextElement.textContent.toLowerCase();
+                        if (menuText.includes(searchTerm)) {
+                            item.classList.remove('hidden-by-search');
+                            item.style.display = ''; // Kembalikan ke display default
+
+                            // Cari parent ul dan label di atasnya
+                            let parentUl = item.closest('ul.pcoded-item.pcoded-left-item');
+                            if (parentUl) {
+                                let previousLabel = parentUl.previousElementSibling;
+                                while(previousLabel && !previousLabel.classList.contains('pcoded-navigatio-lavel')) {
+                                    previousLabel = previousLabel.previousElementSibling;
+                                }
+                                if (previousLabel && previousLabel.classList.contains('pcoded-navigatio-lavel')) {
+                                    previousLabel.classList.remove('hidden-by-search');
+                                    previousLabel.style.display = '';
+                                }
+                            }
+
+
+                        } else {
+                            item.classList.add('hidden-by-search');
+                            item.style.display = 'none';
+                        }
+                    }
+                });
+
+                // Jika input pencarian kosong, tampilkan semua menu dan label
+                if (searchTerm === "") {
+                    menuItems.forEach(item => {
+                        item.classList.remove('hidden-by-search');
+                        item.style.display = '';
+                    });
+                    navLabels.forEach(label => {
+                        label.classList.remove('hidden-by-search');
+                        label.style.display = '';
+                    });
+                }
+            });
+        }
+    });
+    </script>
   </body>
 </html>

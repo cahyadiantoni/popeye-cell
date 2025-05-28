@@ -1,5 +1,10 @@
 <nav class="pcoded-navbar">
     <div class="pcoded-inner-navbar main-menu">
+        {{-- Bagian untuk Input Pencarian --}}
+        <div class="pcoded-search-box">
+            <input type="text" id="menuSearch" class="form-control" placeholder="Cari menu...">
+        </div>
+
         <div class="pcoded-navigatio-lavel">Popeye Cell</div>
         <ul class="pcoded-item pcoded-left-item">
             <li class="{{ Request::is('/') ? 'active' : '' }}">
