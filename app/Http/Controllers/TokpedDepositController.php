@@ -215,7 +215,11 @@ class TokpedDepositController extends Controller
             })->pluck('invoice_end')->toArray();
 
             $total_unit_invoice = $faktur->transaksiJuals->filter(fn($item) => in_array($item->invoice, $matchedInvoices))->count();
-            $total_uang_masuk = TokpedDataDeposit::whereIn('invoice_end', $invoices)->sum('nominal');
+            $total_uang_masuk = TokpedDataDeposit::where(function ($query) use ($invoices) {
+                foreach ($invoices as $inv) {
+                    $query->orWhereRaw("RIGHT(REGEXP_REPLACE(invoice_end, '[^0-9]', ''), 7) = ?", [$inv]);
+                }
+            })->sum('nominal');
             $selisih = $total_nominal_faktur - $total_uang_masuk;
 
             $keterangan = $total_unit_faktur === $total_unit_invoice ? 'Lunas' : 'Belum Lunas';
