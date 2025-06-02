@@ -238,6 +238,12 @@
                         <span class="pcoded-mtext">Tokped Rekap</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('tokped-order') ? 'active' : '' }}">
+                    <a href="{{ url('/tokped-order') }}">
+                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-mtext">Tokped Order</span>
+                    </a>
+                </li>
             </ul>
             @endif
         @endif

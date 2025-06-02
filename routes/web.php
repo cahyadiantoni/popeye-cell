@@ -28,6 +28,7 @@ use App\Http\Controllers\AdmReqTokpedController;
 use App\Http\Controllers\MacCheckController;
 use App\Http\Controllers\FakturPaymentController;
 use App\Http\Controllers\TokpedDepositController;
+use App\Http\Controllers\TokpedOrderController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckMacAccess;
 use App\Exports\BarangExport;
@@ -200,6 +201,8 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/transaksi-faktur-online/{id}/export', function ($id) {
         return Excel::download(new FakturOnlineExport($id), 'faktur-online-'.$id.'.xlsx');
     })->name('transaksi-faktur-online.export');
+
+    Route::resource('/tokped-order', TokpedOrderController::class)->middleware('auth');
 
 });
 
