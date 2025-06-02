@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\TokpedInputDeposit;
 use App\Models\TokpedDataDeposit;
 use App\Models\FakturOnline;
+use App\Models\TokpedDataOrder;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Yajra\DataTables\Facades\DataTables;
@@ -156,8 +157,6 @@ class TokpedDepositController extends Controller
     {
         
         $data = $this->getRekapData($request);
-        logger('Filter params:', $request->all());
-        logger('Data count:', [$data->count()]);
         return Excel::download(new RekapTokpedExport($data), 'RekapTokped.xlsx');
     }
 
@@ -170,9 +169,9 @@ class TokpedDepositController extends Controller
             if ($request->kode_faktur == 'Lain') {
                 $query->where(function ($q) {
                     $q->where('title', 'not like', 'PPY%')
-                    ->where('title', 'not like', 'POD%')
-                    ->where('title', 'not like', 'JJ%')
-                    ->where('title', 'not like', 'NAR%');
+                        ->where('title', 'not like', 'POD%')
+                        ->where('title', 'not like', 'JJ%')
+                        ->where('title', 'not like', 'NAR%');
                 });
             } else {
                 $query->where('title', 'like', $request->kode_faktur . '%');
@@ -191,50 +190,105 @@ class TokpedDepositController extends Controller
 
         $fakturs = $query->orderBy('tgl_jual', 'asc')->get();
 
-        $data = $fakturs->map(function ($faktur) {
+        // Ambil semua invoice number dari TokpedDataOrder yang statusnya dibatalkan (7 digit terakhir)
+        $cancelledTokpedOrderInvoices = TokpedDataOrder::where('latest_status', 'like', 'Dibatalkan%')
+            ->pluck('invoice_number')
+            ->map(function ($invoice) {
+                $clean = preg_replace('/\D/', '', $invoice);
+                return Str::substr($clean, -7);
+            })
+            ->filter()
+            ->unique()
+            ->toArray();
+
+        $data = $fakturs->map(function ($faktur) use ($cancelledTokpedOrderInvoices) {
             $title = $faktur->title;
             $tgl = $faktur->tgl_jual;
             $total_unit_faktur = $faktur->transaksiJuals->count();
             $total_nominal_faktur = $faktur->total;
 
-            $invoices = $faktur->transaksiJuals->pluck('invoice')
+            $invoicesFaktur = $faktur->transaksiJuals->pluck('invoice')
                 ->filter()
-                ->unique()
                 ->map(function ($invoice) {
-                    // Hapus semua non-angka
                     $clean = preg_replace('/\D/', '', $invoice);
-                    // Ambil 7 digit terakhir
                     return Str::substr($clean, -7);
                 })
+                ->unique()
                 ->toArray();
-
-            $matchedInvoices = TokpedDataDeposit::where(function ($query) use ($invoices) {
-                foreach ($invoices as $inv) {
+            
+            // Cocokkan dengan TokpedDataDeposit (invoice_end)
+            $matchedDepositInvoicesRaw = TokpedDataDeposit::where(function ($query) use ($invoicesFaktur) {
+                foreach ($invoicesFaktur as $inv) {
                     $query->orWhereRaw("RIGHT(REGEXP_REPLACE(invoice_end, '[^0-9]', ''), 7) = ?", [$inv]);
                 }
+            })->when(!empty($invoicesFaktur), function ($q) { // Hanya query jika $invoicesFaktur tidak kosong
+                return $q;
+            }, function ($q) { // Jika $invoicesFaktur kosong, return query yg tidak menghasilkan apa-apa
+                return $q->whereRaw('1=0');
             })->pluck('invoice_end')->toArray();
 
-            $total_unit_invoice = $faktur->transaksiJuals->filter(fn($item) => in_array($item->invoice, $matchedInvoices))->count();
-            $total_uang_masuk = TokpedDataDeposit::where(function ($query) use ($invoices) {
-                foreach ($invoices as $inv) {
+            $matchedDepositInvoicesCleaned = collect($matchedDepositInvoicesRaw)->map(function($invEnd){
+                $clean = preg_replace('/\D/', '', $invEnd);
+                return Str::substr($clean, -7);
+            })->unique()->toArray();
+
+            // Hitung total_unit_invoice berdasarkan transaksiJuals yang invoicenya cocok dengan deposit
+            $total_unit_invoice = $faktur->transaksiJuals->filter(function($item) use ($matchedDepositInvoicesCleaned) {
+                if (empty($item->invoice)) return false;
+                $cleanFakturInvoice = preg_replace('/\D/', '', $item->invoice);
+                $last7FakturInvoice = Str::substr($cleanFakturInvoice, -7);
+                return in_array($last7FakturInvoice, $matchedDepositInvoicesCleaned);
+            })->count();
+
+            $total_uang_masuk = TokpedDataDeposit::where(function ($query) use ($invoicesFaktur) {
+                foreach ($invoicesFaktur as $inv) {
                     $query->orWhereRaw("RIGHT(REGEXP_REPLACE(invoice_end, '[^0-9]', ''), 7) = ?", [$inv]);
                 }
+            })->when(!empty($invoicesFaktur), function ($q) {
+                return $q;
+            }, function ($q) {
+                return $q->whereRaw('1=0');
             })->sum('nominal');
+
+            // Hitung total_unit_dibatalkan
+            $total_unit_dibatalkan = 0;
+            if (!empty($cancelledTokpedOrderInvoices)) {
+                $total_unit_dibatalkan = $faktur->transaksiJuals->filter(function ($item) use ($cancelledTokpedOrderInvoices) {
+                    if (empty($item->invoice)) return false;
+                    $cleanInvoice = preg_replace('/\D/', '', $item->invoice);
+                    $last7Digits = Str::substr($cleanInvoice, -7);
+                    return in_array($last7Digits, $cancelledTokpedOrderInvoices);
+                })->count();
+            }
+            
             $selisih = $total_nominal_faktur - $total_uang_masuk;
+            
+            // Logika keterangan baru
+            $keterangan = $total_unit_faktur === ($total_unit_invoice + $total_unit_dibatalkan) ? 'Lunas' : 'Belum Lunas';
 
-            $keterangan = $total_unit_faktur === $total_unit_invoice ? 'Lunas' : 'Belum Lunas';
-
+            // ... (sisa map, bonusan, return tetap sama) ...
             $bonusPerBulan = $faktur->transaksiJuals
-                ->filter(fn($item) => in_array($item->invoice, $matchedInvoices))
+                ->filter(function($item) use ($matchedDepositInvoicesCleaned) { // Gunakan $matchedDepositInvoicesCleaned
+                    if (empty($item->invoice)) return false;
+                    $cleanFakturInvoice = preg_replace('/\D/', '', $item->invoice);
+                    $last7FakturInvoice = Str::substr($cleanFakturInvoice, -7);
+                    return in_array($last7FakturInvoice, $matchedDepositInvoicesCleaned);
+                })
                 ->map(function ($item) {
-                    $deposit = TokpedDataDeposit::where('invoice_end', $item->invoice)->first();
+                     // Ambil invoice_end yang bersih untuk mencocokkan dengan TokpedDataDeposit
+                    $cleanFakturInvoice = preg_replace('/\D/', '', $item->invoice);
+                    $last7FakturInvoice = Str::substr($cleanFakturInvoice, -7);
+
+                    // Cari deposit yang invoice_end (7 digit terakhir bersih) nya cocok
+                    $deposit = TokpedDataDeposit::whereRaw("RIGHT(REGEXP_REPLACE(invoice_end, '[^0-9]', ''), 7) = ?", [$last7FakturInvoice])
+                                             ->orderBy('date', 'asc') // Ambil yang paling awal jika ada duplikat bersih
+                                             ->first();
                     if (!$deposit) return null;
 
                     $date = Carbon::parse($deposit->date);
                     if ($date->day > 28) {
                         $date->addMonth();
                     }
-
                     return $date->format('F');
                 })
                 ->filter()
@@ -259,9 +313,8 @@ class TokpedDepositController extends Controller
 
                     $date = Carbon::parse($tgl);
                     if ($date->day > 28) {
-                        $date->addMonth(); // perlakuan sama seperti bonusan
+                        $date->addMonth();
                     }
-
                     return $date->format('F');
                 })
                 ->filter()
@@ -269,8 +322,8 @@ class TokpedDepositController extends Controller
                 ->map(fn($group, $month) => $month . ' (' . count($group) . ')')
                 ->values()
                 ->implode(', ');
-
             $return_info = $returnPerBulan ?: '-';
+
 
             return [
                 'title' => '<a class="btn btn-info" href="' . route('transaksi-faktur-online.show', $faktur->id) . '" target="_blank">' . $title . '</a>',
@@ -278,9 +331,10 @@ class TokpedDepositController extends Controller
                 'total_unit_faktur' => $total_unit_faktur,
                 'total_nominal_faktur' => $total_nominal_faktur,
                 'total_unit_invoice' => $total_unit_invoice,
+                'total_unit_dibatalkan' => $total_unit_dibatalkan, // Data baru
                 'total_uang_masuk' => $total_uang_masuk,
                 'selisih' => $selisih,
-                'keterangan' => $keterangan,
+                'keterangan' => $keterangan, // Logika baru
                 'prefix' => substr($title, 0, 3),
                 'bonusan' => $bonusPerBulan,
                 'return_count' => $return_info,

@@ -24,6 +24,8 @@ class RekapPerTokoSheet implements FromView, WithTitle, WithEvents, ShouldAutoSi
 
     public function view(): View
     {
+        // Anda perlu memastikan view 'pages.tokped-deposit.export'
+        // juga diperbarui untuk menampilkan kolom 'Total Unit Dibatalkan'
         return view('pages.tokped-deposit.export', [
             'data' => $this->data
         ]);
@@ -39,7 +41,7 @@ class RekapPerTokoSheet implements FromView, WithTitle, WithEvents, ShouldAutoSi
         return match ($this->prefix) {
             'POD' => 'Podomoro',
             'PPY' => 'Popeye',
-            'JJ-'  => 'Toko JJ',
+            'JJ-'  => 'Toko JJ', // Disesuaikan dari 'JJ-' menjadi 'JJ' jika prefix di controller adalah 'JJ'
             'NAR' => 'Naruto',
             default => 'Lain-lain'
         };
@@ -50,11 +52,12 @@ class RekapPerTokoSheet implements FromView, WithTitle, WithEvents, ShouldAutoSi
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet;
-                $rowCount = count($this->data) + 2;
+                // Data dimulai dari baris ke-3 setelah header toko (baris 1) dan header tabel (baris 2)
+                $rowCount = count($this->data) + 2; 
                 $totalRow = $rowCount + 1;
 
-                // Header toko
-                $sheet->mergeCells('A1:J1');
+                // Header toko - Sekarang dari A1 sampai K1
+                $sheet->mergeCells('A1:K1'); 
                 $sheet->setCellValue('A1', strtoupper($this->getNamaToko()));
                 $sheet->getStyle('A1')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 14],
@@ -65,8 +68,8 @@ class RekapPerTokoSheet implements FromView, WithTitle, WithEvents, ShouldAutoSi
                     ]
                 ]);
 
-                // Header tabel
-                $sheet->getStyle('A2:J2')->applyFromArray([
+                // Header tabel - Sekarang dari A2 sampai K2
+                $sheet->getStyle('A2:K2')->applyFromArray([
                     'font' => ['bold' => true],
                     'alignment' => ['horizontal' => 'center'],
                     'fill' => [
@@ -78,24 +81,25 @@ class RekapPerTokoSheet implements FromView, WithTitle, WithEvents, ShouldAutoSi
                     ]
                 ]);
 
-                // Border seluruh data + total
-                $sheet->getStyle("A2:J{$totalRow}")->applyFromArray([
+                // Border seluruh data + total - Sekarang dari A2 sampai K{$totalRow}
+                $sheet->getStyle("A2:K{$totalRow}")->applyFromArray([
                     'borders' => [
                         'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                     ]
                 ]);
 
                 // Baris total
-                $sheet->mergeCells("A{$totalRow}:B{$totalRow}");
+                $sheet->mergeCells("A{$totalRow}:B{$totalRow}"); // Ini tetap sama
                 $sheet->setCellValue("A{$totalRow}", "TOTAL");
-                $sheet->getStyle("C{$totalRow}:J{$totalRow}")->applyFromArray([
+                // Style untuk kolom C sampai K di baris total
+                $sheet->getStyle("C{$totalRow}:K{$totalRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'E2EFDA']
                     ]
                 ]);
-                $sheet->getStyle("A{$totalRow}")->applyFromArray([
+                $sheet->getStyle("A{$totalRow}")->applyFromArray([ // Style untuk sel TOTAL (A-B merged)
                     'font' => ['bold' => true],
                     'alignment' => ['horizontal' => 'center'],
                     'fill' => [
@@ -104,28 +108,29 @@ class RekapPerTokoSheet implements FromView, WithTitle, WithEvents, ShouldAutoSi
                     ]
                 ]);
 
-                // Format angka
-                foreach (['D', 'F', 'G'] as $col) {
+                // Format angka - Kolom bergeser
+                // D: Total Faktur, G: Uang Masuk, H: Selisih
+                foreach (['D', 'G', 'H'] as $col) { 
                     $sheet->getStyle("{$col}3:{$col}{$totalRow}")
                         ->getNumberFormat()
                         ->setFormatCode('"Rp."#,##0');
                 }
 
-                // Selisih negatif
+                // Selisih negatif - Kolom bergeser ke H
                 for ($row = 3; $row <= $rowCount; $row++) {
-                    $value = $sheet->getCell("G{$row}")->getValue();
+                    $value = $sheet->getCell("H{$row}")->getValue(); // Kolom G menjadi H
                     if (is_numeric($value) && $value < 0) {
-                        $sheet->getStyle("G{$row}")->getFont()->getColor()->setRGB('FF0000');
+                        $sheet->getStyle("H{$row}")->getFont()->getColor()->setRGB('FF0000');
                     }
                 }
 
-                // Status lunas/belum lunas
+                // Status lunas/belum lunas - Kolom bergeser ke I
                 for ($row = 3; $row <= $rowCount; $row++) {
-                    $status = strtoupper((string) $sheet->getCell("H{$row}")->getValue());
+                    $status = strtoupper((string) $sheet->getCell("I{$row}")->getValue()); // Kolom H menjadi I
                     if (str_contains($status, 'BELUM')) {
-                        $sheet->getStyle("H{$row}")->getFont()->getColor()->setRGB('FF0000');
+                        $sheet->getStyle("I{$row}")->getFont()->getColor()->setRGB('FF0000');
                     } elseif (str_contains($status, 'LUNAS')) {
-                        $sheet->getStyle("H{$row}")->getFont()->getColor()->setRGB('00AA00');
+                        $sheet->getStyle("I{$row}")->getFont()->getColor()->setRGB('00AA00');
                     }
                 }
             }

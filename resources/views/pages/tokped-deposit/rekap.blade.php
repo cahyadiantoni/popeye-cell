@@ -5,10 +5,8 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- Main-body start -->
 <div class="main-body">
     <div class="page-wrapper">
-        <!-- Page-header start -->
         <div class="page-header">
             <div class="row align-items-end">
                 <div class="col-lg-8">
@@ -30,14 +28,10 @@
                 </div>
             </div>
         </div>
-        <!-- Page-header end -->
-
-        <!-- Page-body start -->
         <div class="page-body">
             <div class="row">
                 <div class="col-sm-12">
-                    <!-- Table start -->
-                     <div class="card">
+                    <div class="card">
                         <div class="card-header">
                             <form action="{{ route('tokped-deposit.rekap') }}" method="GET">
                                 <div class="row">
@@ -92,7 +86,7 @@
                                             <th>Total Unit Faktur</th>
                                             <th>Total Faktur</th>
                                             <th>Total Unit Invoice</th>
-                                            <th>Uang Masuk</th>
+                                            <th>Total Unit Dibatalkan</th> <th>Uang Masuk</th>
                                             <th>Selisih</th>
                                             <th>Keterangan</th>
                                             <th>Bonusan</th>
@@ -106,7 +100,7 @@
                                             <th>Total Unit Faktur</th>
                                             <th>Total Faktur</th>
                                             <th>Total Unit Invoice</th>
-                                            <th>Uang Masuk</th>
+                                            <th>Total Unit Dibatalkan</th> <th>Uang Masuk</th>
                                             <th>Selisih</th>
                                             <th>Keterangan</th>
                                             <th>Bonusan</th>
@@ -117,15 +111,11 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Table end -->
-                </div>
+                    </div>
             </div>
         </div>
-        <!-- Page-body end -->
-    </div>
+        </div>
 </div>
-<!-- Main-body end -->
-
 <script>
     $(document).ready(function () {
         var table = $('#rekapTable').DataTable({
@@ -140,13 +130,14 @@
                     d.cek = $('select[name=cek]').val();
                 }
             },
-            order: [[1, 'desc']],
+            order: [[1, 'desc']], // Urutkan berdasarkan Tanggal (kolom kedua) descending
             columns: [
                 { data: 'title', name: 'title' },
                 { data: 'tgl', name: 'tgl' },
                 { data: 'total_unit_faktur', name: 'total_unit_faktur' },
                 { data: 'total_nominal_faktur', name: 'total_nominal_faktur' },
                 { data: 'total_unit_invoice', name: 'total_unit_invoice' },
+                { data: 'total_unit_dibatalkan', name: 'total_unit_dibatalkan' }, // Data baru
                 { data: 'total_uang_masuk', name: 'total_uang_masuk' },
                 { data: 'selisih', name: 'selisih' },
                 { data: 'keterangan', name: 'keterangan' },
@@ -159,7 +150,7 @@
             e.preventDefault();
 
             // Update URL export dengan filter terbaru
-            const urlExport = '/tokped-deposit/export?' + new URLSearchParams({
+            const urlExport = '{{ route("tokped-deposit.export") }}?' + new URLSearchParams({ // Pastikan route() digunakan untuk base URL
                 kode_faktur: $('#filterKodeFaktur').val(),
                 tanggal_mulai: $('#filterTanggalMulai').val(),
                 tanggal_selesai: $('#filterTanggalSelesai').val(),
@@ -171,6 +162,14 @@
             // Reload datatable
             table.ajax.reload();
         });
+
+        // Inisialisasi URL Export saat halaman dimuat (opsional, jika ingin filter default diterapkan)
+        // $('#btnExportExcel').attr('href', '{{ route("tokped-deposit.export") }}?' + new URLSearchParams({
+        //     kode_faktur: $('#filterKodeFaktur').val(),
+        //     tanggal_mulai: $('#filterTanggalMulai').val(),
+        //     tanggal_selesai: $('#filterTanggalSelesai').val(),
+        //     cek: $('#filterCek').val(),
+        // }).toString());
 
     });
 </script>
