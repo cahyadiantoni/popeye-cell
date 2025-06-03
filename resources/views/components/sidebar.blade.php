@@ -244,6 +244,18 @@
                         <span class="pcoded-mtext">Tokped Order</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('pulsa-master') ? 'active' : '' }}">
+                    <a href="{{ url('/pulsa-master') }}">
+                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-mtext">Pulsa Master</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('pulsa-report') ? 'active' : '' }}">
+                    <a href="{{ url('/pulsa-report') }}">
+                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-mtext">Pulsa Report</span>
+                    </a>
+                </li>
             </ul>
             @endif
         @endif

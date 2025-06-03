@@ -3,6 +3,8 @@
 use App\Http\Controllers\KirimBarangController;
 use App\Http\Controllers\NegoanController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PulsaMasterController;
+use App\Http\Controllers\PulsaReportController;
 use App\Http\Controllers\TerimaBarangController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -203,6 +205,10 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     })->name('transaksi-faktur-online.export');
 
     Route::resource('/tokped-order', TokpedOrderController::class)->middleware('auth');
+
+    Route::get('/pulsa-master/export-template', [PulsaMasterController::class, 'exportTemplate'])->name('pulsa-master.exportTemplate');
+    Route::resource('/pulsa-master', PulsaMasterController::class)->middleware('auth');
+    Route::resource('/pulsa-report', PulsaReportController::class)->middleware('auth');
 
 });
 
