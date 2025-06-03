@@ -228,31 +228,31 @@
                 </li>
                 <li class="{{ Request::is('tokped-deposit') ? 'active' : '' }}">
                     <a href="{{ url('/tokped-deposit') }}">
-                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-micon"><i class="fas fa-wallet"></i></span>
                         <span class="pcoded-mtext">Tokped Deposit</span>
-                    </a>
-                </li>
-                <li class="{{ Request::is('tokped-deposit/rekap') ? 'active' : '' }}">
-                    <a href="{{ url('/tokped-deposit/rekap') }}">
-                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
-                        <span class="pcoded-mtext">Tokped Rekap</span>
                     </a>
                 </li>
                 <li class="{{ Request::is('tokped-order') ? 'active' : '' }}">
                     <a href="{{ url('/tokped-order') }}">
-                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-micon"><i class="fas fa-shopping-cart"></i></span>
                         <span class="pcoded-mtext">Tokped Order</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('tokped-deposit/rekap') ? 'active' : '' }}">
+                    <a href="{{ url('/tokped-deposit/rekap') }}">
+                        <span class="pcoded-micon"><i class="fas fa-file-invoice-dollar"></i></span>
+                        <span class="pcoded-mtext">Tokped Rekap</span>
                     </a>
                 </li>
                 <li class="{{ Request::is('pulsa-master') ? 'active' : '' }}">
                     <a href="{{ url('/pulsa-master') }}">
-                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-micon"><i class="fas fa-sim-card"></i></span>
                         <span class="pcoded-mtext">Pulsa Master</span>
                     </a>
                 </li>
                 <li class="{{ Request::is('pulsa-report') ? 'active' : '' }}">
                     <a href="{{ url('/pulsa-report') }}">
-                        <span class="pcoded-micon"><i class="fas fa-file"></i></span>
+                        <span class="pcoded-micon"><i class="fas fa-chart-line"></i></span>
                         <span class="pcoded-mtext">Pulsa Report</span>
                     </a>
                 </li>

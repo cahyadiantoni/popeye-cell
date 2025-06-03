@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PulsaReport; // Model yang sudah kita buat
+use App\Models\PulsaReport;
+use App\Models\PulsaMaster;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
-use Exception; // Tambahkan ini
+use Exception;
+use App\Exports\PulsaReportExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PulsaReportController extends Controller
 {
@@ -18,10 +21,111 @@ class PulsaReportController extends Controller
      */
     public function index(Request $request)
     {
+        $storeOptions = PulsaMaster::select('kode', 'nama_toko')
+                                    ->distinct()
+                                    ->orderBy('nama_toko', 'asc')
+                                    ->get();
+
         if ($request->ajax()) {
-            $data = PulsaReport::orderBy('Tanggal', 'desc')->latest()->get(); // Urutkan berdasarkan tanggal terbaru
-            return DataTables::of($data)
+            $query = PulsaReport::query();
+
+            if ($request->filled('tanggal_mulai')) {
+                try {
+                    $query->where('Tanggal', '>=', Carbon::parse($request->tanggal_mulai)->format('Y-m-d'));
+                } catch (\Exception $e) {
+                    // Abaikan
+                }
+            }
+            if ($request->filled('tanggal_selesai')) {
+                try {
+                    $query->where('Tanggal', '<=', Carbon::parse($request->tanggal_selesai)->format('Y-m-d'));
+                } catch (\Exception $e) {
+                    // Abaikan
+                }
+            }
+
+            $reports = $query->orderBy('Tanggal', 'desc')->orderBy('id', 'desc')->get();
+
+            $searchableMasterFields = [
+                'pasca_bayar1', 'pasca_bayar2', 'token1', 'token2',
+                'pam1', 'pam2', 'pulsa1', 'pulsa2', 'pulsa3',
+            ];
+            $pulsaMasters = PulsaMaster::where(function ($q_master) use ($searchableMasterFields) {
+                foreach ($searchableMasterFields as $field) {
+                    $q_master->orWhere(function($sub_q) use ($field){
+                        $sub_q->whereNotNull($field)->where($field, '!=', '');
+                    });
+                }
+            })->select(['kode', 'nama_toko', ...$searchableMasterFields])->get();
+
+            $processedReports = [];
+            foreach ($reports as $report) {
+                $kodeMasterMatch = null;
+                $namaTokoMatch = null;
+                $matchFound = false;
+
+                foreach ($pulsaMasters as $master) {
+                    foreach ($searchableMasterFields as $field) {
+                        $masterValue = $master->{$field};
+                        if (!empty($masterValue) && str_contains((string)$report->Keterangan, (string)$masterValue)) {
+                            $kodeMasterMatch = $master->kode;
+                            $namaTokoMatch = $master->nama_toko;
+                            $matchFound = true;
+                            break; 
+                        }
+                    }
+                    if ($matchFound) {
+                        break; 
+                    }
+                }
+                
+                $report->kode_master_match = $kodeMasterMatch; 
+                $report->nama_toko_master_match = $namaTokoMatch;
+                $processedReports[] = $report;
+            }
+            
+            $reportCollection = collect($processedReports);
+
+            if ($request->filled('filter_kode_toko')) {
+                $filterKode = $request->filter_kode_toko;
+                $reportCollection = $reportCollection->filter(function ($item) use ($filterKode) {
+                    return $item->kode_master_match === $filterKode;
+                });
+            }
+
+            if ($request->filled('filter_cek')) {
+                $cekStatus = $request->filter_cek;
+                if ($cekStatus === 'ada_kode') {
+                    $reportCollection = $reportCollection->filter(function ($item) {
+                        return !is_null($item->kode_master_match);
+                    });
+                } elseif ($cekStatus === 'tidak_ada_kode') {
+                    $reportCollection = $reportCollection->filter(function ($item) {
+                        return is_null($item->kode_master_match);
+                    });
+                }
+            }
+            
+            return DataTables::of($reportCollection)
+                ->addColumn('kode_master', function ($row) {
+                    return $row->kode_master_match ?? '-';
+                })
+                ->addColumn('nama_toko_master', function ($row) {
+                    return $row->nama_toko_master_match ?? '-';
+                })
+                ->addColumn('tipe_transaksi', function ($row) { // KOLOM BARU "Transaksi"
+                    // Pastikan $row->Cabang adalah string untuk `match` atau `switch`
+                    $cabangValue = (string) $row->Cabang;
+                    return match ($cabangValue) {
+                        '0000' => 'PAM',
+                        '0001' => 'PASCABAYAR',
+                        '0253' => 'TOKEN',
+                        '0998' => 'PULSA',
+                        default => $cabangValue, // Atau '-' jika tidak ada yang cocok dan tidak ingin menampilkan kode cabang asli
+                    };
+                })
                 ->editColumn('Tanggal', function ($row) {
+                    // Akses $row->Tanggal karena $row adalah item dari $reportCollection (objek PulsaReport yang dimodifikasi)
                     return Carbon::parse($row->Tanggal)->translatedFormat('d M Y');
                 })
                 ->editColumn('Jumlah', function ($row) {
@@ -30,10 +134,13 @@ class PulsaReportController extends Controller
                 ->editColumn('Saldo', function ($row) {
                     return 'Rp. ' . number_format($row->Saldo, 2, ',', '.');
                 })
-                // Tambahkan kolom aksi jika perlu
+                 // rawColumns perlu menyertakan 'tipe_transaksi' jika mengandung HTML,
+                 // tapi karena hanya teks, tidak wajib.
+                ->rawColumns(['kode_master', 'nama_toko_master'])
                 ->make(true);
         }
-        return view('pages.pulsa-report.index');
+
+        return view('pages.pulsa-report.index', compact('storeOptions'));
     }
 
     /**
@@ -145,5 +252,86 @@ class PulsaReportController extends Controller
             Log::error('Kesalahan Umum (CSV): ' . $e->getMessage() . ' Stack: ' . $e->getTraceAsString());
             return redirect()->back()->with('error', 'Impor CSV gagal: ' . $e->getMessage() . (isset($rowIndex) ? ' (Baris CSV terakhir diproses: ' . $rowIndex . ')' : ''));
         }
+    }
+
+    public function exportExcel(Request $request)
+    {
+        // Logika pengambilan data dan filter SAMA PERSIS dengan yang ada di metode index() saat $request->ajax()
+        // Ini untuk memastikan data yang diekspor konsisten dengan yang ditampilkan
+        $query = PulsaReport::query();
+
+        if ($request->filled('tanggal_mulai')) {
+            try { $query->where('Tanggal', '>=', Carbon::parse($request->tanggal_mulai)->format('Y-m-d')); } 
+            catch (\Exception $e) { /* Abaikan */ }
+        }
+        if ($request->filled('tanggal_selesai')) {
+            try { $query->where('Tanggal', '<=', Carbon::parse($request->tanggal_selesai)->format('Y-m-d')); } 
+            catch (\Exception $e) { /* Abaikan */ }
+        }
+
+        $reports = $query->orderBy('Tanggal', 'desc')->orderBy('id', 'desc')->get();
+
+        $searchableMasterFields = [
+            'pasca_bayar1', 'pasca_bayar2', 'token1', 'token2',
+            'pam1', 'pam2', 'pulsa1', 'pulsa2', 'pulsa3',
+        ];
+        $pulsaMasters = PulsaMaster::where(function ($q_master) use ($searchableMasterFields) {
+            foreach ($searchableMasterFields as $field) {
+                $q_master->orWhere(function($sub_q) use ($field){
+                    $sub_q->whereNotNull($field)->where($field, '!=', '');
+                });
+            }
+        })->select(['kode', 'nama_toko', ...$searchableMasterFields])->get();
+
+        $processedReports = [];
+        foreach ($reports as $report) {
+            $kodeMasterMatch = null;
+            $namaTokoMatch = null;
+            $matchFound = false;
+            foreach ($pulsaMasters as $master) {
+                foreach ($searchableMasterFields as $field) {
+                    $masterValue = $master->{$field};
+                    if (!empty($masterValue) && str_contains((string)$report->Keterangan, (string)$masterValue)) {
+                        $kodeMasterMatch = $master->kode;
+                        $namaTokoMatch = $master->nama_toko;
+                        $matchFound = true;
+                        break; 
+                    }
+                }
+                if ($matchFound) break; 
+            }
+            $report->kode_master_match = $kodeMasterMatch; 
+            $report->nama_toko_master_match = $namaTokoMatch;
+            // Hitung tipe_transaksi di sini juga agar konsisten
+            $cabangValue = (string) $report->Cabang;
+            $report->tipe_transaksi = match ($cabangValue) {
+                '0000' => 'PAM',
+                '0001' => 'PASCABAYAR',
+                '0253' => 'TOKEN',
+                '0998' => 'PULSA',
+                default => $cabangValue,
+            };
+            $processedReports[] = $report;
+        }
+        
+        $reportCollection = collect($processedReports);
+
+        if ($request->filled('filter_kode_toko')) {
+            $filterKode = $request->filter_kode_toko;
+            $reportCollection = $reportCollection->filter(fn ($item) => $item->kode_master_match === $filterKode);
+        }
+
+        if ($request->filled('filter_cek')) {
+            $cekStatus = $request->filter_cek;
+            if ($cekStatus === 'ada_kode') {
+                $reportCollection = $reportCollection->filter(fn ($item) => !is_null($item->kode_master_match));
+            } elseif ($cekStatus === 'tidak_ada_kode') {
+                $reportCollection = $reportCollection->filter(fn ($item) => is_null($item->kode_master_match));
+            }
+        }
+        // Akhir logika pengambilan data yang disalin dari index()
+
+        $timestamp = Carbon::now()->format('Ymd_His');
+        return Excel::download(new PulsaReportExport($reportCollection), "Laporan_Pulsa_{$timestamp}.xlsx");
     }
 }

@@ -208,6 +208,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
 
     Route::get('/pulsa-master/export-template', [PulsaMasterController::class, 'exportTemplate'])->name('pulsa-master.exportTemplate');
     Route::resource('/pulsa-master', PulsaMasterController::class)->middleware('auth');
+    Route::get('/pulsa-report/export', [PulsaReportController::class, 'exportExcel'])->name('pulsa-report.exportExcel');
     Route::resource('/pulsa-report', PulsaReportController::class)->middleware('auth');
 
 });
