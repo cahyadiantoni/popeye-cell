@@ -40,7 +40,7 @@ class TransaksiBawahController extends Controller
                     't_faktur_bawah.tgl_jual',
                     't_faktur_bawah.petugas as petugas_faktur'  // Alias petugas dari t_faktur_bawah
                 )
-                ->where('t_barang.status_barang', 2)
+                ->whereIn('t_barang.status_barang', [2, 5])
                 ->orderBy('t_faktur_bawah.tgl_jual', 'desc');
 
             return DataTables::of($barangs)
@@ -74,41 +74,75 @@ class TransaksiBawahController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Validasi input textarea
         $request->validate([
-            'filedata' => 'required|file|mimes:xlsx,xls',
-            'tgl_jual' => 'required|date',
-            'nomor_faktur' => 'required|string',
-            'pembeli' => 'required|string',
-            'petugas' => 'required|string',
-            'grade' => 'required|string',
+            'pasted_data' => 'required|string',
         ]);
 
-        // Cek apakah nomor_faktur sudah ada
-        if (FakturBawah::where('nomor_faktur', $request->nomor_faktur)->exists()) {
-            return redirect()->back()->with('error', 'Gagal disimpan: Nomor FakturBawah sudah ada. Harap diganti!');
+        // 2. Parsing data dari textarea
+        $pastedData = trim($request->pasted_data);
+        $rows = array_filter(explode("\n", $pastedData), 'trim');
+
+        if (empty($rows)) {
+            return redirect()->back()->with('error', 'Data yang ditempelkan kosong atau tidak valid.');
         }
 
+        // 3. Ambil data umum dari baris PERTAMA
+        $firstRowColumns = str_getcsv(reset($rows), "\t");
+
+        try {
+            $tglJual = Carbon::createFromFormat('j-M-Y', trim($firstRowColumns[0]))->format('Y-m-d');
+            $petugas = trim($firstRowColumns[1]);
+            $keterangan = trim($firstRowColumns[2]);
+            $grade = trim($firstRowColumns[8]);
+            $pembeli = trim($firstRowColumns[12]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Format tanggal pada baris pertama salah. Gunakan format "2-Jun-2025".');
+        }
+
+        // 4. Buat Nomor Faktur (Logika disamakan dengan getSuggestNoFak Anda)
+        $kodeFaktur = "BW";
+        $tglJualCarbon = Carbon::parse($tglJual);
+        $currentMonthYear = $tglJualCarbon->format('my');
+
+        $lastFaktur = FakturBawah::where('nomor_faktur', 'like', "$kodeFaktur-$currentMonthYear-%")
+            ->orderByRaw("CAST(SUBSTRING(nomor_faktur, 10, LENGTH(nomor_faktur) - 9) AS UNSIGNED) DESC")
+            ->first();
+
+        if ($lastFaktur) {
+            preg_match('/-(\d+)$/', $lastFaktur->nomor_faktur, $matches);
+            $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
+            $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '001';
+        }
+
+        $nomorFakturBaru = "$kodeFaktur-$currentMonthYear-$newNumber";
+
+        // Cek duplikasi nomor faktur (sebagai pengaman)
+        if (FakturBawah::where('nomor_faktur', $nomorFakturBaru)->exists()) {
+            return redirect()->back()->with('error', 'Gagal generate Nomor Faktur unik. Coba submit lagi.');
+        }
+
+        // 5. Proses validasi setiap baris (logika lama Anda dipertahankan)
         $errors = [];
         $totalHargaJual = 0;
         $validLokSpk = [];
         $processedLokSpk = [];
 
-        $file = $request->file('filedata');
-        $data = Excel::toArray([], $file);
+        foreach ($rows as $index => $rowString) {
+            $row = str_getcsv($rowString, "\t");
 
-        foreach ($data[0] as $index => $row) {
-            if ($index === 0) continue; // skip header
-
-            $lokSpk = $row[0] ?? null;
-            $hargaJual = isset($row[1]) ? $row[1] * 1000 : null;
+            $lokSpk = $row[3] ?? null;
+            $hargaJual = isset($row[5]) ? (int)trim($row[5]) * 1000 : null;
 
             if (!$lokSpk || !$hargaJual) {
-                $errors[] = "Row " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
+                $errors[] = "Baris " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
                 continue;
             }
 
             if (in_array($lokSpk, $processedLokSpk)) {
-                $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
+                $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam data yang ditempel.";
                 continue;
             }
 
@@ -116,20 +150,18 @@ class TransaksiBawahController extends Controller
             $barang = Barang::where('lok_spk', $lokSpk)->first();
 
             if (!$barang) {
-                $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan.";
+                $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan.";
                 continue;
             }
 
             if (!in_array($barang->status_barang, [0, 1])) {
-                if (!($barang->status_barang == 4 && $request->grade == 'Pengambilan AM')) {
-                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
+                if (!($barang->status_barang == 4 && $grade == 'Pengambilan AM')) {
+                    $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
                     continue;
                 }
-            }            
+            }
 
             $tipe = $barang->tipe;
-            $grade = $request->grade;
-            $tglJual = $request->tgl_jual;
 
             $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
                 ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
@@ -141,7 +173,7 @@ class TransaksiBawahController extends Controller
 
             if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
                 $hargaList = $hargaSebelumnya->implode(', ');
-                $errors[] = "Row " . ($index + 1) . ": Harga jual $hargaJual berbeda dengan transaksi sebelumnya untuk tipe '$tipe', grade '$grade' pada tanggal $tglJual (harga sebelumnya: $hargaList).";
+                $errors[] = "Baris " . ($index + 1) . ": Harga jual " . ($hargaJual / 1000) . " berbeda dengan transaksi sebelumnya untuk tipe '$tipe', grade '$grade' pada tanggal " . Carbon::parse($tglJual)->format('d-M-Y') . " (harga sebelumnya: ".($hargaList/1000).").";
                 continue;
             }
 
@@ -152,27 +184,25 @@ class TransaksiBawahController extends Controller
             ];
         }
 
-        // Jika ada error, batalkan proses
         if (!empty($errors)) {
-            return redirect()->back()->with('errors', $errors);
+            return redirect()->back()->with('errors', $errors)->withInput();
         }
 
-        // Jalankan simpan dalam transaksi
-        DB::transaction(function () use ($request, $validLokSpk, $totalHargaJual) {
-            $newFaktur = FakturBawah::create([
-                'nomor_faktur' => $request->nomor_faktur,
-                'pembeli' => $request->pembeli,
-                'tgl_jual' => $request->tgl_jual,
-                'petugas' => $request->petugas,
-                'grade' => $request->grade,
-                'keterangan' => $request->keterangan,
+        // 6. Simpan ke database (logika lama Anda dipertahankan)
+        DB::transaction(function () use ($nomorFakturBaru, $pembeli, $tglJual, $petugas, $grade, $keterangan, $totalHargaJual, $validLokSpk) {
+            FakturBawah::create([
+                'nomor_faktur' => $nomorFakturBaru,
+                'pembeli' => $pembeli,
+                'tgl_jual' => $tglJual,
+                'petugas' => $petugas,
+                'grade' => $grade,
+                'keterangan' => $keterangan,
                 'total' => $totalHargaJual,
             ]);
 
             foreach ($validLokSpk as $item) {
                 $barang = Barang::where('lok_spk', $item['lok_spk'])->first();
                 $tipe = $barang->tipe;
-                $grade = $request->grade;
 
                 $negoan = Negoan::where('tipe', $tipe)
                     ->where('grade', $grade)
@@ -181,13 +211,14 @@ class TransaksiBawahController extends Controller
                     ->first();
 
                 $barang->update([
-                    'no_faktur' => $request->nomor_faktur,
+                    'no_faktur' => $nomorFakturBaru,
                     'harga_jual' => $item['harga_jual'],
+                    'status_barang' => 5
                 ]);
 
                 TransaksiJualBawah::create([
                     'lok_spk' => $item['lok_spk'],
-                    'nomor_faktur' => $request->nomor_faktur,
+                    'nomor_faktur' => $nomorFakturBaru,
                     'harga' => $item['harga_jual'],
                     'harga_acc' => $negoan->harga_acc ?? 0,
                 ]);
@@ -195,7 +226,7 @@ class TransaksiBawahController extends Controller
         });
 
         return redirect()->route('transaksi-faktur-bawah.show', [
-            'nomor_faktur' => $request->nomor_faktur
+            'nomor_faktur' => $nomorFakturBaru
         ])->with('success', 'FakturBawah berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.');
     }
     

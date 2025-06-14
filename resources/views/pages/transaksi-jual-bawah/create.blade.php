@@ -41,64 +41,20 @@
                                 <h3>Form Jual Barang</h3>
                             </div>
                             <div class="card-block">
-                                <h4 class="sub-title">Upload Jual Barang</h4>
-                                <form method="POST" action="{{ route('transaksi-jual-bawah.store') }}" enctype="multipart/form-data">
+                                <h4 class="sub-title">Copy-Paste Data Jual Barang</h4>
+                                <form method="POST" action="{{ route('transaksi-jual-bawah.store') }}">
                                     @csrf
-                                    <a href="{{ asset('files/template jual barang.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
-                                    <hr>
                                     <div class="mb-3 row">
-                                        <div class="sub-title">Masukan file excel di bawah!</div>
-                                        <h5 style="color:red">SEBELUM UPLOAD HARAP DICEK ULANG AGAR TIDAK ADA HARGA YANG BERBEDA UNTUK TIPE DAN GRADE YANG SAMA.</h5>
-                                        <hr>
-                                        <input type="file" name="filedata" required>
-                                    </div>
-                                    <div class="mb-3 row">
-                                        <label class="form-label col-sm-2 col-form-label">Tanggal Jual</label>
-                                        <div class="col-sm-10">
-                                            <input type="date" name="tgl_jual" class="form-control" required>
+                                        <div class="col-sm-12">
+                                            <p>Salin data dari Excel lalu tempelkan di area bawah ini. Pastikan urutan kolom sesuai:</p>
+                                            <p><strong>tgl_jual | petugas | keterangan | lok_spk | harga_beli | harga_jual | merk_tipe | kelengkapan | grade | kerusakan | pj | imei | pembeli</strong></p>
+                                            <h5 style="color:red">PASTIKAN AGAR TIDAK ADA HARGA YANG BERBEDA UNTUK TIPE DAN GRADE YANG SAMA.</h5>
+                                            <hr>
+                                            <textarea name="pasted_data" class="form-control" rows="15" placeholder="Tempelkan data dari Excel di sini..." required></textarea>
                                         </div>
                                     </div>
-                                    <div class="mb-3 row">
-                                        <label class="form-label col-sm-2 col-form-label">Nomor Faktur</label>
-                                        <div class="col-sm-10">
-                                            <input type="text" name="nomor_faktur" class="form-control" placeholder="Ketik Nomor Faktur" required>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3 row">
-                                        <label class="form-label col-sm-2 col-form-label">Pembeli</label>
-                                        <div class="col-sm-10">
-                                            <input type="text" name="pembeli" class="form-control" placeholder="Ketik Pembeli" required>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3 row">
-                                        <label class="form-label col-sm-2 col-form-label">Petugas</label>
-                                        <div class="col-sm-10">
-                                            <input type="text" name="petugas" class="form-control" placeholder="Ketik Nama Petugas" required>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3 row">
-                                        <label class="form-label col-sm-2 col-form-label">Grade</label>
-                                        <div class="col-sm-10">
-                                            <select name="grade" class="form-control" required>
-                                                <option value="">Pilih Grade</option>
-                                                <option value="Barang JB">Barang JB</option>
-                                                <option value="Barang 2nd">Barang 2nd</option>
-                                                <option value="IP JB">IP JB</option>
-                                                <option value="IP 2nd">IP 2nd</option>
-                                                <option value="Batangan">Batangan</option>
-                                                <option value="Pengambilan AM">Pengambilan AM</option>
-                                                <option value="Lain Lain">Lain Lain</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3 row">
-                                        <label class="form-label col-sm-2 col-form-label">Keterangan</label>
-                                        <div class="col-sm-10">
-                                            <textarea name="keterangan" class="form-control" placeholder="Tambahkan keterangan jika diperlukan" rows="4"></textarea>
-                                        </div>
-                                    </div>
-                                    <!-- Tambahkan tombol submit di sini -->
-                                    <div class="d-flex justify-content-between">
+
+                                    <div class="d-flex justify-content-between mt-3">
                                         <a href="{{ route('transaksi-jual-bawah.index') }}" class="btn btn-secondary btn-round">List All Transaksi</a>
                                         <button type="submit" class="btn btn-primary btn-round">Submit Jual Barang</button>
                                     </div>
@@ -113,44 +69,4 @@
         </div>
     </div>
     <!-- Main-body end -->
-    <script>
-        $(document).ready(function() {
-            // Function to format number as currency
-            function formatCurrency(value) {
-                return 'Rp. ' + new Intl.NumberFormat('id-ID').format(value);
-            }
-
-            // Update display for nominal
-            $('#nominal').on('input', function() {
-                const value = $(this).val();
-                $('#nominal_display').text(formatCurrency(value));
-            });
-        });
-    </script>
-    <script>
-        $(document).ready(function() {
-            function updateNomorFaktur() {
-                var kodeFaktur = "BW";
-                var tglJual = $('input[name="tgl_jual"]').val(); // Ambil tanggal jual yang dipilih
-
-                if (kodeFaktur && tglJual) {
-                    $.ajax({
-                        url: "{{ route('suggest.no.fak.bawah') }}",
-                        type: "GET",
-                        data: { kode_faktur: kodeFaktur, tgl_jual: tglJual }, // Kirim tanggal jual
-                        dataType: "json",
-                        success: function(response) {
-                            console.log("Response:", response); // Debugging
-                            $('input[name="nomor_faktur"]').val(response.suggested_no_fak);
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("AJAX Error:", error); // Debugging
-                        }
-                    });
-                }
-            }
-
-            $('input[name="tgl_jual"]').on('change', updateNomorFaktur);
-        });
-    </script>
 @endsection()

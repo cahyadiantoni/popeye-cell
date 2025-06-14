@@ -39,7 +39,7 @@ class TransaksiController extends Controller
                     't_faktur.tgl_jual',
                     't_faktur.petugas as petugas_faktur'  // Alias petugas dari t_faktur
                 )
-                ->where('t_barang.status_barang', 2)
+                ->whereIn('t_barang.status_barang', [2, 5])
                 ->orderBy('t_faktur.tgl_jual', 'desc');
 
             return DataTables::of($barangs)
@@ -170,6 +170,7 @@ class TransaksiController extends Controller
                 Barang::where('lok_spk', $item['lok_spk'])->update([
                     'no_faktur' => $request->input('nomor_faktur'),
                     'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
+                    'status_barang' => 5,
                 ]);
 
                 TransaksiJual::create([

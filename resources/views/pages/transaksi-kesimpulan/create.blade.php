@@ -2,12 +2,10 @@
 
 @section('title', 'Buat Kesimpulan Faktur')
 @section('content')
-    <!-- Main-body start -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <div class="main-body">
         <div class="page-wrapper">
-            <!-- Page body start -->
             <div class="page-body">
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -35,7 +33,6 @@
                 @endif
                 <div class="row">
                     <div class="col-sm-12">
-                        <!-- Basic Form Inputs card start -->
                         <div class="card">
                             <div class="card-header">
                                 <h3>Form Kesimpulan Faktur</h3>
@@ -87,7 +84,8 @@
                                     <div class="mb-3 row">
                                         <label class="form-label col-sm-2 col-form-label">Tanggal Jual</label>
                                         <div class="col-sm-10">
-                                            <input type="date" name="tgl_jual" class="form-control" required>
+                                            {{-- PERUBAHAN HTML: Menambahkan atribut 'readonly' --}}
+                                            <input type="date" name="tgl_jual" class="form-control" readonly required>
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
@@ -148,7 +146,6 @@
                                             <small class="form-text text-muted" id="nominal_display">{{ 'Rp. 0' }}</small>
                                         </div>
                                     </div>
-                                    <!-- Tambahkan tombol submit di sini -->
                                     <div class="d-flex justify-content-between">
                                         <a href="{{ route('transaksi-kesimpulan.index') }}" class="btn btn-secondary btn-round">Kembali</a>
                                         <button type="submit" class="btn btn-primary btn-round">Submit Kesimpulan</button>
@@ -156,14 +153,11 @@
                                 </form>
                             </div>
                         </div>
-                        <!-- Basic Form Inputs card end -->
-                    </div>
+                        </div>
                 </div>
             </div>
-            <!-- Page body end -->
-        </div>
+            </div>
     </div>
-    <!-- Main-body end -->
     <script>
         $(document).ready(function() {
             // Function to format number as currency
@@ -201,7 +195,9 @@
                 let totalBarang = 0;
                 let totalHarga = 0;
 
-                $('input[name="faktur_id[]"]:checked').each(function() {
+                const checkedFakturs = $('input[name="faktur_id[]"]:checked');
+
+                checkedFakturs.each(function() {
                     const row = $(this).closest('tr');
                     totalFaktur += 1;
                     totalBarang += parseInt(row.find('td:eq(4)').text()) || 0;
@@ -213,6 +209,18 @@
                 $('#total_faktur').val(totalFaktur);
                 $('#total_barang').val(totalBarang);
                 $('#total').val(totalHarga).trigger('input');
+
+                // Ambil baris dari faktur terakhir yang dicentang
+                const lastCheckedRow = checkedFakturs.last().closest('tr');
+                if (lastCheckedRow.length > 0) {
+                    // Ambil tanggal dari kolom ke-4 (index 3)
+                    const tglJual = lastCheckedRow.find('td:eq(3)').text();
+                    // Set nilai input tanggal
+                    $('input[name="tgl_jual"]').val(tglJual);
+                } else {
+                    // Kosongkan input tanggal jika tidak ada yang dipilih
+                    $('input[name="tgl_jual"]').val('');
+                }
 
                 // Hitung ulang potongan dan grand total setelah update total_barang dan total
                 calculatePotonganDanGrandTotal(totalHarga);

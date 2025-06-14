@@ -163,7 +163,7 @@ class StokGudangController extends Controller
 
         // Mendapatkan stokGudangs berdasarkan gudang_id
         $stokGudangs = Barang::selectRaw('gudang_id, COUNT(*) as total')
-            ->whereIn('status_barang', [0, 1]) // Ambil status 0 dan 1
+            ->whereIn('status_barang', [0, 1, 5]) // Ambil status 0 dan 1
             ->groupBy('gudang_id') // Kelompokkan berdasarkan gudang_id
             ->get()
             ->keyBy('gudang_id'); // Mempermudah akses data berdasarkan gudang_id
