@@ -80,7 +80,7 @@ class TransaksiKesimpulanController extends Controller
 
     public function store(Request $request)
     {
-        // Validasi awal
+        // Validasi yang disesuaikan untuk array
         $request->validate([
             'tgl_jual' => 'required|date',
             'potongan_kondisi' => 'nullable|numeric',
@@ -89,23 +89,24 @@ class TransaksiKesimpulanController extends Controller
             'grand_total' => 'required|numeric',
             'keterangan' => 'nullable|string',
             'faktur_id' => 'required|array',
-            'foto' => 'nullable|image',
-            'nominal' => 'nullable|numeric',
+            'fotos' => 'nullable|array', // Validasi 'fotos' sebagai array
+            'fotos.*' => 'nullable|image|max:2048', // Validasi setiap item di dalam array 'fotos'
+            'nominals' => 'nullable|array', // Validasi 'nominals' sebagai array
+            'nominals.*' => 'nullable|numeric|min:1', // Validasi setiap item di dalam array 'nominals'
         ]);
 
         DB::beginTransaction();
 
         try {
-            // Nomor Kesimpulan
+            // Nomor Kesimpulan (tidak ada perubahan)
             $tglJual = $request->input('tgl_jual');
             $bulanTahun = date('my', strtotime($tglJual));
             $prefix = 'K-BW-' . $bulanTahun;
-
             $count = KesimpulanBawah::where('nomor_kesimpulan', 'like', "$prefix-%")->count();
             $noUrut = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
             $nomor_kesimpulan = "$prefix-$noUrut";
 
-            // Create Kesimpulan
+            // Create Kesimpulan (tidak ada perubahan)
             $kesimpulan = KesimpulanBawah::create([
                 'nomor_kesimpulan' => $nomor_kesimpulan,
                 'tgl_jual' => $tglJual,
@@ -117,7 +118,7 @@ class TransaksiKesimpulanController extends Controller
                 'is_lunas' => 0, // default
             ]);
 
-            // Simpan relasi faktur
+            // Simpan relasi faktur (tidak ada perubahan)
             foreach ($request->input('faktur_id') as $fakturId) {
                 FakturKesimpulan::create([
                     'kesimpulan_id' => $kesimpulan->id,
@@ -125,37 +126,46 @@ class TransaksiKesimpulanController extends Controller
                 ]);
             }
 
-            // Foto + Nominal Bukti Transfer
-            if ($request->hasFile('foto') && $request->input('nominal') !== null) {
-                $path = $request->file('foto')->store('bukti_transfer_kesimpulan', 'public');
+            if ($request->has('nominals')) {
+                $nominals = $request->input('nominals');
+                
+                // Ubah cara iterasi: Loop melalui nominals, bukan fotos.
+                foreach ($nominals as $key => $nominal) {
+                    // Periksa apakah ada file yang diupload untuk kunci (key) ini DAN nominalnya valid.
+                    if ($request->hasFile("fotos.{$key}") && is_numeric($nominal)) {
+                        $file = $request->file("fotos.{$key}");
+                        $path = $file->store('bukti_transfer_kesimpulan', 'public');
 
-                BuktiTfBawah::create([
-                    'kesimpulan_id' => $kesimpulan->id,
-                    'nominal' => $request->input('nominal'),
-                    'foto' => $path,
-                    'keterangan' => 'Transfer awal',
-                ]);
-
-                // Hitung total semua nominal bukti transfer
-                $totalNominal = BuktiTfBawah::where('kesimpulan_id', $kesimpulan->id)->sum('nominal');
-
-                // Tandai lunas jika total nominal >= grand_total
-                if ($totalNominal >= $kesimpulan->grand_total) {
-                    $kesimpulan->is_lunas = 1;
-                } else {
-                    $kesimpulan->is_lunas = 0;
+                        BuktiTfBawah::create([
+                            'kesimpulan_id' => $kesimpulan->id,
+                            'nominal' => $nominal,
+                            'foto' => $path,
+                            'keterangan' => 'Transfer - Bukti ' . ($key + 1),
+                        ]);
+                    }
                 }
-                $kesimpulan->save();
             }
 
+            // Hitung total semua nominal dan tentukan status lunas (tidak ada perubahan)
+            $totalNominal = array_sum($request->input('nominals', []));
+            if ($totalNominal >= $kesimpulan->grand_total && $kesimpulan->grand_total > 0) {
+                $kesimpulan->is_lunas = 1;
+            } else {
+                $kesimpulan->is_lunas = 0;
+            }
+            $kesimpulan->save();
+
             DB::commit();
-            return redirect()->route('transaksi-kesimpulan.index')->with('success', 'Kesimpulan berhasil disimpan!');
+            return redirect()->route('transaksi-kesimpulan.show', [
+                'kesimpulan_id' => $kesimpulan->id
+            ])->with('success', 'Kesimpulan berhasil disimpan!');
+
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()->with('error', 'Gagal menyimpan kesimpulan: ' . $e->getMessage());
         }
     }
-
+    
     public function show($kesimpulan_id)
     {
         $kesimpulan = KesimpulanBawah::with([

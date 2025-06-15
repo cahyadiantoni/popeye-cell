@@ -93,10 +93,8 @@
                                                 <th>Cek</th>
                                                 <th>No Kesimpulan</th>
                                                 <th>Tanggal</th>
+                                                <th>Pembeli</th>
                                                 <th>Jumlah Barang</th>
-                                                <th>Total Harga</th>
-                                                <th>Potongan</th>
-                                                <th>Diskon</th>
                                                 <th>Grand Total</th>
                                                 <th>Sudah Dibayar</th>
                                                 <th>Pembayaran</th>
@@ -128,10 +126,8 @@
                                                     </a>
                                                 </td>
                                                 <td>{{ $kesimpulan->tgl_jual }}</td>
+                                                <td>{{ $kesimpulan->pembeli }}</td>
                                                 <td>{{ $kesimpulan->total_barang }}</td>
-                                                <td>{{ 'Rp. ' . number_format($kesimpulan->total, 0, ',', '.') }}</td>
-                                                <td>{{ 'Rp. ' . number_format($kesimpulan->potongan_kondisi, 0, ',', '.') }}</td>
-                                                <td>{{ $kesimpulan->diskon }}%</td>
                                                 <td>{{ 'Rp. ' . number_format($kesimpulan->grand_total, 0, ',', '.') }}</td>
                                                 <td>{{ 'Rp. ' . number_format($kesimpulan->total_nominal, 0, ',', '.') }}</td>
                                                 <td>
@@ -160,10 +156,8 @@
                                                 <th>Cek</th>
                                                 <th>No Kesimpulan</th>
                                                 <th>Tanggal</th>
+                                                <th>Pembeli</th>
                                                 <th>Jumlah Barang</th>
-                                                <th>Total Harga</th>
-                                                <th>Potongan</th>
-                                                <th>Diskon</th>
                                                 <th>Grand Total</th>
                                                 <th>Sudah Dibayar</th>
                                                 <th>Pembayaran</th>

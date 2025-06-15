@@ -6,7 +6,7 @@
     <style>
         body { font-family: Arial, sans-serif; font-size: 12px; margin: 0; padding: 0; }
         .page-break { page-break-after: always; }
-        .container { padding: 10mm; } /* Optional padding for content within pages */
+        .container { padding: 10mm; box-sizing: border-box; } /* Tambahkan box-sizing di sini untuk konsistensi */
 
         /* --- Common Styles --- */
         .title { text-align: center; font-weight: bold; font-size: 16px; }
@@ -20,47 +20,64 @@
         .info-table .center-align { text-align: center; }
         .total { font-weight: bold; margin-top: 5px; }
         .footer { font-style: italic; text-align: center; margin-top: 20px; }
+        .badge { display: inline-block; padding: .35em .65em; font-size: .75em; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25rem; color: #fff; }
+        .bg-warning { background-color: #ffc107; color: #000; }
+        .bg-success { background-color: #28a745; }
 
-        /* --- Specific Styles for Bukti Images --- */
-        /* Container full A4 height untuk bukti */
-        .container.bukti-section {
-            page-break-inside: avoid;
-            break-inside: avoid; /* Untuk kompatibilitas */
-            min-height: 100vh; /* Paksa isi bukti berada dalam 1 halaman penuh */
+
+        /* --- STYLES FOR BUKTI SECTION (TABLE LAYOUT) --- */
+
+        /* Wrapper utama untuk tabel, jika diperlukan */
+        .bukti-container {
+            width: 100%;
         }
-
-
-        /* Penyesuaian gambar agar tetap proporsional dan tidak overflow */
-        .bukti-image-container {
-            flex: 1;
+        
+        /* Tabel utama yang akan menjadi grid */
+        .bukti-table {
+            width: 100%;
+            border-collapse: collapse; /* Menghilangkan spasi antar sel */
+            page-break-inside: avoid;  /* Mencegah tabel terpotong jika memungkinkan */
+        }
+        
+        /* Sel tabel (TD) yang akan menjadi kolom kita */
+        .bukti-table td {
+            width: 50%;
+            vertical-align: top;
+            padding: 0 5px 15px 5px; /* Padding: atas kanan bawah kiri */
+            page-break-inside: avoid; /* SANGAT PENTING: Mencegah isi sel terpotong antar halaman */
+        }
+        
+        /* Ini adalah blok konten di dalam setiap sel */
+        .bukti-item {
+            border: 1px solid #ccc;
+            padding: 8px;
+            height: 400px; /* agar 2 baris muat per halaman A4 (90vh total dengan margin) */
+            box-sizing: border-box;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        
+        .bukti-item p {
+            margin: 2px 0;
+            font-size: 11px;
+        }
+        
+        .bukti-item .bukti-image-container {
+            flex-grow: 1;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            margin-top: 10mm;
+            margin-top: 5px;
         }
-
-        .bukti-image-container img {
+        
+        .bukti-item .bukti-image-container img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
         }
-
-        /* Style for status badges if needed */
-        .badge {
-            display: inline-block;
-            padding: .35em .65em;
-            font-size: .75em;
-            font-weight: 700;
-            line-height: 1;
-            text-align: center;
-            white-space: nowrap;
-            vertical-align: baseline;
-            border-radius: .25rem;
-            color: #fff; /* Default text color */
-        }
-        .bg-warning { background-color: #ffc107; color: #000; }
-        .bg-success { background-color: #28a745; }
 
     </style>
 </head>
@@ -72,7 +89,7 @@
         <div class="subtitle">Jl. KH Hasyim Ashari 112BB, Jakarta Pusat | Telp : 0856-9312-4547</div>
         <div class="title">Kesimpulan Penjualan</div>
         <div class="line"></div>
-
+        {{-- ... Konten Kesimpulan lainnya tetap sama ... --}}
         <div class="info">
             <table class="info-table">
                 <tr>
@@ -128,7 +145,6 @@
                     <td>{{ $fakturKesimpulan->faktur->nomor_faktur ?? '-' }}</td>
                     <td>{{ $fakturKesimpulan->faktur->pembeli ?? '-' }}</td>
                     <td>{{ $fakturKesimpulan->faktur->tgl_jual ?? '-' }}</td>
-                    {{-- Assuming 'barangs' relation exists on Faktur model or you can count TransaksiJualBawah --}}
                     <td>{{ $fakturKesimpulan->faktur->barangs->count() ?? '?' }}</td>
                     <td>{{ 'Rp. ' . number_format($fakturKesimpulan->faktur->total ?? 0, 0, ',', '.') }}</td>
                     <td>{{ $fakturKesimpulan->faktur->petugas ?? '-' }}</td>
@@ -141,13 +157,8 @@
 
         <div class="total">Total Barang: {{ $kesimpulan->total_barang ?? '0' }}</div>
         <div class="total">Grand Total Harga: Rp. {{ number_format($kesimpulan->grand_total ?? 0, 0, ',', '.') }}</div>
-
-         {{-- Footer hanya di halaman terakhir biasanya, tapi bisa juga di sini --}}
-         {{-- <div class="footer">Terima Kasih telah Berbelanja dengan Kami!</div> --}}
-
     </div>
 
-    {{-- Add a page break before the next section if there are fakturs or bukti --}}
     @if (!empty($faktursDataForView) || !$kesimpulan->bukti->isEmpty())
         <div class="page-break"></div>
     @endif
@@ -160,7 +171,7 @@
             <div class="subtitle">Jl. KH Hasyim Ashari 112BB, Jakarta Pusat | Telp : 0856-9312-4547</div>
             <div class="title">Faktur Penjualan</div>
             <div class="line"></div>
-
+             {{-- ... Konten Faktur lainnya tetap sama ... --}}
             <div class="info">
                 <table class="info-table">
                     <tr>
@@ -193,43 +204,62 @@
                         <td>{{ $transaksi->lok_spk ?? '-' }}</td>
                         <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
                         <td>Rp. {{ number_format($transaksi->harga ?? 0, 0, ',', '.') }}</td>
-                        <td>Rp. {{ number_format($transaksi->subtotal ?? 0, 0, ',', '.') }}</td> {{-- subtotal kumulatif --}}
+                        <td>Rp. {{ number_format($transaksi->subtotal ?? 0, 0, ',', '.') }}</td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
-
             <div class="total">Total Harga Keseluruhan: Rp. {{ number_format($fakturData['totalHarga'] ?? 0, 0, ',', '.') }}</div>
-
-             {{-- Footer bisa diletakkan di sini juga --}}
-             {{-- <div class="footer">Terima Kasih telah Berbelanja dengan Kami!</div> --}}
-
         </div>
 
-        {{-- Add a page break after each faktur, unless it's the last faktur AND there are no bukti images --}}
         @if (!$loop->last || !$kesimpulan->bukti->isEmpty())
              <div class="page-break"></div>
         @endif
-
     @endforeach
 
 
-    {{-- ==================== SECTION 3: BUKTI(S) ==================== --}}
-    @foreach($kesimpulan->bukti as $index => $bukti)
-        <div class="container bukti-section"> {{-- Tambahkan class khusus bukti-section --}}
+    {{-- ==================== SECTION 3: BUKTI(S) (REVISED WITH TABLE LAYOUT) ==================== --}}
+    @if(!$kesimpulan->bukti->isEmpty())
+        <div class="container">
             <div class="title">Bukti Transfer</div>
-            <p><strong>Keterangan:</strong> {{ $bukti->keterangan ?? '-' }}</p>
-            <p><strong>Nominal:</strong> Rp. {{ number_format($bukti->nominal ?? 0, 0, ',', '.') }}</p>
-
-            <div class="bukti-image-container">
-                <img src="{{ storage_path('app/public/' . $bukti->foto) }}" alt="Bukti Transfer {{ $index + 1 }}">
-            </div>
         </div>
-
-        @if (!$loop->last)
-            <div class="page-break"></div>
-        @endif
-    @endforeach
+        <div class="bukti-container">
+            <table class="bukti-table">
+                {{-- Loop melalui bukti, ambil 2 item per baris (chunk) --}}
+                @foreach($kesimpulan->bukti->chunk(2) as $rowChunk)
+                    <tr>
+                        {{-- Loop untuk setiap bukti dalam satu baris --}}
+                        @foreach($rowChunk as $bukti)
+                            <td>
+                                <div class="bukti-item">
+                                    <p><strong>Keterangan:</strong> {{ $bukti->keterangan ?? '-' }}</p>
+                                    <p><strong>Nominal:</strong> Rp. {{ number_format($bukti->nominal ?? 0, 0, ',', '.') }}</p>
+                                    <div class="bukti-image-container">
+                                        <img src="{{ storage_path('app/public/' . $bukti->foto) }}" alt="Bukti Transfer">
+                                    </div>
+                                </div>
+                            </td>
+                        @endforeach
+    
+                        {{-- Jika dalam satu baris hanya ada 1 bukti, tambahkan sel kosong agar tabel tidak rusak --}}
+                        @if (count($rowChunk) < 2)
+                            <td></td>
+                        @endif
+                    </tr>
+    
+                    {{-- KONDISI PAGE BREAK YANG DIPERBAIKI --}}
+                    {{-- Lakukan page break setelah setiap 2 baris (kelipatan 2), dan pastikan bukan baris terakhir --}}
+                    @if ($loop->iteration % 2 == 0 && !$loop->last)
+                        {{-- Tutup tabel saat ini, buat halaman baru, lalu buka tabel baru --}}
+                        </table>
+                        <div class="page-break"></div>
+                        <table class="bukti-table">
+                    @endif
+    
+                @endforeach
+            </table>
+        </div>
+    @endif
 
 
 </body>

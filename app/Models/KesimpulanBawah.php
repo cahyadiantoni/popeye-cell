@@ -49,4 +49,15 @@ class KesimpulanBawah extends Model
         return $this->bukti->sum('nominal');
     }
 
+    public function getPembeliAttribute()
+    {
+        $firstFakturKesimpulan = $this->fakturKesimpulans->first();
+
+        if ($firstFakturKesimpulan && $firstFakturKesimpulan->faktur) {
+            return $firstFakturKesimpulan->faktur->pembeli;
+        }
+        
+        return '-';
+    }
+
 }

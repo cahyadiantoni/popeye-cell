@@ -248,7 +248,7 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="kesimpulan_id" value="{{ $kesimpulan->id }}">
-                    <input type="text" class="form-control mb-2" name="keterangan" placeholder="Keterangan" required>
+                    <input type="text" class="form-control mb-2" name="keterangan" placeholder="Keterangan" value="Bukti TF Bawah" required>
                     <input type="number" class="form-control mb-2" id="nominal" name="nominal" placeholder="Nominal Transfer" required>
                     <small class="form-text text-muted" id="nominal_display">{{ 'Rp. 0' }}</small>
                     <input type="file" class="form-control" name="foto" required>

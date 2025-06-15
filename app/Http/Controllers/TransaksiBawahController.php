@@ -90,14 +90,26 @@ class TransaksiBawahController extends Controller
         // 3. Ambil data umum dari baris PERTAMA
         $firstRowColumns = str_getcsv(reset($rows), "\t");
 
+        // Ambil string tanggal mentah
+        $dateString = trim($firstRowColumns[0]);
+
+        // Kamus untuk menerjemahkan bulan dari Indonesia ke Inggris
+        $bulanIndonesia = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        $bulanInggris   = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        // Ganti nama bulan Indonesia ke Inggris (case-insensitive)
+        $dateString = str_ireplace($bulanIndonesia, $bulanInggris, $dateString);
+
         try {
-            $tglJual = Carbon::createFromFormat('j-M-Y', trim($firstRowColumns[0]))->format('Y-m-d');
+            // Parsing string tanggal yang sudah dinormalisasi ke Bahasa Inggris
+            $tglJual = Carbon::parse($dateString)->format('Y-m-d');
             $petugas = trim($firstRowColumns[1]);
             $keterangan = trim($firstRowColumns[2]);
             $grade = trim($firstRowColumns[8]);
             $pembeli = trim($firstRowColumns[12]);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Format tanggal pada baris pertama salah. Gunakan format "2-Jun-2025".');
+            // Pesan error dibuat lebih umum jika parsing tetap gagal
+            return redirect()->back()->with('error', 'Format tanggal pada baris pertama tidak valid. Gunakan format seperti "14-May-2025" atau "14-Mei-2025".');
         }
 
         // 4. Buat Nomor Faktur (Logika disamakan dengan getSuggestNoFak Anda)
@@ -230,7 +242,6 @@ class TransaksiBawahController extends Controller
         ])->with('success', 'FakturBawah berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.');
     }
     
-
     public function destroy($id)
     {
         try {

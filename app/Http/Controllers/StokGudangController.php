@@ -238,12 +238,12 @@ class StokGudangController extends Controller
 
         if ($gudangId === 'all') {
             $selectedGudang = (object) ['nama_gudang' => 'Semua Gudang', 'id' => 'all'];
-            $query = Barang::with('gudang')->where('status_barang', 1);
+            $query = Barang::with('gudang')->whereIn('status_barang', [0, 1, 5]);
         } else {
             $selectedGudang = Gudang::findOrFail($gudangId);
             $query = Barang::with('gudang')
                 ->where('gudang_id', $gudangId)
-                ->where('status_barang', 1);
+                ->whereIn('status_barang', [0, 1, 5]);
         }
 
         if ($jenis) {
