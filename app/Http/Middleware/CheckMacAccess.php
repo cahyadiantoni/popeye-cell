@@ -31,7 +31,8 @@ class CheckMacAccess
             }
 
             if ($macEntry->status == 1) {
-                return $next($request); // Disetujui
+                $response = $next($request);
+                return $response->cookie('mac_address', $mac, 60 * 24 * 30);
             }
 
             if ($macEntry->status == 2) {
