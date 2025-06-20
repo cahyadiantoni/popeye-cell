@@ -95,6 +95,13 @@ class TransaksiKesimpulanController extends Controller
             'nominals.*' => 'nullable|numeric|min:1', // Validasi setiap item di dalam array 'nominals'
         ]);
 
+        // Cek duplikasi faktur_id
+        $existingFaktur = FakturKesimpulan::whereIn('faktur_id', $request->faktur_id)->exists();
+
+        if ($existingFaktur) {
+            return back()->withInput()->with('error', 'Salah satu faktur sudah digunakan dalam kesimpulan lain.');
+        }
+
         DB::beginTransaction();
 
         try {
