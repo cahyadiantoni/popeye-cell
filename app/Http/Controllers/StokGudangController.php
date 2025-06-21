@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
 use App\Models\Gudang;
+use App\Models\FakturBawah;
 use App\Models\Faktur;
 use App\Models\FakturOnline;
 use Carbon\Carbon;
@@ -39,6 +40,28 @@ class StokGudangController extends Controller
         ->orderBy('tanggal')
         ->get();
 
+        // Mendapatkan transaksi bawah berdasarkan nomor_faktur dari Faktur
+        $transaksiBawah = FakturBawah::withCount(['barangs as total_barang'])->get();
+
+        // Mengolah data transaksi bawah
+        $transaksiBawahData = [];
+        foreach ($transaksiBawah as $transaksi) {
+            // Mendapatkan id gudang berdasarkan awalan nomor faktur
+            $gudangId = 1;
+            
+            // Filter berdasarkan selectedGudangId
+            if ($gudangId != $selectedGudangId) {
+                continue; // Lewati jika tidak sesuai
+            }
+            
+            // Menyimpan data transaksi bawah
+            $transaksiBawahData[] = (object) [
+                'tanggal' => DATE($transaksi->tgl_jual),
+                'jumlahKeluar' => $transaksi->total_barang,
+                'keterangan' => "<a href=\"" . route('transaksi-faktur-bawah.show', $transaksi->nomor_faktur) . "\" class=\"btn btn-info btn-sm\" target=\"_blank\">View</a>  Transaksi Bawah ke $transaksi->pembeli",
+            ];
+        }
+        
         // Mendapatkan transaksi offline berdasarkan nomor_faktur dari Faktur
         $transaksiOffline = Faktur::withCount(['barangs as total_barang'])->get();
 
@@ -49,7 +72,6 @@ class StokGudangController extends Controller
             $gudangId = match (substr($transaksi->nomor_faktur, 0, 3)) {
                 'TKP' => 3, // Periksa 3 karakter pertama
                 default => match (substr($transaksi->nomor_faktur, 0, 2)) { // Jika tidak cocok, periksa 2 karakter
-                    'BW' => 1,
                     'AT' => 2,
                     'LN' => 2,
                     'VR' => 5,
@@ -132,7 +154,7 @@ class StokGudangController extends Controller
         }
 
         // Menggabungkan semua data
-        $allData = collect($uploadBarang)->merge($transaksiOfflineData)->merge($transaksiOnlineData)->merge($kirimBarangData)->merge($terimaBarangData);
+        $allData = collect($uploadBarang)->merge($transaksiBawahData)->merge($transaksiOfflineData)->merge($transaksiOnlineData)->merge($kirimBarangData)->merge($terimaBarangData);
 
         // Mengurutkan berdasarkan tanggal
         $sortedData = $allData->sortBy('tanggal');
