@@ -32,14 +32,13 @@ class TransaksiKesimpulanController extends Controller
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
             $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
         }
-    
-        // Filter berdasarkan status Lunas/Hutang
+
         if ($request->filled('status')) {
-            if ($request->status == 'Lunas') {
-                $query->where('is_lunas', 1);
-            } elseif ($request->status == 'Hutang') {
-                $query->where('is_lunas', 0);
-            }
+            $query->where('is_lunas', $request->status == 'Lunas' ? 1 : 0);
+        }
+
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
         }
     
         $kesimpulans = $query->get();

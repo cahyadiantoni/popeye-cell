@@ -74,6 +74,14 @@
                                                 <option value="Hutang" {{ request('status') == 'Hutang' ? 'selected' : '' }}>Hutang</option>
                                             </select>
                                         </div>
+                                        <div class="col-md-3">
+                                            <label for="cek">Cek</label>
+                                            <select name="cek" class="form-control">
+                                                <option value="">-- Semua cek --</option>
+                                                <option value="Sudah_Dicek" {{ request('cek') == 'Sudah_Dicek' ? 'selected' : '' }}>Sudah Dicek</option>
+                                                <option value="Belum_Dicek" {{ request('cek') == 'Belum_Dicek' ? 'selected' : '' }}>Belum Dicek</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="d-flex justify-content-end mt-3">
                                         <button type="submit" class="btn btn-primary">Filter</button>
@@ -94,6 +102,7 @@
                                                 <th>No Kesimpulan</th>
                                                 <th>Tanggal</th>
                                                 <th>Pembeli</th>
+                                                <th>Faktur</th>
                                                 <th>Jumlah Barang</th>
                                                 <th>Grand Total</th>
                                                 <th>Sudah Dibayar</th>
@@ -127,6 +136,14 @@
                                                 </td>
                                                 <td>{{ $kesimpulan->tgl_jual }}</td>
                                                 <td>{{ $kesimpulan->pembeli }}</td>
+                                                <td>
+                                                    @foreach($kesimpulan->fakturKesimpulans as $index => $fakturKesimpulan)
+                                                        @if($fakturKesimpulan->faktur)
+                                                            <a href="{{ route('transaksi-faktur-bawah.show', $fakturKesimpulan->faktur->nomor_faktur) }}" target="_blank">
+                                                                {{ $fakturKesimpulan->faktur->nomor_faktur }}</a>{{ !$loop->last ? ',' : '' }}
+                                                        @endif
+                                                    @endforeach
+                                                </td>
                                                 <td>{{ $kesimpulan->total_barang }}</td>
                                                 <td>{{ 'Rp. ' . number_format($kesimpulan->grand_total, 0, ',', '.') }}</td>
                                                 <td>{{ 'Rp. ' . number_format($kesimpulan->total_nominal, 0, ',', '.') }}</td>
@@ -157,6 +174,7 @@
                                                 <th>No Kesimpulan</th>
                                                 <th>Tanggal</th>
                                                 <th>Pembeli</th>
+                                                <th>Faktur</th>
                                                 <th>Jumlah Barang</th>
                                                 <th>Grand Total</th>
                                                 <th>Sudah Dibayar</th>
