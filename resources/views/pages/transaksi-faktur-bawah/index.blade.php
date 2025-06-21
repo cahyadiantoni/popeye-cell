@@ -74,6 +74,14 @@
                                                 <option value="Belum_Dicek" {{ request('cek') == 'Belum_Dicek' ? 'selected' : '' }}>Belum Dicek</option>
                                             </select>
                                         </div>
+                                        <div class="col-md-3">
+                                            <label for="status_kesimpulan">Kesimpulan</label>
+                                            <select name="status_kesimpulan" id="status_kesimpulan" class="form-control">
+                                                <option value="">Semua</option>
+                                                <option value="ada" {{ request('status_kesimpulan') == 'ada' ? 'selected' : '' }}>Ada</option>
+                                                <option value="tidak_ada" {{ request('status_kesimpulan') == 'tidak_ada' ? 'selected' : '' }}>Tidak Ada</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="d-flex justify-content-end mt-3">
                                         <button type="submit" class="btn btn-primary">Filter</button>
@@ -102,6 +110,7 @@
                                             <tr>
                                                 <th>Cek</th>
                                                 <th>No Faktur</th>
+                                                <th>Kesimpulan</th>
                                                 <th>Pembeli</th>
                                                 <th>Tgl Faktur</th>
                                                 <th>jumlah Barang</th>
@@ -136,6 +145,15 @@
                                                         {{ $faktur->nomor_faktur }}
                                                     </a>
                                                 </td>
+                                                <td>
+                                                    @if ($kesimpulan = optional($faktur->fakturKesimpulan)->kesimpulan)
+                                                        <a href="{{ route('transaksi-kesimpulan.show', $kesimpulan->id) }}" target="_blank">
+                                                            {{ $kesimpulan->nomor_kesimpulan }}
+                                                        </a>
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
                                                 <td>{{ $faktur->pembeli }}</td>
                                                 <td>{{ $faktur->tgl_jual }}</td>
                                                 <td>{{ $faktur->total_barang }}</td>
@@ -163,6 +181,7 @@
                                             <tr>
                                                 <th>Cek</th>
                                                 <th>No Faktur</th>
+                                                <th>Kesimpulan</th>
                                                 <th>Pembeli</th>
                                                 <th>Tgl Faktur</th>
                                                 <th>jumlah Barang</th>

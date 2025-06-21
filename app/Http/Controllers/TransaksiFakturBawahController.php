@@ -21,7 +21,8 @@ class TransaksiFakturBawahController extends Controller
 {
     public function index(Request $request)
     {
-        $query = FakturBawah::withCount(['barangs as total_barang'])
+        $query = FakturBawah::with(['fakturKesimpulan.kesimpulan']) 
+            ->withCount(['barangs as total_barang'])
             ->orderBy('tgl_jual', 'desc');
     
         $roleUser = optional(Auth::user())->role;
@@ -34,6 +35,16 @@ class TransaksiFakturBawahController extends Controller
 
         if ($request->filled('cek')) {
             $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
+
+        if ($request->filled('status_kesimpulan')) {
+            if ($request->status_kesimpulan == 'ada') {
+                // Hanya ambil faktur yang memiliki relasi ke faktur_kesimpulan
+                $query->whereHas('fakturKesimpulan');
+            } elseif ($request->status_kesimpulan == 'tidak_ada') {
+                // Hanya ambil faktur yang TIDAK memiliki relasi ke faktur_kesimpulan
+                $query->whereDoesntHave('fakturKesimpulan');
+            }
         }
     
         $fakturs = $query->get();
