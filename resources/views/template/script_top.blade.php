@@ -34,6 +34,20 @@
     @yield('heads')
 
     <style>
+      /* Untuk Chrome, Safari, Edge, Opera */
+      input::-webkit-outer-spin-button,
+      input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+      }
+
+      /* Untuk Firefox */
+      input[type=number] {
+          -moz-appearance: textfield;
+      }
+    </style>
+
+    <style>
       /* Styling untuk kotak pencarian menu */
       .pcoded-search-box {
           padding: 10px 15px; /* Sesuaikan padding */

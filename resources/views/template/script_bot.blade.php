@@ -46,6 +46,26 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const numberInputs = document.querySelectorAll('input[type="number"]');
+
+            numberInputs.forEach(function(input) {
+                // Cegah scroll mouse
+                input.addEventListener('wheel', function (e) {
+                    e.target.blur();
+                });
+
+                // Cegah tombol panah ↑ ↓
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
         const menuSearchInput = document.getElementById('menuSearch');
         const sidebarMainMenu = document.querySelector('.pcoded-inner-navbar.main-menu');
 
