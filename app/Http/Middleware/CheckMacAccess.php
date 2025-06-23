@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Cookie;
 use App\Models\MacAddress;
 
 class CheckMacAccess
@@ -32,7 +33,8 @@ class CheckMacAccess
 
             if ($macEntry->status == 1) {
                 $response = $next($request);
-                return $response->cookie('mac_address', $mac, 60 * 24 * 30);
+                $response->headers->setCookie(cookie('mac_address', $mac, 60 * 24 * 30));
+                return $response;
             }
 
             if ($macEntry->status == 2) {
