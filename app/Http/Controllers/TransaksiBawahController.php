@@ -142,6 +142,12 @@ class TransaksiBawahController extends Controller
         $validLokSpk = [];
         $processedLokSpk = [];
 
+        // Ambil gudang_id dari user yang sedang login
+        $gudangId = optional(Auth::user())->gudang_id;
+        if (!$gudangId) {
+            return redirect()->back()->with('error', 'Gagal memvalidasi data. User tidak terasosiasi dengan gudang manapun.');
+        }
+
         foreach ($rows as $index => $rowString) {
             $row = str_getcsv($rowString, "\t");
 
@@ -166,7 +172,12 @@ class TransaksiBawahController extends Controller
                 continue;
             }
 
-            if (!in_array($barang->status_barang, [0, 1])) {
+            if ($barang->gudang_id != $gudangId) {
+                $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' tidak terdaftar di gudang Anda.";
+                continue;
+            }
+
+            if (!in_array($barang->status_barang, [1])) {
                 if (!($barang->status_barang == 4 && $grade == 'Pengambilan AM')) {
                     $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
                     continue;

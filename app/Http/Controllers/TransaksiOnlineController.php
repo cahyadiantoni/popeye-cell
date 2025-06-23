@@ -13,6 +13,7 @@ use App\Models\TransaksiJualOnline;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\DB;
 
 class TransaksiOnlineController extends Controller
 {
@@ -74,6 +75,7 @@ class TransaksiOnlineController extends Controller
 
     public function store(Request $request)
     {
+        // TAHAP 1: VALIDASI INPUT & PRASYARAT AWAL
         $request->validate([
             'filedata' => 'required|file|mimes:xlsx,xls',
             'tgl_jual' => 'required|date',
@@ -86,63 +88,80 @@ class TransaksiOnlineController extends Controller
         // Inisialisasi variabel
         $errors = [];
         $totalHargaJual = 0;
-        $validLokSpk = [];
-        $fakturOnlineId = 0;
-        $processedLokSpk = []; // Untuk memeriksa duplikat di dalam Excel
+        $dataToProcess = []; 
+        $processedLokSpkInFile = [];
 
-        // Membaca file Excel
+        // Ambil gudang_id dari user yang sedang login
+        $gudangId = optional(Auth::user())->gudang_id;
+
+        if (!$gudangId) {
+            return redirect()->back()->with('error', 'Gagal memvalidasi data. User tidak terasosiasi dengan gudang manapun.');
+        }
+
+        // 2. Baca dan Validasi Seluruh Isi File Excel (Tanpa Menyimpan ke DB)
         $file = $request->file('filedata');
         $data = Excel::toArray([], $file);
 
         foreach ($data[0] as $index => $row) {
-            // Lewati baris pertama jika merupakan header
+            // Lewati baris header
             if ($index === 0) continue;
 
-            // Validasi kolom di Excel
-            if (isset($row[0]) && isset($row[1]) && isset($row[2]) && isset($row[3])) {
-                $invoice = $row[0]; // Invoice
-                $lokSpk = $row[1]; // Lok SPK
-                $hargaJual = $row[2] * 1000; // Harga Jual
-                $pj = $row[3] * 1000; // Harga PJ
+            // Validasi kelengkapan kolom di Excel
+            if (!isset($row[0], $row[1], $row[2], $row[3])) {
+                $errors[] = "Baris " . ($index + 1) . ": Data tidak lengkap. Pastikan kolom Invoice, Lok SPK, Harga Jual, dan PJ terisi.";
+                continue; // Lanjut ke baris berikutnya
+            }
+            
+            $invoice = $row[0];
+            $lokSpk = $row[1];
+            $hargaJual = $row[2] * 1000;
+            $pj = $row[3] * 1000;
 
-                // Cek duplikat lok_spk di dalam Excel
-                if (in_array($lokSpk, $processedLokSpk)) {
-                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
-                    continue;
-                }
+            // Cek duplikat lok_spk di dalam file Excel
+            if (in_array($lokSpk, $processedLokSpkInFile)) {
+                $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
+                continue;
+            }
+            $processedLokSpkInFile[] = $lokSpk;
 
-                // Tambahkan lok_spk ke daftar yang sudah diproses
-                $processedLokSpk[] = $lokSpk;
+            // Cari barang berdasarkan lok_spk
+            $barang = Barang::where('lok_spk', $lokSpk)->first();
 
-                // Cari barang berdasarkan lok_spk
-                $barang = Barang::where('lok_spk', $lokSpk)->first();
-
-                if ($barang) {
-                    // Cek apakah status_barang adalah 0 atau 1
-                    if (in_array($barang->status_barang, [0, 1])) {
-                        // Tambahkan harga_jual ke total
-                        $totalHargaJual += $hargaJual;
-
-                        // Simpan lok_spk untuk update nanti
-                        $validLokSpk[] = [
-                            'invoice' => $invoice,
-                            'lok_spk' => $lokSpk,
-                            'harga_jual' => $hargaJual,
-                            'pj' => $pj,
-                        ];
-                    } else {
-                        $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
-                    }
+            if ($barang) {
+                if ($barang->gudang_id != $gudangId) {
+                    $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' tidak terdaftar di gudang Anda.";
+                } elseif ($barang->status_barang != 1) {
+                    $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' sudah terjual atau statusnya tidak valid (" . $barang->status_barang . ").";
                 } else {
-                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan.";
+                    $totalHargaJual += $hargaJual;
+                    $dataToProcess[] = [
+                        'invoice' => $invoice,
+                        'lok_spk' => $lokSpk,
+                        'harga_jual' => $hargaJual,
+                        'pj' => $pj,
+                    ];
                 }
             } else {
-                $errors[] = "Row " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
+                $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan di database.";
             }
         }
 
-        // Simpan data Faktur jika ada data valid
-        if (!empty($validLokSpk)) {
+        // 3. TAHAP KRITIS: Gerbang Keputusan
+        // Jika ada satu saja error yang terkumpul, batalkan semua proses.
+        if (!empty($errors)) {
+            return redirect()->back()->with('errors', $errors)->withInput();
+        }
+
+        // 4. Pastikan ada data untuk diproses (menangani file kosong atau tanpa baris valid)
+        if (empty($dataToProcess)) {
+            return redirect()->back()
+                ->with('error', 'Gagal: Tidak ada data valid yang dapat diproses dari file yang diunggah.')
+                ->withInput();
+        }
+
+        // 5. JIKA LOLOS SEMUA VALIDASI: Lakukan Operasi Database dengan Transaksi
+        DB::beginTransaction();
+        try {
             $fakturOnline = FakturOnline::create([
                 'title' => $request->input('title'),
                 'toko' => $request->input('toko'),
@@ -153,14 +172,13 @@ class TransaksiOnlineController extends Controller
                 'total' => $totalHargaJual,
             ]);
 
-            // Ambil ID dari data yang baru saja dibuat
             $fakturOnlineId = $fakturOnline->id;
 
-            // Update Barang untuk lok_spk yang valid
-            foreach ($validLokSpk as $item) {
+            // Lakukan create/update untuk setiap data yang sudah divalidasi
+            foreach ($dataToProcess as $item) {
                 Barang::where('lok_spk', $item['lok_spk'])->update([
                     'no_faktur' => $fakturOnlineId,
-                    'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
+                    'harga_jual' => $item['harga_jual'],
                     'status_barang' => 5,
                 ]);
 
@@ -173,16 +191,20 @@ class TransaksiOnlineController extends Controller
                 ]);
             }
 
-            // Tampilkan pesan sukses dan error
-            return redirect()->route('transaksi-faktur-online.show', ['nomor_faktur' => $fakturOnlineId])
-                ->with('success', 'Faktur berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.')
-                ->with('errors', $errors);
-        }
+            DB::commit(); // Konfirmasi dan simpan semua perubahan ke database
 
-        // Jika tidak ada data valid, hanya tampilkan error
-        return redirect()->back()->with('errors', $errors);
+            return redirect()->route('transaksi-faktur-online.show', ['nomor_faktur' => $fakturOnlineId])
+                ->with('success', 'Faktur berhasil disimpan. ' . count($dataToProcess) . ' barang berhasil diproses.');
+
+        } catch (\Exception $e) {
+            DB::rollBack(); // Jika terjadi error saat proses penyimpanan, batalkan semua yang sudah di-query
+
+            // Opsional: catat error $e->getMessage() ke log untuk debugging
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan pada server saat menyimpan data. Semua perubahan telah dibatalkan.')
+                ->withInput();
+        }
     }
-    
 
     public function destroy($id)
     {
