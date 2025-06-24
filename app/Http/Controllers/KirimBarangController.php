@@ -12,6 +12,7 @@ use App\Models\KirimBarang;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class KirimBarangController extends Controller
 {
@@ -38,87 +39,86 @@ class KirimBarangController extends Controller
             'filedata' => 'required|file|mimes:xlsx,xls',
             'penerima_gudang_id' => 'required',
         ]);
-    
-        // Inisialisasi variabel
+
         $errors = [];
-        $validLokSpk = [];
-    
-        // Membaca file Excel
+        $validatedLokSpk = [];
         $file = $request->file('filedata');
         $data = Excel::toArray([], $file);
-    
+
+        $pengirimGudangId = Auth::user()->gudang_id;
+
+        if (!$pengirimGudangId) {
+            return redirect()->back()->with('errors', ['User pengirim tidak terasosiasi dengan gudang manapun.']);
+        }
+        
         foreach ($data[0] as $index => $row) {
-            // Lewati baris pertama jika merupakan header
             if ($index === 0) continue;
-    
-            // Validasi kolom di Excel
-            if (isset($row[0])) {
-                $lokSpk = $row[0]; // Lok SPK
-    
-                // Cari barang berdasarkan lok_spk
-                $barang = Barang::where('lok_spk', $lokSpk)->first();
-    
-                if ($barang) {
-                    // Cek apakah status_barang adalah 0 atau 1
-                    if (in_array($barang->status_barang, [1])) {
-                        // Simpan lok_spk untuk update nanti
-                        $validLokSpk[] = [
-                            'lok_spk' => $lokSpk,
-                        ];
-                    } else {
-                        $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
-                    }
-                } else {
-                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan.";
+            
+            $rowNumber = $index + 1;
+            $lokSpk = $row[0] ?? null;
+
+            if (empty($lokSpk)) {
+                $errors[] = "Baris $rowNumber: Kolom Lok SPK tidak boleh kosong.";
+                continue;
+            }
+
+            $barang = Barang::where('lok_spk', $lokSpk)->first();
+
+            if ($barang) {
+                if ($barang->status_barang != 1) {
+                    $errors[] = "Baris $rowNumber: Status barang untuk LOK SPK '$lokSpk' tidak sesuai (bukan status 'Tersedia').";
                 }
+                
+                if ($barang->gudang_id != $pengirimGudangId) {
+                    $errors[] = "Baris $rowNumber: Barang dengan LOK SPK '$lokSpk' tidak berada di gudang pengirim.";
+                }
+
+                if (empty($errors)) {
+                     $validatedLokSpk[] = $lokSpk;
+                }
+
             } else {
-                $errors[] = "Row " . ($index + 1) . ": Data tidak valid (Lok SPK kosong).";
+                $errors[] = "Baris $rowNumber: LOK SPK '$lokSpk' tidak ditemukan di database.";
             }
         }
-    
-        // Ambil data lok_spk, pengirim_gudang_id, dan penerima_gudang_id yang diceklis
-        $gudangPenerimaId = $request->input('penerima_gudang_id');
-        $gudangPenerima = Gudang::find($gudangPenerimaId);
-        $pj_gudang = $gudangPenerima->pj_gudang;
-        // Mendapatkan auth id pengguna yang sedang login
-        $authId = Auth::id();
-        $gudangId = optional(Auth::user())->gudang_id;
-        $gudang = Gudang::where('id', $gudangId)->select('id', 'nama_gudang')->first();
-        $gudangIds = $gudang->id;
 
-        // Simpan data Faktur jika ada data valid
-        if (!empty($validLokSpk)) {
+        if (!empty($errors)) {
+            return redirect()->back()->with('errors', $errors);
+        }
 
-            $kirim = Kirim::create([
-                'pengirim_gudang_id' => $gudangIds,
-                'penerima_gudang_id' => $gudangPenerimaId,
-                'pengirim_user_id' => Auth::id(),
-                'penerima_user_id' => $pj_gudang,
-                'status' => 0,
-                'keterangan' => $request->input('keterangan'),
-                'dt_kirim' => Carbon::now(),
-            ]);
+        if (empty($validatedLokSpk)) {
+            return redirect()->back()->with('errors', ['Tidak ada data valid yang ditemukan di dalam file.']);
+        }
 
-            // Ambil kirim_id dari data yang baru dibuat
-            $kirim_id = $kirim->id;
-    
-            // Update Barang untuk lok_spk yang valid
-            foreach ($validLokSpk as $item) {
-                KirimBarang::create([
-                    'lok_spk' => $item['lok_spk'],
-                    'kirim_id' => $kirim_id,
+        try {
+            DB::transaction(function () use ($request, $validatedLokSpk, $pengirimGudangId) {
+                $penerimaGudangId = $request->input('penerima_gudang_id');
+                $gudangPenerima = Gudang::find($penerimaGudangId);
+
+                $kirim = Kirim::create([
+                    'pengirim_gudang_id' => $pengirimGudangId,
+                    'penerima_gudang_id' => $penerimaGudangId,
+                    'pengirim_user_id' => Auth::id(),
+                    'penerima_user_id' => $gudangPenerima->pj_gudang,
+                    'status' => 0,
+                    'keterangan' => $request->input('keterangan'),
+                    'dt_kirim' => Carbon::now(),
                 ]);
-            }
-    
-            // Tampilkan pesan sukses dan error
-            return redirect()->back()
-                ->with('success', 'Barang berhasil dikirim. ' . count($validLokSpk) . ' barang diproses.')
-                ->with('errors', $errors);        
+
+                foreach ($validatedLokSpk as $lokSpk) {
+                    KirimBarang::create([
+                        'lok_spk' => $lokSpk,
+                        'kirim_id' => $kirim->id,
+                    ]);
+                }
+            });
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('errors', ['Terjadi kesalahan pada server saat menyimpan data: ' . $e->getMessage()]);
         }
-    
-        // Jika tidak ada data valid, hanya tampilkan error
+        
         return redirect()->back()
-            ->with('errors', $errors);
+            ->with('success', 'Data berhasil disimpan. ' . count($validatedLokSpk) . ' barang telah diproses untuk dikirim.');
     }
 
     public function destroy($id)
