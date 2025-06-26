@@ -112,10 +112,10 @@ class TransaksiOutletController extends Controller
         foreach ($data[0] as $index => $row) {
             if ($index === 0) continue; // Lewati header
 
-            if (!isset($row[0]) || !isset($row[1])) {
-                $errors[] = "Baris " . ($index + 1) . ": Data tidak lengkap (Lok SPK atau harga jual kosong).";
-                continue;
-            }
+            // if (!isset($row[0]) || !isset($row[1])) {
+            //     $errors[] = "Baris " . ($index + 1) . ": Data tidak lengkap (Lok SPK atau harga jual kosong).";
+            //     continue;
+            // }
 
             $lokSpk = $row[0];
             $hargaJual = $row[1] * 1000;

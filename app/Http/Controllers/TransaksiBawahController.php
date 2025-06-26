@@ -154,10 +154,10 @@ class TransaksiBawahController extends Controller
             $lokSpk = $row[3] ?? null;
             $hargaJual = isset($row[5]) ? (int)trim($row[5]) * 1000 : null;
 
-            if (!$lokSpk || !$hargaJual) {
-                $errors[] = "Baris " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
-                continue;
-            }
+            // if (!$lokSpk || !$hargaJual) {
+            //     $errors[] = "Baris " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
+            //     continue;
+            // }
 
             if (in_array($lokSpk, $processedLokSpk)) {
                 $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam data yang ditempel.";
