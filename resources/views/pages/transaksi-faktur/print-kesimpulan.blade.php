@@ -35,6 +35,7 @@
                 <th>No</th>
                 <th>Tanggal Jual</th>
                 <th>Invoice</th>
+                <th>Pembeli</th>
                 <th>Petugas</th>
                 <th>Jml Barang</th>
                 <th>Ttl Harga</th>
@@ -53,6 +54,7 @@
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td class="text-center">{{ \Carbon\Carbon::parse($faktur->tgl_jual)->format('d-m-Y') }}</td>
                 <td>{{ $faktur->nomor_faktur }}</td>
+                <td>{{ $faktur->pembeli }}</td>
                 <td>{{ $faktur->petugas }}</td>
                 <td class="text-center">{{ $faktur->total_barang }}</td>
                 <td class="text-right">Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>
