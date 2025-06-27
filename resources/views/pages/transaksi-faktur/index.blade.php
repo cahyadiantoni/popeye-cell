@@ -66,7 +66,6 @@
                                                 <option value="AT" {{ request('kode_faktur') == 'AT' ? 'selected' : '' }}>Gudang Zilfa</option>
                                                 <option value="TKP" {{ request('kode_faktur') == 'TKP' ? 'selected' : '' }}>Gudang Tokopedia</option>
                                                 <option value="VR" {{ request('kode_faktur') == 'VR' ? 'selected' : '' }}>Gudang Vira</option>
-                                                <option value="BW" {{ request('kode_faktur') == 'BW' ? 'selected' : '' }}>Gudang Bawah</option>
                                                 <option value="Lain" {{ request('kode_faktur') == 'Lain' ? 'selected' : '' }}>Lain-Lain</option>
                                             </select>
                                         </div>
