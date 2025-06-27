@@ -112,10 +112,10 @@ class TransaksiController extends Controller
             if ($index === 0) continue;
 
             // Pastikan kolom yang dibutuhkan ada isinya
-            // if (empty($row[0]) || !isset($row[1])) {
-            //     $errors[] = "Baris " . ($index + 1) . ": Data tidak lengkap (Lok SPK atau harga jual kosong).";
-            //     continue;
-            // }
+            if (empty($row[0]) || !isset($row[1])) {
+                $errors[] = "Baris " . ($index + 1) . ": Data tidak lengkap (Lok SPK atau harga jual kosong).";
+                continue;
+            }
             
             $lokSpk = $row[0];
             $hargaJual = $row[1] * 1000;

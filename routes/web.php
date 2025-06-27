@@ -114,6 +114,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::post('/transaksi-jual/addbarang', [TransaksiFakturController::class, 'addbarang'])->name('transaksi-jual.addbarang');
     Route::get('/suggest-no-fak', [TransaksiController::class, 'getSuggestNoFak'])->name('suggest.no.fak');
 
+    Route::get('/transaksi-faktur-bawah/print-kesimpulan', [TransaksiFakturBawahController::class, 'printKesimpulan'])->name('transaksi-faktur-bawah.printKesimpulan');
     Route::get('/transaksi-faktur-bawah/print-multiple', [TransaksiFakturBawahController::class, 'printMultiple'])->name('transaksi-faktur-bawah.printMultiple');
     Route::get('/transaksi-faktur-bawah/export', [TransaksiFakturBawahController::class, 'exportMultiple'])->name('transaksi-faktur-bawah.exportMultiple');
     Route::resource('/transaksi-faktur-bawah', TransaksiFakturBawahController::class)->middleware('auth');

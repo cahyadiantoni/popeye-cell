@@ -317,6 +317,14 @@ class TransaksiFakturBawahController extends Controller
             $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
         }
 
+        if ($request->filled('status_kesimpulan')) {
+            if ($request->status_kesimpulan == 'ada') {
+                $query->whereHas('fakturKesimpulan');
+            } elseif ($request->status_kesimpulan == 'tidak_ada') {
+                $query->whereDoesntHave('fakturKesimpulan');
+            }
+        }
+
         $fakturs = $query->get();
 
         // Ambil transaksi jual masing-masing faktur
@@ -376,5 +384,52 @@ class TransaksiFakturBawahController extends Controller
 
         // Ekspor ke Excel
         return Excel::download(new FakturBawahExport($fakturs), 'faktur_bawah.xlsx');
+    }
+
+    public function printKesimpulan(Request $request)
+    {
+        // 1. Ambil query dasar yang sama persis dengan method index()
+        $query = FakturBawah::withCount(['barangs as total_barang'])
+            ->orderBy('tgl_jual', 'asc'); // Kita urutkan dari yang terlama untuk subtotal
+
+        // 2. Terapkan filter yang sama persis dengan method index()
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
+
+        if ($request->filled('status_kesimpulan')) {
+            if ($request->status_kesimpulan == 'ada') {
+                $query->whereHas('fakturKesimpulan');
+            } elseif ($request->status_kesimpulan == 'tidak_ada') {
+                $query->whereDoesntHave('fakturKesimpulan');
+            }
+        }
+        
+        // 3. Eksekusi query untuk mendapatkan koleksi data faktur
+        $fakturs = $query->get();
+
+        // 4. Hitung data untuk header info PDF
+        $totalJumlahBarang = $fakturs->sum('total_barang');
+        $totalHargaKeseluruhan = $fakturs->sum('total');
+
+        $tanggalMulai = $fakturs->isNotEmpty() ? Carbon::parse($fakturs->first()->tgl_jual)->translatedFormat('d M Y') : 'N/A';
+        $tanggalSelesai = $fakturs->isNotEmpty() ? Carbon::parse($fakturs->last()->tgl_jual)->translatedFormat('d M Y') : 'N/A';
+        
+        $rentangTanggal = ($tanggalMulai == $tanggalSelesai) ? $tanggalMulai : $tanggalMulai . ' - ' . $tanggalSelesai;
+
+        // 5. Load view PDF dan kirimkan data yang dibutuhkan
+        $pdf = \PDF::loadView('pages.transaksi-faktur-bawah.print-kesimpulan', compact(
+            'fakturs', 
+            'totalJumlahBarang', 
+            'totalHargaKeseluruhan', 
+            'rentangTanggal'
+        ));
+        
+        // 6. Tampilkan PDF di browser
+        return $pdf->stream('kesimpulan-faktur-' . time() . '.pdf');
     }
 }

@@ -107,10 +107,10 @@ class TransaksiOnlineController extends Controller
             if ($index === 0) continue;
 
             // Validasi kelengkapan kolom di Excel
-            // if (!isset($row[0], $row[1], $row[2], $row[3])) {
-            //     $errors[] = "Baris " . ($index + 1) . ": Data tidak lengkap. Pastikan kolom Invoice, Lok SPK, Harga Jual, dan PJ terisi.";
-            //     continue; // Lanjut ke baris berikutnya
-            // }
+            if (!isset($row[0], $row[1], $row[2], $row[3])) {
+                $errors[] = "Baris " . ($index + 1) . ": Data tidak lengkap. Pastikan kolom Invoice, Lok SPK, Harga Jual, dan PJ terisi.";
+                continue; // Lanjut ke baris berikutnya
+            }
             
             $invoice = $row[0];
             $lokSpk = $row[1];

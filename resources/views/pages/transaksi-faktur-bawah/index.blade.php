@@ -69,7 +69,7 @@
                                         <div class="col-md-3">
                                             <label for="cek">Cek</label>
                                             <select name="cek" class="form-control">
-                                                <option value="">-- Semua cek --</option>
+                                                <option value="">-- Semua --</option>
                                                 <option value="Sudah_Dicek" {{ request('cek') == 'Sudah_Dicek' ? 'selected' : '' }}>Sudah Dicek</option>
                                                 <option value="Belum_Dicek" {{ request('cek') == 'Belum_Dicek' ? 'selected' : '' }}>Belum Dicek</option>
                                             </select>
@@ -77,7 +77,7 @@
                                         <div class="col-md-3">
                                             <label for="status_kesimpulan">Kesimpulan</label>
                                             <select name="status_kesimpulan" id="status_kesimpulan" class="form-control">
-                                                <option value="">Semua</option>
+                                                <option value="">-- Semua --</option>
                                                 <option value="ada" {{ request('status_kesimpulan') == 'ada' ? 'selected' : '' }}>Ada</option>
                                                 <option value="tidak_ada" {{ request('status_kesimpulan') == 'tidak_ada' ? 'selected' : '' }}>Tidak Ada</option>
                                             </select>
@@ -96,6 +96,10 @@
                                         <!-- Tombol Export Excel -->
                                         <a href="{{ route('transaksi-faktur-bawah.exportMultiple', request()->query()) }}" class="btn btn-success mx-2">
                                             Export Excel
+                                        </a>
+
+                                        <a href="{{ route('transaksi-faktur-bawah.printKesimpulan', request()->query()) }}" class="btn btn-warning" target="_blank">
+                                            Print Kesimpulan
                                         </a>
                                         @endif
                                     </div>
