@@ -33,17 +33,26 @@ class TransaksiFakturController extends Controller
 
         if($roleUser == 'admin'){
             $daftarGudang = ['AT', 'TKP', 'VR', 'BW'];
-        
+                    
             if ($request->filled('kode_faktur')) {
                 $kodeFaktur = $request->kode_faktur;
-        
                 if (in_array($kodeFaktur, $daftarGudang)) {
-                    $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
-                } else {
+                    if ($kodeFaktur === 'AT') {
+                        $query->where(function ($q) {
+                            $q->where('nomor_faktur', 'like', 'AT-%')
+                            ->orWhere('nomor_faktur', 'like', 'LN-%');
+                        });
+                    } 
+                    else {
+                        $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
+                    }
+                } 
+                else {
                     $query->where(function ($q) use ($daftarGudang) {
                         foreach ($daftarGudang as $kode) {
                             $q->where('nomor_faktur', 'not like', "$kode-%");
                         }
+                        $q->where('nomor_faktur', 'not like', 'LN-%');
                     });
                 }
             }
@@ -505,15 +514,26 @@ class TransaksiFakturController extends Controller
 
         if ($roleUser == 'admin') {
             $daftarGudang = ['AT', 'TKP', 'VR', 'BW'];
+                    
             if ($request->filled('kode_faktur')) {
                 $kodeFaktur = $request->kode_faktur;
                 if (in_array($kodeFaktur, $daftarGudang)) {
-                    $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
-                } else {
+                    if ($kodeFaktur === 'AT') {
+                        $query->where(function ($q) {
+                            $q->where('nomor_faktur', 'like', 'AT-%')
+                            ->orWhere('nomor_faktur', 'like', 'LN-%');
+                        });
+                    } 
+                    else {
+                        $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
+                    }
+                } 
+                else {
                     $query->where(function ($q) use ($daftarGudang) {
                         foreach ($daftarGudang as $kode) {
                             $q->where('nomor_faktur', 'not like', "$kode-%");
                         }
+                        $q->where('nomor_faktur', 'not like', 'LN-%');
                     });
                 }
             }
@@ -573,15 +593,26 @@ class TransaksiFakturController extends Controller
         // Filter berdasarkan role user
         if ($roleUser == 'admin') {
             $daftarGudang = ['AT', 'TKP', 'VR', 'BW'];
+                    
             if ($request->filled('kode_faktur')) {
                 $kodeFaktur = $request->kode_faktur;
                 if (in_array($kodeFaktur, $daftarGudang)) {
-                    $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
-                } else {
+                    if ($kodeFaktur === 'AT') {
+                        $query->where(function ($q) {
+                            $q->where('nomor_faktur', 'like', 'AT-%')
+                            ->orWhere('nomor_faktur', 'like', 'LN-%');
+                        });
+                    } 
+                    else {
+                        $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
+                    }
+                } 
+                else {
                     $query->where(function ($q) use ($daftarGudang) {
                         foreach ($daftarGudang as $kode) {
                             $q->where('nomor_faktur', 'not like', "$kode-%");
                         }
+                        $q->where('nomor_faktur', 'not like', 'LN-%');
                     });
                 }
             }
@@ -629,5 +660,84 @@ class TransaksiFakturController extends Controller
 
         // Ekspor ke Excel
         return Excel::download(new FakturExport($fakturs), 'faktur_atas.xlsx');
+    }
+
+    public function printKesimpulan(Request $request)
+    {
+        $query = Faktur::withCount(['barangs as total_barang'])
+            ->orderBy('tgl_jual', 'asc');
+
+        $roleUser = optional(Auth::user())->role;
+        $gudangId = optional(Auth::user())->gudang_id;
+
+        if ($roleUser == 'admin') {
+            $daftarGudang = ['AT', 'TKP', 'VR', 'BW'];
+            if ($request->filled('kode_faktur')) {
+                $kodeFaktur = $request->kode_faktur;
+                if (in_array($kodeFaktur, $daftarGudang)) {
+                    if ($kodeFaktur === 'AT') {
+                        $query->where(function ($q) {
+                            $q->where('nomor_faktur', 'like', 'AT-%')
+                              ->orWhere('nomor_faktur', 'like', 'LN-%');
+                        });
+                    } else {
+                        $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
+                    }
+                } else {
+                    $query->where(function ($q) use ($daftarGudang) {
+                        foreach ($daftarGudang as $kode) {
+                            $q->where('nomor_faktur', 'not like', "$kode-%");
+                        }
+                        $q->where('nomor_faktur', 'not like', 'LN-%');
+                    });
+                }
+            }
+        } else {
+            switch ($gudangId) {
+                case 1: $query->where('nomor_faktur', 'like', "BW-%"); break;
+                case 2:
+                    $query->where(function ($q) {
+                        $q->where('nomor_faktur', 'like', 'AT-%')
+                          ->orWhere('nomor_faktur', 'like', 'LN-%');
+                    });
+                    break;
+                case 3: $query->where('nomor_faktur', 'like', "TKP-%"); break;
+                case 5: $query->where('nomor_faktur', 'like', "VR-%"); break;
+            }
+        }
+        
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+        
+        if ($request->filled('status')) {
+            if ($request->status == 'Lunas') {
+                $query->where('is_lunas', 1);
+            } elseif ($request->status == 'Hutang') {
+                $query->where('is_lunas', 0);
+            }
+        }
+
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
+
+        $fakturs = $query->get();
+
+        $totalJumlahBarang = $fakturs->sum('total_barang');
+        $totalHargaKeseluruhan = $fakturs->sum('total');
+
+        $tanggalMulai = $fakturs->isNotEmpty() ? Carbon::parse($fakturs->first()->tgl_jual)->translatedFormat('d M Y') : 'N/A';
+        $tanggalSelesai = $fakturs->isNotEmpty() ? Carbon::parse($fakturs->last()->tgl_jual)->translatedFormat('d M Y') : 'N/A';
+        $rentangTanggal = ($tanggalMulai == $tanggalSelesai) ? $tanggalMulai : $tanggalMulai . ' - ' . $tanggalSelesai;
+
+        $pdf = \PDF::loadView('pages.transaksi-faktur.print-kesimpulan', compact(
+            'fakturs',
+            'totalJumlahBarang',
+            'totalHargaKeseluruhan',
+            'rentangTanggal'
+        ));
+        
+        return $pdf->stream('kesimpulan-faktur-' . time() . '.pdf');
     }
 }

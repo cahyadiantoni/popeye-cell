@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Kesimpulan Faktur</title>
+    <title>Kesimpulan Faktur Online</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 10px; }
         .title { text-align: center; font-weight: bold; font-size: 16px; }
@@ -13,11 +13,10 @@
         .data-table th { background-color: #e0e0e0; text-align: center; } /* Abu-abu untuk header */
         .text-center { text-align: center; }
         .text-right { text-align: right; }
-        .total { font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="title">Kesimpulan Faktur</div>
+    <div class="title">Kesimpulan Faktur Online</div>
     <div class="line"></div>
 
     <div class="info">
@@ -35,7 +34,7 @@
             <tr>
                 <th>No</th>
                 <th>Tanggal Jual</th>
-                <th>Invoice</th>
+                <th>Invoice / Title</th>
                 <th>Petugas</th>
                 <th>Jml Barang</th>
                 <th>Ttl Harga</th>
@@ -53,7 +52,7 @@
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td class="text-center">{{ \Carbon\Carbon::parse($faktur->tgl_jual)->format('d-m-Y') }}</td>
-                <td>{{ $faktur->keterangan }}</td>
+                <td>{{ $faktur->title }}</td>
                 <td>{{ $faktur->petugas }}</td>
                 <td class="text-center">{{ $faktur->total_barang }}</td>
                 <td class="text-right">Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>

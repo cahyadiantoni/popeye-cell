@@ -109,6 +109,10 @@
                                         <a href="{{ route('transaksi-faktur.exportMultiple', request()->query()) }}" class="btn btn-success mx-2">
                                             Export Excel
                                         </a>
+
+                                        <a href="{{ route('transaksi-faktur.printKesimpulan', request()->query()) }}" class="btn btn-warning" target="_blank">
+                                            Print Kesimpulan
+                                        </a>
                                         @endif
                                     </div>
                                 </form>

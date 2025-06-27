@@ -94,6 +94,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
         return Excel::download(new BarangExport($id, $jenis), 'stok_barang_' . $id . '.xlsx');
     })->name('export.barang');
 
+    Route::get('/transaksi-faktur/print-kesimpulan', [TransaksiFakturController::class, 'printKesimpulan'])->name('transaksi-faktur.printKesimpulan');
     Route::get('/transaksi-faktur/print-multiple', [TransaksiFakturController::class, 'printMultiple'])->name('transaksi-faktur.printMultiple');
     Route::get('/transaksi-faktur/export', [TransaksiFakturController::class, 'exportMultiple'])->name('transaksi-faktur.exportMultiple');
     Route::resource('/transaksi-faktur', TransaksiFakturController::class)->middleware('auth');
@@ -149,6 +150,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::post('/transaksi-jual-online/addbarang', [TransaksiFakturOnlineController::class, 'addbarang'])->name('transaksi-jual-online.addbarang');
     Route::get('/-bawah-online', [TransaksiOnlineController::class, 'getSuggestNoFak'])->name('suggest.no.fak.online');
     
+    Route::get('/transaksi-faktur-online/print-kesimpulan', [TransaksiFakturOnlineController::class, 'printKesimpulan'])->name('transaksi-faktur-online.printKesimpulan');
     Route::resource('/transaksi-faktur-online', TransaksiFakturOnlineController::class)->middleware('auth');
     Route::delete('/transaksi-faktur-online/{nomor_faktur}', [TransaksiFakturOnlineController::class, 'destroy'])->name('transaksi-faktur-online.delete');
     Route::get('/transaksi-rekap-online', [TransaksiFakturOnlineController::class, 'rekap'])->name('transaksi-faktur-online.rekap');

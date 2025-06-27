@@ -452,4 +452,59 @@ class TransaksiFakturOnlineController extends Controller
     
         return view('pages.transaksi-faktur-online.rekap', compact('rekaps', 'daftarGudang', 'filterGudang', 'filterBulan'));
     }
+
+    public function printKesimpulan(Request $request)
+    {
+        // 1. Ambil query dasar dan relasi yang dibutuhkan
+        $query = FakturOnline::withCount(['barangs as total_barang'])
+            ->orderBy('tgl_jual', 'asc'); // Urutkan dari terlama untuk subtotal
+
+        // 2. Terapkan SEMUA filter yang sama persis dengan method index()
+        $daftarGudang = ['POD', 'PPY', 'JJ', 'NAR'];
+
+        if ($request->filled('kode_faktur')) {
+            $kodeFaktur = $request->kode_faktur;
+            if (in_array($kodeFaktur, $daftarGudang)) {
+                $query->where('title', 'like', "$kodeFaktur-%");
+            } else { // "Lain-Lain"
+                $query->where(function ($q) use ($daftarGudang) {
+                    foreach ($daftarGudang as $kode) {
+                        $q->where('title', 'not like', "$kode-%");
+                    }
+                });
+            }
+        }
+
+        // Filter berdasarkan rentang tanggal
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+        
+        // Filter berdasarkan status cek
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
+
+        // 3. Eksekusi query untuk mendapatkan koleksi data faktur
+        $fakturs = $query->get();
+
+        // 4. Hitung data untuk header info PDF
+        $totalJumlahBarang = $fakturs->sum('total_barang');
+        $totalHargaKeseluruhan = $fakturs->sum('total');
+
+        $tanggalMulai = $fakturs->isNotEmpty() ? Carbon::parse($fakturs->first()->tgl_jual)->translatedFormat('d M Y') : 'N/A';
+        $tanggalSelesai = $fakturs->isNotEmpty() ? Carbon::parse($fakturs->last()->tgl_jual)->translatedFormat('d M Y') : 'N/A';
+        $rentangTanggal = ($tanggalMulai == $tanggalSelesai) ? $tanggalMulai : $tanggalMulai . ' - ' . $tanggalSelesai;
+
+        // 5. Load view PDF dan kirimkan data yang dibutuhkan
+        $pdf = \PDF::loadView('pages.transaksi-faktur-online.print-kesimpulan', compact(
+            'fakturs',
+            'totalJumlahBarang',
+            'totalHargaKeseluruhan',
+            'rentangTanggal'
+        ));
+        
+        // 6. Tampilkan PDF di browser
+        return $pdf->stream('kesimpulan-faktur-online-' . time() . '.pdf');
+    }
 }

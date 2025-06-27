@@ -88,6 +88,10 @@
                                         <div class="d-flex justify-content-end mt-3">
                                             <button type="submit" class="btn btn-primary">Filter</button>
                                             <a href="{{ route('transaksi-faktur-online.index') }}" class="btn btn-secondary mx-2">Reset</a>
+
+                                            <a href="{{ route('transaksi-faktur-online.printKesimpulan', request()->query()) }}" class="btn btn-warning" target="_blank">
+                                                Print Kesimpulan
+                                            </a>
                                         </div>
                                     </div>
                                 </form>
