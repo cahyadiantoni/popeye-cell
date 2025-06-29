@@ -42,7 +42,7 @@
                             </div>
                             <div class="card-block">
                                 <h4 class="sub-title">Copy-Paste Data Jual Barang</h4>
-                                <form method="POST" action="{{ route('transaksi-jual-bawah.store') }}">
+                                <form method="POST" action="{{ route('transaksi-jual-bawah.store') }}" enctype="multipart/form-data"></form>
                                     @csrf
                                     <div class="mb-3 row">
                                         <div class="col-sm-12">
@@ -52,6 +52,51 @@
                                             <hr>
                                             <textarea name="pasted_data" class="form-control" rows="15" placeholder="Tempelkan data dari Excel di sini..." required></textarea>
                                         </div>
+                                    </div>
+
+                                    <div class="mb-3 row">
+                                        <label class="col-sm-2 col-form-label">Tindakan Lanjutan</label>
+                                        <div class="col-sm-10">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="create_conclusion" id="conclusion_no" value="0" checked>
+                                                <label class="form-check-label" for="conclusion_no">
+                                                    Hanya Buat Faktur (Default)
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="create_conclusion" id="conclusion_yes" value="1">
+                                                <label class="form-check-label" for="conclusion_yes">
+                                                    Buat Faktur & Langsung Jadikan Kesimpulan
+                                                </label>
+                                            </div>
+                                            <small class="form-text text-muted">Pilih opsi ini jika data yang ditempel hanya untuk satu faktur dan ingin langsung dibuatkan kesimpulannya.</small>
+                                        </div>
+                                    </div>
+
+                                    <div id="conclusion-fields" style="display: none;">
+                                        <hr>
+                                        <div class="mb-3 row">
+                                            <div class="sub-title">Masukan Bukti Transfer (Opsional)</div>
+                                            <div id="bukti-transfer-container">
+                                                <div class="row align-items-center bukti-entry mb-2">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Foto Bukti Transfer</label>
+                                                        <input type="file" name="fotos[]" class="form-control">
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <label class="form-label">Nominal Transfer</label>
+                                                        <input type="number" name="nominals[]" class="form-control" placeholder="Ketik Nominal Transfer">
+                                                    </div>
+                                                    <div class="col-md-1 d-flex align-self-end">
+                                                        {{-- Tombol hapus tidak ada untuk entri pertama --}}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 mt-2">
+                                                <button type="button" id="add-bukti-btn" class="btn btn-success btn-sm">Tambah Bukti Transfer</button>
+                                            </div>
+                                        </div>
+                                        <hr>
                                     </div>
 
                                     <div class="d-flex justify-content-between mt-3">
@@ -69,4 +114,38 @@
         </div>
     </div>
     <!-- Main-body end -->
+    <script>
+    $(document).ready(function() {
+        // 1. Logika untuk menampilkan/menyembunyikan form upload
+        $('input[name="create_conclusion"]').change(function() {
+            if ($(this).val() == '1') {
+                $('#conclusion-fields').slideDown(); // Tampilkan jika "Ya" dipilih
+            } else {
+                $('#conclusion-fields').slideUp(); // Sembunyikan jika "Tidak" dipilih
+            }
+        });
+
+        // 2. Logika untuk menambah entri bukti transfer baru
+        $('#add-bukti-btn').click(function() {
+            const newEntry = `
+            <div class="row align-items-center bukti-entry mb-2">
+                <div class="col-md-6">
+                    <input type="file" name="fotos[]" class="form-control">
+                </div>
+                <div class="col-md-5">
+                    <input type="number" name="nominals[]" class="form-control" placeholder="Ketik Nominal Transfer">
+                </div>
+                <div class="col-md-1 d-flex align-self-end">
+                    <button type="button" class="btn btn-danger btn-sm remove-bukti-btn">Hapus</button>
+                </div>
+            </div>`;
+            $('#bukti-transfer-container').append(newEntry);
+        });
+
+        // 3. Logika untuk menghapus entri bukti transfer
+        $('#bukti-transfer-container').on('click', '.remove-bukti-btn', function() {
+            $(this).closest('.bukti-entry').remove();
+        });
+    });
+    </script>
 @endsection()
