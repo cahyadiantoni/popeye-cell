@@ -70,6 +70,7 @@ class TransaksiKesimpulanController extends Controller
     public function create()
     {
         $fakturs = FakturBawah::withCount(['barangs as total_barang'])
+            ->where('is_finish', 0)
             ->whereDoesntHave('fakturKesimpulan') // Filter faktur yang belum ada di FakturKesimpulan
             ->orderBy('tgl_jual', 'desc')
             ->get();

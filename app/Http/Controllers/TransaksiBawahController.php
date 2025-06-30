@@ -132,7 +132,51 @@ class TransaksiBawahController extends Controller
             $lokSpk = $row[3] ?? null;
             $hargaJual = isset($row[5]) ? (int)trim($row[5]) * 1000 : null;
             
-            // ... (logika validasi detail per baris seperti sebelumnya) ...
+            if (!$lokSpk || is_null($hargaJual)) {
+                $errors[] = "Baris " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
+                continue;
+            }
+
+            if (in_array($lokSpk, $processedLokSpk)) {
+                $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam data yang ditempel.";
+                continue;
+            }
+
+            $processedLokSpk[] = $lokSpk;
+            $barang = Barang::where('lok_spk', $lokSpk)->first();
+
+            if (!$barang) {
+                $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan.";
+                continue;
+            }
+
+            if ($barang->gudang_id != $gudangId) {
+                $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' tidak terdaftar di gudang Anda.";
+                continue;
+            }
+
+            if (!in_array($barang->status_barang, [1])) {
+                if (!($barang->status_barang == 4 && $grade == 'Pengambilan AM')) {
+                    $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
+                    continue;
+                }
+            }
+
+            $tipe = $barang->tipe;
+
+            $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
+                ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
+                ->whereDate('t_faktur_bawah.tgl_jual', $tglJual)
+                ->where('t_barang.tipe', $tipe)
+                ->where('t_faktur_bawah.grade', $grade)
+                ->pluck('t_jual_bawah.harga')
+                ->unique();
+
+            if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
+                $hargaList = $hargaSebelumnya->implode(', ');
+                $errors[] = "Baris " . ($index + 1) . ": Harga jual " . ($hargaJual / 1000) . " berbeda dengan transaksi sebelumnya untuk tipe '$tipe', grade '$grade' pada tanggal " . Carbon::parse($tglJual)->format('d-M-Y') . " (harga sebelumnya: ".($hargaList/1000).").";
+                continue;
+            }
             
             $totalHargaJual += $hargaJual;
             $validLokSpk[] = [ 'lok_spk' => $lokSpk, 'harga_jual' => $hargaJual ];

@@ -42,7 +42,7 @@
                             </div>
                             <div class="card-block">
                                 <h4 class="sub-title">Copy-Paste Data Jual Barang</h4>
-                                <form method="POST" action="{{ route('transaksi-jual-bawah.store') }}" enctype="multipart/form-data"></form>
+                                <form method="POST" action="{{ route('transaksi-jual-bawah.store') }}" enctype="multipart/form-data">
                                     @csrf
                                     <div class="mb-3 row">
                                         <div class="col-sm-12">
