@@ -43,6 +43,14 @@
                         <span class="pcoded-mtext">Data Barang</span>
                     </a>
                 </li>
+                @if(auth()->user()->role=="admin")
+                    <li class="{{ Request::is('master-harga') ? 'active' : '' }}">
+                        <a href="{{ url('/master-harga') }}">
+                            <span class="pcoded-micon"><i class="fas fa-money-bill-wave"></i></span>
+                            <span class="pcoded-mtext">Data Harga</span>
+                        </a>
+                    </li>
+                @endif
                 <li class="{{ Request::is('data-barang-pendingan') ? 'active' : '' }}">
                     <a href="{{ url('/data-barang-pendingan') }}">
                         <span class="pcoded-micon"><i class="fas fa-box"></i></span>

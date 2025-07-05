@@ -10,6 +10,7 @@ use App\Models\KesimpulanBawah;
 use App\Models\BuktiTfBawah;
 use App\Models\Gudang;
 use App\Models\Negoan;
+use App\Models\MasterHarga;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Kirim;
@@ -163,6 +164,33 @@ class TransaksiBawahController extends Controller
             }
 
             $tipe = $barang->tipe;
+
+            // 1. "Normalkan" string tipe dan grade dari barang yang sedang diproses.
+            $tipeNormalisasi = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($tipe));
+            $gradeNormalisasi = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($grade));
+
+            // 2. Cari di master harga dengan menormalkan kolom 'tipe' dan 'grade' di database.
+            $hargaMaster = MasterHarga::whereRaw(
+                'LOWER(REGEXP_REPLACE(tipe, "[^a-zA-Z0-9]", "")) = ?', 
+                [$tipeNormalisasi]
+            )->whereRaw(
+                'LOWER(REGEXP_REPLACE(grade, "[^a-zA-Z0-9]", "")) = ?', 
+                [$gradeNormalisasi]
+            )
+            ->orderBy('tanggal', 'desc')
+            ->first();
+
+            // 3. Jika kombinasi tipe & grade ini ada di master harga, lakukan perbandingan.
+            //    Jika tidak ada ($hargaMaster bernilai null), maka validasi ini dilewati (dianggap sesuai).
+            if ($hargaMaster) {
+                // 4. Bandingkan harga dari master dengan harga jual dari input.
+                if ($hargaMaster->harga != $hargaJual) {
+                    // Jika tidak cocok, buat pesan error dan lewati ke baris berikutnya.
+                    $errors[] = "Baris " . ($index + 1) . ": Harga jual untuk tipe '$tipe' dan grade '$grade' tidak sesuai. Harga master: " 
+                                . number_format($hargaMaster->harga) . ", Harga input: " . number_format($hargaJual) . ".";
+                    continue; // Lanjut ke iterasi berikutnya
+                }
+            }
 
             $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
                 ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')

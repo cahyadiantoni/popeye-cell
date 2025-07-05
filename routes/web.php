@@ -32,6 +32,7 @@ use App\Http\Controllers\FakturPaymentController;
 use App\Http\Controllers\TokpedDepositController;
 use App\Http\Controllers\TokpedOrderController;
 use App\Http\Controllers\RiwayatBarangController;
+use App\Http\Controllers\MasterHargaController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckMacAccess;
 use App\Exports\BarangExport;
@@ -74,6 +75,10 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/riwayat-barang', [RiwayatBarangController::class, 'index'])->name('riwayat-barang.index')->middleware('auth');
     Route::post('/riwayat-barang/{history}/upload-foto', [RiwayatBarangController::class, 'uploadFoto'])->name('riwayat-barang.uploadFoto');
     Route::post('/riwayat-barang/{history}/hapus-foto', [RiwayatBarangController::class, 'hapusFoto'])->name('riwayat-barang.hapusFoto');
+
+    Route::get('/master-harga', [MasterHargaController::class, 'index'])->name('master-harga.index');
+    Route::get('/master-harga/export', [MasterHargaController::class, 'export'])->name('master-harga.export')->middleware('auth');
+    Route::post('/master-harga/import-pivot', [MasterHargaController::class, 'importPivot'])->name('master-harga.importPivot');
 
     // Route::post('/kirim-barang', [StokGudangController::class, 'kirimBarang'])->middleware('auth')->name('kirimBarang');
     Route::delete('/kirim-barang/{id}', [KirimBarangController::class, 'destroy'])->name('kirim-barang.delete');
