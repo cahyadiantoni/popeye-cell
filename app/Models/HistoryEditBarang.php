@@ -26,6 +26,9 @@ class HistoryEditBarang extends Model
         'lok_spk',
         'update',
         'user_id',
+        'foto_barang',
+        'foto_imei',
+        'foto_device_cek',
     ];
 
     /**

@@ -72,6 +72,8 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/buku-stok', [StokGudangController::class, 'index'])->name('buku-stok.index');
     
     Route::get('/riwayat-barang', [RiwayatBarangController::class, 'index'])->name('riwayat-barang.index')->middleware('auth');
+    Route::post('/riwayat-barang/{history}/upload-foto', [RiwayatBarangController::class, 'uploadFoto'])->name('riwayat-barang.uploadFoto');
+    Route::post('/riwayat-barang/{history}/hapus-foto', [RiwayatBarangController::class, 'hapusFoto'])->name('riwayat-barang.hapusFoto');
 
     // Route::post('/kirim-barang', [StokGudangController::class, 'kirimBarang'])->middleware('auth')->name('kirimBarang');
     Route::delete('/kirim-barang/{id}', [KirimBarangController::class, 'destroy'])->name('kirim-barang.delete');
