@@ -173,7 +173,7 @@
                     </a>
                 </div>
 
-                <div class="col-xl-6 col-md-6">
+                <div class="col-xl-4 col-md-6">
                     <a href="{{ url('/stok-opname?gudang_id=6') }}">
                         <div class="card bg-c-orenge update-card">
                             <div class="card-block">
@@ -197,7 +197,31 @@
                     </a>
                 </div>
 
-                <div class="col-xl-6 col-md-6">
+                <div class="col-xl-4 col-md-6">
+                    <a href="{{ url('/stok-opname?gudang_id=11') }}">
+                        <div class="card bg-c-orenge update-card">
+                            <div class="card-block">
+                                <div class="row align-items-end">
+                                    <div class="col-8">
+                                        <h4 class="text-white">Gudang Merah (Bawah)</h4>
+                                        <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[11]->total ?? 0 }} </h5>
+                                        <h6 class="text-white m-b-0">Box : {{ $stokBox[11]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[11]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[11]->total ?? 0 }} </h6>
+                                    </div>
+                                    <div class="col-4 text-end">
+                                        <canvas id="update-chart-4" height="50"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <p class="text-white m-b-0"><i class="feather icon-clock text-white f-14 m-r-10"></i>update : {{ now()->format('h:i A') }}</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-xl-4 col-md-6">
                     <a href="{{ url('/stok-opname?gudang_id=7') }}">
                         <div class="card bg-c-orenge update-card">
                             <div class="card-block">
