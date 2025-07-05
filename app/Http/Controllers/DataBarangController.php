@@ -31,19 +31,19 @@ class DataBarangController extends Controller
                     $terjual = '';
                 
                     if ($barang->status_barang != 2) {
-                        $editButton = '
-                            <!-- Tombol Edit -->
-                            <button type="button" class="btn btn-warning btn-round edit-barang-btn" 
-                                data-lok_spk="' . htmlspecialchars($barang->lok_spk) . '" 
-                                data-jenis="' . htmlspecialchars($barang->jenis) . '" 
-                                data-tipe="' . htmlspecialchars($barang->tipe) . '" 
-                                data-grade="' . htmlspecialchars($barang->grade) . '"
-                                data-kelengkapan="' . htmlspecialchars($barang->kelengkapan) . '">
-                                Edit
-                            </button>
-                        ';
-
                         if ($roleUser === 'admin') {
+                            $editButton = '
+                                <!-- Tombol Edit -->
+                                <button type="button" class="btn btn-warning btn-round edit-barang-btn" 
+                                    data-lok_spk="' . htmlspecialchars($barang->lok_spk) . '" 
+                                    data-jenis="' . htmlspecialchars($barang->jenis) . '" 
+                                    data-tipe="' . htmlspecialchars($barang->tipe) . '" 
+                                    data-grade="' . htmlspecialchars($barang->grade) . '"
+                                    data-kelengkapan="' . htmlspecialchars($barang->kelengkapan) . '">
+                                    Edit
+                                </button>
+                            ';
+
                             $deleteButton = '
                                 <!-- Tombol Delete -->
                                 <form action="' . route('data-barang.destroy', urlencode($barang->lok_spk)) . '" method="POST" style="display:inline;">
@@ -54,6 +54,13 @@ class DataBarangController extends Controller
                                         Delete
                                     </button>
                                 </form>
+                            ';
+                        }else{
+                            $terjual = '
+                                <!-- Tombol Disable -->
+                                <button type="button" class="btn btn-secondary btn-round">
+                                    Edit Hanya Admin
+                                </button>
                             ';
                         }
                     }else{
@@ -75,7 +82,7 @@ class DataBarangController extends Controller
                 ->make(true);
         }
     
-        return view('pages.data-barang.index');
+        return view('pages.data-barang.index', compact('roleUser'));
     }    
 
     public function edit($lok_spk)
@@ -156,6 +163,122 @@ class DataBarangController extends Controller
     public function massedit()
     {
         return view('pages.data-barang.mass-edit');
+    }
+
+    public function massUpdateDataBarang(Request $request)
+    {
+        $request->validate([
+            'filedata' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        $errors = [];
+        $updatedRows = [];
+
+        $file = $request->file('filedata');
+        $data = Excel::toArray([], $file);
+
+        foreach ($data[0] as $index => $row) {
+            if ($index === 0) continue; // Lewati header
+
+            // Validasi bahwa lok_spk tidak boleh kosong
+            if (empty($row[0])) {
+                $errors[] = "Baris " . ($index + 1) . " tidak memiliki lok_spk.";
+                continue;
+            }
+
+            $barang = Barang::where('lok_spk', $row[0])->first();
+
+            if (!$barang) {
+                $errors[] = "Baris " . ($index + 1) . " memiliki lok_spk yang tidak ditemukan.";
+                continue;
+            }
+
+            // Array untuk menyimpan data yang akan diperbarui
+            $updateData = [];
+
+            if (!empty($row[1])) $updateData['jenis'] = $row[1];
+            if (!empty($row[2])) $updateData['tipe'] = $row[2];
+            if (!empty($row[3])) $updateData['kelengkapan'] = $row[3];
+            if (!empty($row[4])) $updateData['grade'] = $row[4];
+            
+            if (!empty($updateData)) {
+                $barang->update($updateData);
+                $updatedRows[] = $index + 1;
+            }
+        }
+
+        if (count($errors) > 0 || count($updatedRows) > 0) {
+            $successMessage = count($updatedRows) > 0 ? 
+                'Baris yang berhasil diperbarui: ' . implode(', ', $updatedRows) : 
+                '';
+
+            return redirect()->route('data-barang.index')->with([
+                'errors' => $errors,
+                'success' => $successMessage
+            ]);
+        }
+
+        return redirect()->route('data-barang.index')->with('success', 'Tidak ada baris yang diperbarui.');
+    }
+
+    public function masseditUser()
+    {
+        return view('pages.data-barang.mass-edit-user');
+    }
+
+    public function massUpdateDataBarangUser(Request $request)
+    {
+        $request->validate([
+            'filedata' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        $errors = [];
+        $updatedRows = [];
+
+        $file = $request->file('filedata');
+        $data = Excel::toArray([], $file);
+
+        foreach ($data[0] as $index => $row) {
+            if ($index === 0) continue; // Lewati header
+
+            // Validasi bahwa lok_spk tidak boleh kosong
+            if (empty($row[0])) {
+                $errors[] = "Baris " . ($index + 1) . " tidak memiliki lok_spk.";
+                continue;
+            }
+
+            $barang = Barang::where('lok_spk', $row[0])->first();
+
+            if (!$barang) {
+                $errors[] = "Baris " . ($index + 1) . " memiliki lok_spk yang tidak ditemukan.";
+                continue;
+            }
+
+            // Array untuk menyimpan data yang akan diperbarui
+            $updateData = [];
+
+            if (!empty($row[1])) $updateData['jenis'] = $row[1];
+            if (!empty($row[2])) $updateData['kelengkapan'] = $row[2];
+            if (!empty($row[3])) $updateData['grade'] = $row[3];
+            
+            if (!empty($updateData)) {
+                $barang->update($updateData);
+                $updatedRows[] = $index + 1;
+            }
+        }
+
+        if (count($errors) > 0 || count($updatedRows) > 0) {
+            $successMessage = count($updatedRows) > 0 ? 
+                'Baris yang berhasil diperbarui: ' . implode(', ', $updatedRows) : 
+                '';
+
+            return redirect()->route('data-barang.index')->with([
+                'errors' => $errors,
+                'success' => $successMessage
+            ]);
+        }
+
+        return redirect()->route('data-barang.index')->with('success', 'Tidak ada baris yang diperbarui.');
     }
 
     public function store(Request $request)
@@ -284,62 +407,6 @@ class DataBarangController extends Controller
         $barang->save();
         
         return redirect()->back()->with('success', 'Data barang berhasil diperbarui.');
-    }
-
-    public function massUpdateDataBarang(Request $request)
-    {
-        $request->validate([
-            'filedata' => 'required|file|mimes:xlsx,xls'
-        ]);
-
-        $errors = [];
-        $updatedRows = [];
-
-        $file = $request->file('filedata');
-        $data = Excel::toArray([], $file);
-
-        foreach ($data[0] as $index => $row) {
-            if ($index === 0) continue; // Lewati header
-
-            // Validasi bahwa lok_spk tidak boleh kosong
-            if (empty($row[0])) {
-                $errors[] = "Baris " . ($index + 1) . " tidak memiliki lok_spk.";
-                continue;
-            }
-
-            $barang = Barang::where('lok_spk', $row[0])->first();
-
-            if (!$barang) {
-                $errors[] = "Baris " . ($index + 1) . " memiliki lok_spk yang tidak ditemukan.";
-                continue;
-            }
-
-            // Array untuk menyimpan data yang akan diperbarui
-            $updateData = [];
-
-            if (!empty($row[1])) $updateData['jenis'] = $row[1];
-            if (!empty($row[2])) $updateData['tipe'] = $row[2];
-            if (!empty($row[3])) $updateData['kelengkapan'] = $row[3];
-            if (!empty($row[4])) $updateData['grade'] = $row[4];
-            
-            if (!empty($updateData)) {
-                $barang->update($updateData);
-                $updatedRows[] = $index + 1;
-            }
-        }
-
-        if (count($errors) > 0 || count($updatedRows) > 0) {
-            $successMessage = count($updatedRows) > 0 ? 
-                'Baris yang berhasil diperbarui: ' . implode(', ', $updatedRows) : 
-                '';
-
-            return redirect()->route('data-barang.index')->with([
-                'errors' => $errors,
-                'success' => $successMessage
-            ]);
-        }
-
-        return redirect()->route('data-barang.index')->with('success', 'Tidak ada baris yang diperbarui.');
     }
 
     public function pendingan(Request $request)

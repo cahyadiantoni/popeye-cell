@@ -61,6 +61,8 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::resource('/data-barang', DataBarangController::class)->middleware('auth');
     Route::get('/mass-edit-barang', [DataBarangController::class, 'massedit'])->middleware('auth');
     Route::post('/mass-update-data-barang', [DataBarangController::class, 'massUpdateDataBarang'])->middleware('auth')->name('mass-update.dataBarang');
+    Route::get('/mass-edit-barang-user', [DataBarangController::class, 'masseditUser'])->middleware('auth');
+    Route::post('/mass-update-data-barang-user', [DataBarangController::class, 'massUpdateDataBarangUser'])->middleware('auth')->name('mass-update.dataBarangUser');
     Route::put('/update-data-barang/{lok_spk}', [DataBarangController::class, 'updateDataBarang'])->middleware('auth');
     Route::get('/request-masuk-gudang', [StokGudangController::class, 'request_masuk'])->middleware('auth');
     Route::post('/handle-request', [StokGudangController::class, 'handleRequest'])->middleware('auth')->name('handleRequest');
