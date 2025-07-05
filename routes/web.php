@@ -31,6 +31,7 @@ use App\Http\Controllers\MacCheckController;
 use App\Http\Controllers\FakturPaymentController;
 use App\Http\Controllers\TokpedDepositController;
 use App\Http\Controllers\TokpedOrderController;
+use App\Http\Controllers\RiwayatBarangController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckMacAccess;
 use App\Exports\BarangExport;
@@ -69,6 +70,8 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/stok-opname', [StokGudangController::class, 'stok_opname'])->middleware('auth')->name('stokOpname');
     Route::get('/choice-gudang', [StokGudangController::class, 'choice_gudang'])->middleware('auth')->name('choiceGudang');
     Route::get('/buku-stok', [StokGudangController::class, 'index'])->name('buku-stok.index');
+    
+    Route::get('/riwayat-barang', [RiwayatBarangController::class, 'index'])->name('riwayat-barang.index')->middleware('auth');
 
     // Route::post('/kirim-barang', [StokGudangController::class, 'kirimBarang'])->middleware('auth')->name('kirimBarang');
     Route::delete('/kirim-barang/{id}', [KirimBarangController::class, 'destroy'])->name('kirim-barang.delete');

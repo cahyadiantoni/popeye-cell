@@ -55,21 +55,18 @@
                         <span class="pcoded-mtext">Upload Barang</span>
                     </a>
                 </li>
-                @if(auth()->user()->role=="admin")
-                    <li class="{{ Request::is('mass-edit-barang') ? 'active' : '' }}">
-                        <a href="{{ url('/mass-edit-barang') }}">
-                            <span class="pcoded-micon"><i class="fas fa-edit"></i></span>
-                            <span class="pcoded-mtext">Mass Edit Barang</span>
-                        </a>
-                    </li>
-                @else
-                    <li class="{{ Request::is('mass-edit-barang-user') ? 'active' : '' }}">
-                        <a href="{{ url('/mass-edit-barang-user') }}">
-                            <span class="pcoded-micon"><i class="fas fa-edit"></i></span>
-                            <span class="pcoded-mtext">Mass Edit Barang (user)</span>
-                        </a>
-                    </li>
-                @endif
+                <li class="{{ Request::is('mass-edit-barang') ? 'active' : '' }}">
+                    <a href="{{ url('/mass-edit-barang') }}">
+                        <span class="pcoded-micon"><i class="fas fa-edit"></i></span>
+                        <span class="pcoded-mtext">Mass Edit Barang</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('riwayat-barang') ? 'active' : '' }}">
+                    <a href="{{ url('/riwayat-barang') }}">
+                        <span class="pcoded-micon"><i class="fas fa-history"></i></span>
+                        <span class="pcoded-mtext">Riwayat Edit Barang</span>
+                    </a>
+                </li>
             </ul>
             <div class="pcoded-navigatio-lavel">Stok Gudang</div>
             <ul class="pcoded-item pcoded-left-item">

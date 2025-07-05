@@ -66,11 +66,7 @@
                             @endif
                             <div class="card-block">
                             <a href="{{ route('data-barang.create') }}" class="btn btn-primary btn-round mx-2">Upload Excel Barang</a>
-                            @if($roleUser=='admin')
-                                <a href="{{ url('/mass-edit-barang') }}" class="btn btn-info btn-round mx-2">Mass Edit Barang</a>
-                            @else
-                                <a href="{{ url('/mass-edit-barang-user') }}" class="btn btn-info btn-round mx-2">Mass Edit Barang (User)</a>
-                            @endif
+                            <a href="{{ url('/mass-edit-barang') }}" class="btn btn-info btn-round mx-2">Mass Edit Barang</a>
                                 <hr>
                                 <div class="dt-responsive table-responsive">
                                 <table id="tablebarang" class="table table-striped table-bordered nowrap" style="width: 100%;">

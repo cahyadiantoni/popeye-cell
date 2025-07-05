@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
-use App\Models\Kirim;
+use App\Models\HistoryEditBarang;
 use App\Http\Controllers\Controller;
 use App\Models\Gudang;
 use Illuminate\Http\Request;
@@ -31,18 +31,19 @@ class DataBarangController extends Controller
                     $terjual = '';
                 
                     if ($barang->status_barang != 2) {
+                        $editButton = '
+                            <!-- Tombol Edit -->
+                            <button type="button" class="btn btn-warning btn-round edit-barang-btn" 
+                                data-lok_spk="' . htmlspecialchars($barang->lok_spk) . '" 
+                                data-jenis="' . htmlspecialchars($barang->jenis) . '" 
+                                data-tipe="' . htmlspecialchars($barang->tipe) . '" 
+                                data-grade="' . htmlspecialchars($barang->grade) . '"
+                                data-kelengkapan="' . htmlspecialchars($barang->kelengkapan) . '">
+                                Edit
+                            </button>
+                        ';
+
                         if ($roleUser === 'admin') {
-                            $editButton = '
-                                <!-- Tombol Edit -->
-                                <button type="button" class="btn btn-warning btn-round edit-barang-btn" 
-                                    data-lok_spk="' . htmlspecialchars($barang->lok_spk) . '" 
-                                    data-jenis="' . htmlspecialchars($barang->jenis) . '" 
-                                    data-tipe="' . htmlspecialchars($barang->tipe) . '" 
-                                    data-grade="' . htmlspecialchars($barang->grade) . '"
-                                    data-kelengkapan="' . htmlspecialchars($barang->kelengkapan) . '">
-                                    Edit
-                                </button>
-                            ';
 
                             $deleteButton = '
                                 <!-- Tombol Delete -->
@@ -54,13 +55,6 @@ class DataBarangController extends Controller
                                         Delete
                                     </button>
                                 </form>
-                            ';
-                        }else{
-                            $terjual = '
-                                <!-- Tombol Disable -->
-                                <button type="button" class="btn btn-secondary btn-round">
-                                    Edit Hanya Admin
-                                </button>
                             ';
                         }
                     }else{
@@ -92,64 +86,64 @@ class DataBarangController extends Controller
         return view('pages.data-barang.edit', compact('barang'));
     }
 
-    public function update(Request $request, $lok_spk)
-    {
-        // Mencari barang berdasarkan primary key lok_spk
-        $barang = Barang::findOrFail($lok_spk);
+    // public function update(Request $request, $lok_spk)
+    // {
+    //     // Mencari barang berdasarkan primary key lok_spk
+    //     $barang = Barang::findOrFail($lok_spk);
 
-        // Validasi input
-        $validator = Validator::make($request->all(), [
-            'jenis' => 'required|string',
-            'merek' => 'required|string',
-            'tipe' => 'required|string',
-            'imei' => 'required|string',
-            'kelengkapan' => 'required|string',
-            'kerusakan' => 'required|string',
-            'grade' => 'required|string',
-            'gudang_id' => 'required|string',
-            'status_barang' => 'required|integer',
-            'qt_bunga' => 'required|string',
-            'harga_jual' => 'required|numeric',
-            'harga_beli' => 'required|numeric',
-            'keterangan1' => 'nullable|string',
-            'keterangan2' => 'nullable|string',
-            'keterangan3' => 'nullable|string',
-            'nama_petugas' => 'required|string',
-            'dt_beli' => 'required|date',
-            'dt_lelang' => 'required|date',
-            'dt_jatuh_tempo' => 'required|date',
-        ]);
+    //     // Validasi input
+    //     $validator = Validator::make($request->all(), [
+    //         'jenis' => 'required|string',
+    //         'merek' => 'required|string',
+    //         'tipe' => 'required|string',
+    //         'imei' => 'required|string',
+    //         'kelengkapan' => 'required|string',
+    //         'kerusakan' => 'required|string',
+    //         'grade' => 'required|string',
+    //         'gudang_id' => 'required|string',
+    //         'status_barang' => 'required|integer',
+    //         'qt_bunga' => 'required|string',
+    //         'harga_jual' => 'required|numeric',
+    //         'harga_beli' => 'required|numeric',
+    //         'keterangan1' => 'nullable|string',
+    //         'keterangan2' => 'nullable|string',
+    //         'keterangan3' => 'nullable|string',
+    //         'nama_petugas' => 'required|string',
+    //         'dt_beli' => 'required|date',
+    //         'dt_lelang' => 'required|date',
+    //         'dt_jatuh_tempo' => 'required|date',
+    //     ]);
 
-        // Jika validasi gagal
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
+    //     // Jika validasi gagal
+    //     if ($validator->fails()) {
+    //         return redirect()->back()->withErrors($validator)->withInput();
+    //     }
 
-        // Update data barang
-        $barang->update([
-            'jenis' => $request->input('jenis'),
-            'merek' => $request->input('merek'),
-            'tipe' => $request->input('tipe'),
-            'imei' => $request->input('imei'),
-            'kelengkapan' => $request->input('kelengkapan'),
-            'kerusakan' => $request->input('kerusakan'),
-            'grade' => $request->input('grade'),
-            'gudang_id' => $request->input('gudang_id'),
-            'status_barang' => $request->input('status_barang'),
-            'qt_bunga' => $request->input('qt_bunga'),
-            'harga_jual' => $request->input('harga_jual'),
-            'harga_beli' => $request->input('harga_beli'),
-            'keterangan1' => $request->input('keterangan1'),
-            'keterangan2' => $request->input('keterangan2'),
-            'keterangan3' => $request->input('keterangan3'),
-            'nama_petugas' => $request->input('nama_petugas'),
-            'dt_beli' => $request->input('dt_beli'),
-            'dt_lelang' => $request->input('dt_lelang'),
-            'dt_jatuh_tempo' => $request->input('dt_jatuh_tempo'),
-        ]);
+    //     // Update data barang
+    //     $barang->update([
+    //         'jenis' => $request->input('jenis'),
+    //         'merek' => $request->input('merek'),
+    //         'tipe' => $request->input('tipe'),
+    //         'imei' => $request->input('imei'),
+    //         'kelengkapan' => $request->input('kelengkapan'),
+    //         'kerusakan' => $request->input('kerusakan'),
+    //         'grade' => $request->input('grade'),
+    //         'gudang_id' => $request->input('gudang_id'),
+    //         'status_barang' => $request->input('status_barang'),
+    //         'qt_bunga' => $request->input('qt_bunga'),
+    //         'harga_jual' => $request->input('harga_jual'),
+    //         'harga_beli' => $request->input('harga_beli'),
+    //         'keterangan1' => $request->input('keterangan1'),
+    //         'keterangan2' => $request->input('keterangan2'),
+    //         'keterangan3' => $request->input('keterangan3'),
+    //         'nama_petugas' => $request->input('nama_petugas'),
+    //         'dt_beli' => $request->input('dt_beli'),
+    //         'dt_lelang' => $request->input('dt_lelang'),
+    //         'dt_jatuh_tempo' => $request->input('dt_jatuh_tempo'),
+    //     ]);
 
-        return redirect()->route('data-barang.index')->with('success', 'Barang updated successfully!');
-    }
+    //     return redirect()->route('data-barang.index')->with('success', 'Barang updated successfully!');
+    // }
 
     public function create()
     {
@@ -167,57 +161,64 @@ class DataBarangController extends Controller
 
     public function massUpdateDataBarang(Request $request)
     {
-        $request->validate([
-            'filedata' => 'required|file|mimes:xlsx,xls'
-        ]);
-
+        $request->validate(['filedata' => 'required|file|mimes:xlsx,xls']);
         $errors = [];
         $updatedRows = [];
-
         $file = $request->file('filedata');
-        $data = Excel::toArray([], $file);
+        $data = Excel::toArray(new \stdClass(), $file);
 
         foreach ($data[0] as $index => $row) {
-            if ($index === 0) continue; // Lewati header
-
-            // Validasi bahwa lok_spk tidak boleh kosong
+            if ($index === 0) continue;
             if (empty($row[0])) {
                 $errors[] = "Baris " . ($index + 1) . " tidak memiliki lok_spk.";
                 continue;
             }
-
             $barang = Barang::where('lok_spk', $row[0])->first();
-
             if (!$barang) {
                 $errors[] = "Baris " . ($index + 1) . " memiliki lok_spk yang tidak ditemukan.";
                 continue;
             }
-
-            // Array untuk menyimpan data yang akan diperbarui
             $updateData = [];
-
-            if (!empty($row[1])) $updateData['jenis'] = $row[1];
-            if (!empty($row[2])) $updateData['tipe'] = $row[2];
-            if (!empty($row[3])) $updateData['kelengkapan'] = $row[3];
-            if (!empty($row[4])) $updateData['grade'] = $row[4];
+            if (isset($row[1]) && !is_null($row[1])) $updateData['jenis'] = $row[1];
+            if (isset($row[2]) && !is_null($row[2])) $updateData['tipe'] = $row[2];
+            if (isset($row[3]) && !is_null($row[3])) $updateData['kelengkapan'] = $row[3];
+            if (isset($row[4]) && !is_null($row[4])) $updateData['grade'] = $row[4];
             
             if (!empty($updateData)) {
-                $barang->update($updateData);
-                $updatedRows[] = $index + 1;
+                $barang->fill($updateData);
+                if ($barang->isDirty()) {
+                    $perubahan = $barang->getDirty();
+                    $pesanPerubahan = [];
+                    $counter = 1;
+
+                    // 1. Buat pesan history SEBELUM di-save
+                    foreach ($perubahan as $kolom => $nilaiBaru) {
+                        $nilaiLama = $barang->getOriginal($kolom);
+                        $pesanPerubahan[] = $counter . ". " . $kolom . " (" . ($nilaiLama ?? 'kosong') . ") menjadi (" . ($nilaiBaru ?? 'kosong') . ")";
+                        $counter++;
+                    }
+
+                    // 2. Simpan perubahan ke database
+                    $barang->save();
+                    $updatedRows[] = $index + 1;
+
+                    // 3. Simpan catatan riwayat
+                    if (!empty($pesanPerubahan)) {
+                        HistoryEditBarang::create([
+                            'lok_spk'   => $barang->lok_spk,
+                            'update'    => implode("\n", $pesanPerubahan),
+                            'user_id'   => Auth::id(),
+                        ]);
+                    }
+                }
             }
         }
 
         if (count($errors) > 0 || count($updatedRows) > 0) {
             $successMessage = count($updatedRows) > 0 ? 
-                'Baris yang berhasil diperbarui: ' . implode(', ', $updatedRows) : 
-                '';
-
-            return redirect()->route('data-barang.index')->with([
-                'errors' => $errors,
-                'success' => $successMessage
-            ]);
+                'Baris yang berhasil diperbarui: ' . implode(', ', $updatedRows) : '';
+            return redirect()->route('data-barang.index')->with(['errors' => $errors, 'success' => $successMessage]);
         }
-
         return redirect()->route('data-barang.index')->with('success', 'Tidak ada baris yang diperbarui.');
     }
 
@@ -228,56 +229,63 @@ class DataBarangController extends Controller
 
     public function massUpdateDataBarangUser(Request $request)
     {
-        $request->validate([
-            'filedata' => 'required|file|mimes:xlsx,xls'
-        ]);
-
+        $request->validate(['filedata' => 'required|file|mimes:xlsx,xls']);
         $errors = [];
         $updatedRows = [];
-
         $file = $request->file('filedata');
-        $data = Excel::toArray([], $file);
+        $data = Excel::toArray(new \stdClass(), $file);
 
         foreach ($data[0] as $index => $row) {
-            if ($index === 0) continue; // Lewati header
-
-            // Validasi bahwa lok_spk tidak boleh kosong
+            if ($index === 0) continue;
             if (empty($row[0])) {
                 $errors[] = "Baris " . ($index + 1) . " tidak memiliki lok_spk.";
                 continue;
             }
-
             $barang = Barang::where('lok_spk', $row[0])->first();
-
             if (!$barang) {
                 $errors[] = "Baris " . ($index + 1) . " memiliki lok_spk yang tidak ditemukan.";
                 continue;
             }
-
-            // Array untuk menyimpan data yang akan diperbarui
             $updateData = [];
-
-            if (!empty($row[1])) $updateData['jenis'] = $row[1];
-            if (!empty($row[2])) $updateData['kelengkapan'] = $row[2];
-            if (!empty($row[3])) $updateData['grade'] = $row[3];
+            if (isset($row[1]) && !is_null($row[1])) $updateData['jenis'] = $row[1];
+            if (isset($row[2]) && !is_null($row[2])) $updateData['kelengkapan'] = $row[2];
+            if (isset($row[3]) && !is_null($row[3])) $updateData['grade'] = $row[3];
             
             if (!empty($updateData)) {
-                $barang->update($updateData);
-                $updatedRows[] = $index + 1;
+                $barang->fill($updateData);
+                if ($barang->isDirty()) {
+                    $perubahan = $barang->getDirty();
+                    $pesanPerubahan = [];
+                    $counter = 1;
+
+                    // 1. Buat pesan history SEBELUM di-save
+                    foreach ($perubahan as $kolom => $nilaiBaru) {
+                        $nilaiLama = $barang->getOriginal($kolom);
+                        $pesanPerubahan[] = $counter . ". " . $kolom . " (" . ($nilaiLama ?? 'kosong') . ") menjadi (" . ($nilaiBaru ?? 'kosong') . ")";
+                        $counter++;
+                    }
+
+                    // 2. Simpan perubahan ke database
+                    $barang->save();
+                    $updatedRows[] = $index + 1;
+
+                    // 3. Simpan catatan riwayat
+                    if (!empty($pesanPerubahan)) {
+                        HistoryEditBarang::create([
+                            'lok_spk'   => $barang->lok_spk,
+                            'update'    => implode("\n", $pesanPerubahan),
+                            'user_id'   => Auth::id(),
+                        ]);
+                    }
+                }
             }
         }
 
         if (count($errors) > 0 || count($updatedRows) > 0) {
             $successMessage = count($updatedRows) > 0 ? 
-                'Baris yang berhasil diperbarui: ' . implode(', ', $updatedRows) : 
-                '';
-
-            return redirect()->route('data-barang.index')->with([
-                'errors' => $errors,
-                'success' => $successMessage
-            ]);
+                'Baris yang berhasil diperbarui: ' . implode(', ', $updatedRows) : '';
+            return redirect()->route('data-barang.index')->with(['errors' => $errors, 'success' => $successMessage]);
         }
-
         return redirect()->route('data-barang.index')->with('success', 'Tidak ada baris yang diperbarui.');
     }
 
@@ -388,7 +396,6 @@ class DataBarangController extends Controller
             return redirect()->back()->with('error', 'Gagal Validasi Error!');
         }
 
-        // Cek apakah `lok_spk` baru sudah ada di database, selain data yang sedang diupdate
         $existingBarang = Barang::where('lok_spk', $request->input('lok_spk'))
             ->where('lok_spk', '!=', $lok_spk)
             ->exists();
@@ -397,14 +404,43 @@ class DataBarangController extends Controller
             return redirect()->back()->with('error', 'Gagal Lok SPK sudah digunakan!');
         }
         
-        // Update data barang
         $barang = Barang::findOrFail($lok_spk);
+
+        // Isi model dengan data baru dari request
         $barang->lok_spk = $request->input('lok_spk');
         $barang->jenis = $request->input('jenis');
         $barang->tipe = $request->input('tipe');
         $barang->grade = $request->input('grade');
         $barang->kelengkapan = $request->input('kelengkapan');
-        $barang->save();
+
+        // Cek apakah ada perubahan pada data
+        if ($barang->isDirty()) {
+            // === LOGIKA BARU DIMULAI DI SINI ===
+            
+            $perubahan = $barang->getDirty(); // Dapatkan array perubahan ['kolom' => 'nilai_baru']
+            $pesanPerubahan = [];
+            $counter = 1;
+
+            // 1. Buat pesan history SEBELUM di-save
+            foreach ($perubahan as $kolom => $nilaiBaru) {
+                $nilaiLama = $barang->getOriginal($kolom); // Ambil nilai lama SEBELUM save()
+                $pesanPerubahan[] = $counter . ". " . $kolom . " (" . ($nilaiLama ?? 'kosong') . ") menjadi (" . ($nilaiBaru ?? 'kosong') . ")";
+                $counter++;
+            }
+
+            // 2. Simpan perubahan data barang ke database
+            $barang->save();
+
+            // 3. Simpan catatan riwayat dengan pesan yang sudah dibuat tadi
+            if (!empty($pesanPerubahan)) {
+                HistoryEditBarang::create([
+                    'lok_spk'   => $barang->lok_spk,
+                    'update'    => implode("\n", $pesanPerubahan),
+                    'user_id'   => Auth::id(),
+                ]);
+            }
+            // === LOGIKA BARU SELESAI ===
+        }
         
         return redirect()->back()->with('success', 'Data barang berhasil diperbarui.');
     }

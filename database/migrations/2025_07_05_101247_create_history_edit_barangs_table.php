@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('t_history_edit_barang', function (Blueprint $table) {
+            // Kolom ID unik untuk setiap catatan riwayat
+            $table->id();
+            $table->string('lok_spk', 255);
+            $table->text('update');
+            $table->unsignedBigInteger('user_id');
+            $table->timestamps();
+            $table->foreign('lok_spk')->references('lok_spk')->on('t_barang')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('t_history_edit_barang');
+    }
+};
