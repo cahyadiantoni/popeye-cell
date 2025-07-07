@@ -105,9 +105,30 @@
                             <th>Sudah Dibayar</th>
                             <td>Rp. {{ number_format($kesimpulan->total_nominal, 0, ',', '.') }}</td>
                         </tr>
+                        @php
+                            $sisa = $kesimpulan->grand_total - $kesimpulan->total_nominal;
+                        @endphp
                         <tr>
-                            <th>Sisa Hutang</th>
-                            <td>Rp. {{ number_format($kesimpulan->grand_total - $kesimpulan->total_nominal, 0, ',', '.') }}</td>
+                            <th>
+                                @if ($sisa < 0)
+                                    Lebih Bayar
+                                @else
+                                    Sisa Hutang
+                                @endif
+                            </th>
+                            <td>
+                                @if ($sisa < 0)
+                                    <span style="color: green; font-weight: bold;">
+                                        Rp. {{ number_format(abs($sisa), 0, ',', '.') }}
+                                    </span>
+                                @elseif ($sisa > 0)
+                                    <span style="color: red; font-weight: bold;">
+                                        Rp. {{ number_format($sisa, 0, ',', '.') }}
+                                    </span>
+                                @else
+                                    Rp. {{ number_format($sisa, 0, ',', '.') }}
+                                @endif
+                            </td>
                         </tr>
                         <tr>
                             <th>Pembayaran</th>

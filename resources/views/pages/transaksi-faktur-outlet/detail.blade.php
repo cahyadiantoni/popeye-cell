@@ -89,9 +89,30 @@
                             <th>Total Bayar</th>
                             <td>Rp. {{ number_format($totalNominal, 0, ',', '.') }}</td>
                         </tr>
+                        @php
+                            $sisa = $faktur->total - $totalNominal;
+                        @endphp
                         <tr>
-                            <th>Sisa Hutang</th>
-                            <td>Rp. {{ number_format($faktur->total - $totalNominal, 0, ',', '.') }}</td>
+                            <th>
+                                @if ($sisa < 0)
+                                    Lebih Bayar
+                                @else
+                                    Sisa Hutang
+                                @endif
+                            </th>
+                            <td>
+                                @if ($sisa < 0)
+                                    <span style="color: green; font-weight: bold;">
+                                        Rp. {{ number_format(abs($sisa), 0, ',', '.') }}
+                                    </span>
+                                @elseif ($sisa > 0)
+                                    <span style="color: red; font-weight: bold;">
+                                        Rp. {{ number_format($sisa, 0, ',', '.') }}
+                                    </span>
+                                @else
+                                    Rp. {{ number_format($sisa, 0, ',', '.') }}
+                                @endif
+                            </td>
                         </tr>
                         <tr>
                             <th>Pembayaran</th>
