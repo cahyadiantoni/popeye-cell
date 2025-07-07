@@ -85,6 +85,18 @@
                             <th>Grade</th>
                             <td>{{ $faktur->grade }}</td>
                         </tr>
+                        @if($faktur->potongan_kondisi > 0)
+                            <tr>
+                                <th>Potongan Kondisi</th>
+                                <td>- Rp. {{ number_format($faktur->potongan_kondisi, 0, ',', '.') }}</td>
+                            </tr>
+                        @endif
+                        @if($faktur->diskon > 0)
+                            <tr>
+                                <th>Diskon</th>
+                                <td>{{ $faktur->diskon }}%</td>
+                            </tr>
+                        @endif
                         <tr>
                             <th>Total Harga</th>
                             <td>Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>
@@ -270,7 +282,45 @@
                             @endforeach
                         </tbody>
                     </table>
-                    <h4><strong>Total:</strong> Rp. {{ number_format($faktur->total, 0, ',', '.') }}</h4>
+                    <div class="d-flex justify-content-end mt-3">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tbody>
+                                    @php
+                                        $subtotal = $transaksiJuals->sum('harga');
+                                    @endphp
+
+                                    @if($faktur->potongan_kondisi > 0 || $faktur->diskon > 0)
+                                    <tr>
+                                        <th class="text-start">Subtotal</th>
+                                        <td class="text-end">Rp. {{ number_format($subtotal, 0, ',', '.') }}</td>
+                                    </tr>
+                                    @endif
+                                    @if($faktur->potongan_kondisi > 0)
+                                    <tr>
+                                        <th class="text-start">Potongan Kondisi</th>
+                                        <td class="text-end">- Rp. {{ number_format($faktur->potongan_kondisi, 0, ',', '.') }}</td>
+                                    </tr>
+                                    @endif
+                                    @if($faktur->diskon > 0)
+                                        @php
+                                            $hargaSetelahPotongan = $subtotal - $faktur->potongan_kondisi;
+                                            $diskonAmount = ($hargaSetelahPotongan * $faktur->diskon) / 100;
+                                        @endphp
+                                    <tr>
+                                        <th class="text-start">Diskon ({{ $faktur->diskon }}%)</th>
+                                        <td class="text-end">- Rp. {{ number_format($diskonAmount, 0, ',', '.') }}</td>
+                                    </tr>
+                                    @endif
+
+                                    <tr class="table-info">
+                                        <th class="text-start h4">Total Akhir</th>
+                                        <td class="text-end h4"><strong>Rp. {{ number_format($faktur->total, 0, ',', '.') }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

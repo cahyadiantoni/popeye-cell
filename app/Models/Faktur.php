@@ -19,6 +19,8 @@ class Faktur extends Model
         'tgl_jual',
         'petugas',
         'total',
+        'potongan_kondisi',
+        'diskon',
         'grade',
         'keterangan',
         'is_finish',

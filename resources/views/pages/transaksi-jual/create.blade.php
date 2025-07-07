@@ -111,6 +111,20 @@
                                         </div>
                                     </div>
                                     <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Potongan Kondisi</label>
+                                        <div class="col-sm-10">
+                                            <input type="number" id="potongan_kondisi" name="potongan_kondisi" class="form-control" placeholder="Ketik nominal potongan (jika ada)">
+                                            <small class="form-text text-muted" id="potongan_kondisi_display">Rp. 0</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-sm-2 col-form-label">Diskon (%)</label>
+                                        <div class="col-sm-10">
+                                            <input type="number" id="diskon" name="diskon" class="form-control" placeholder="Ketik diskon dalam persen (contoh: 5 untuk 5%)">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
                                         <div class="sub-title">Masukan bukti transfer di bawah (opsional)!</div>
                                         <input type="file" name="foto">
                                     </div>
@@ -148,6 +162,11 @@
             $('#nominal').on('input', function() {
                 const value = $(this).val();
                 $('#nominal_display').text(formatCurrency(value));
+            });
+
+            $('#potongan_kondisi').on('input', function() {
+                const value = $(this).val();
+                $('#potongan_kondisi_display').text(formatCurrency(value));
             });
         });
     </script>

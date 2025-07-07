@@ -82,6 +82,8 @@ class TransaksiController extends Controller
             'pembeli' => 'required|string',
             'petugas' => 'required|string',
             'grade' => 'required|string',
+            'potongan_kondisi' => 'nullable|numeric|min:0',
+            'diskon' => 'nullable|numeric|min:0|max:100',
         ]);
 
         // 2. Cek Duplikat Nomor Faktur di Database
@@ -92,11 +94,10 @@ class TransaksiController extends Controller
 
         // Inisialisasi variabel
         $errors = [];
-        $totalHargaJual = 0;
-        $dataToProcess = []; 
-        $processedLokSpkInFile = []; 
+        $totalHargaJual = 0; // Ini akan menjadi subtotal sebelum diskon/potongan
+        $dataToProcess = [];
+        $processedLokSpkInFile = [];
 
-        // Ambil gudang_id dari user yang sedang login
         $gudangId = optional(Auth::user())->gudang_id;
 
         if (!$gudangId) {
@@ -108,57 +109,59 @@ class TransaksiController extends Controller
         $data = Excel::toArray([], $file);
 
         foreach ($data[0] as $index => $row) {
-            // Lewati baris header
-            if ($index === 0) continue;
+            if ($index === 0) continue; // Lewati header
 
-            // Pastikan kolom yang dibutuhkan ada isinya
             if (empty($row[0]) || !isset($row[1])) {
                 $errors[] = "Baris " . ($index + 1) . ": Data tidak lengkap (Lok SPK atau harga jual kosong).";
                 continue;
             }
-            
+
             $lokSpk = $row[0];
             $hargaJual = $row[1] * 1000;
 
-            // Cek duplikat Lok SPK di dalam file yang sama
             if (in_array($lokSpk, $processedLokSpkInFile)) {
                 $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
                 continue;
             }
             $processedLokSpkInFile[] = $lokSpk;
 
-            // Cari barang di database
             $barang = Barang::where('lok_spk', $lokSpk)->first();
 
             if (!$barang) {
                 $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan di database.";
-            } elseif ($barang->gudang_id != $gudangId) { 
+            } elseif ($barang->gudang_id != $gudangId) {
                 $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' tidak terdaftar di gudang Anda.";
-            } elseif ($barang->status_barang != 1) { 
+            } elseif ($barang->status_barang != 1) {
                 $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' sudah terjual atau statusnya tidak valid.";
             } else {
-                $dataToProcess[] = [
-                    'lok_spk' => $lokSpk,
-                    'harga_jual' => $hargaJual,
-                ];
-                $totalHargaJual += $hargaJual;
+                $dataToProcess[] = ['lok_spk' => $lokSpk, 'harga_jual' => $hargaJual];
+                $totalHargaJual += $hargaJual; // Akumulasi subtotal
             }
         }
 
         // 4. TITIK KRITIS: Cek apakah ada error terkumpul
-        // Jika ada error, batalkan semua proses dan kembalikan pesan error.
         if (!empty($errors)) {
             return redirect()->back()->with('errors', $errors)->withInput();
         }
 
-        // 5. Cek apakah ada data yang valid untuk diproses setelah validasi
+        // 5. Cek apakah ada data yang valid untuk diproses
         if (empty($dataToProcess)) {
-            return redirect()->back()
-                ->with('error', 'Gagal disimpan: Tidak ada data yang valid untuk diproses di dalam file.')
-                ->withInput();
+            return redirect()->back()->with('error', 'Gagal disimpan: Tidak ada data yang valid untuk diproses di dalam file.')->withInput();
         }
 
-        // 6. JIKA SEMUA VALID: Lakukan Operasi Database (Sangat direkomendasikan menggunakan transaksi)
+        // PERHITUNGAN TOTAL AKHIR
+        $potonganKondisi = $request->input('potongan_kondisi', 0);
+        $diskonPersen = $request->input('diskon', 0);
+
+        $hargaSetelahPotongan = $totalHargaJual - $potonganKondisi;
+
+        $diskonAmount = ($hargaSetelahPotongan * $diskonPersen) / 100;
+
+        $finalTotal = $hargaSetelahPotongan - $diskonAmount;
+
+        $finalTotal = ceil(max(0, $finalTotal));
+
+        // 6. JIKA SEMUA VALID: Lakukan Operasi Database
         DB::beginTransaction();
         try {
             $newFaktur = Faktur::create([
@@ -168,17 +171,19 @@ class TransaksiController extends Controller
                 'petugas' => $request->input('petugas'),
                 'grade' => $request->input('grade'),
                 'keterangan' => $request->input('keterangan'),
-                'total' => $totalHargaJual,
+                'total' => $finalTotal,
+                'potongan_kondisi' => $potonganKondisi ?? 0,
+                'diskon' => $diskonPersen ?? 0,
             ]);
 
             foreach ($dataToProcess as $item) {
                 $tipe = Barang::where('lok_spk', $item['lok_spk'])->value('tipe');
-                
+
                 $negoan = Negoan::where('tipe', $tipe)
-                        ->where('grade', $request->input('grade'))
-                        ->where('status', 1)
-                        ->orderBy('updated_at', 'desc')
-                        ->first();
+                    ->where('grade', $request->input('grade'))
+                    ->where('status', 1)
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
 
                 Barang::where('lok_spk', $item['lok_spk'])->update([
                     'no_faktur' => $newFaktur->nomor_faktur,
@@ -193,33 +198,31 @@ class TransaksiController extends Controller
                     'harga_acc' => $negoan->harga_acc ?? 0,
                 ]);
             }
-            
+
             if ($request->hasFile('foto') && $request->filled('nominal')) {
                 $path = $request->file('foto')->store('faktur_bukti', 'public');
-                
+
                 FakturBukti::create([
                     't_faktur_id' => $newFaktur->id,
                     'nominal' => $request->input('nominal'),
                     'foto' => $path
                 ]);
-                
+
                 $totalNominal = FakturBukti::where('t_faktur_id', $newFaktur->id)->sum('nominal');
-                
+
                 $newFaktur->is_lunas = ($totalNominal >= $newFaktur->total) ? 1 : 0;
-                $newFaktur->save(); // Gunakan save() karena ini adalah instance yang sudah ada
+                $newFaktur->save();
             }
 
-            DB::commit(); // Semua query berhasil, simpan perubahan secara permanen
+            DB::commit();
 
             return redirect()->route('transaksi-faktur.show', ['nomor_faktur' => $newFaktur->nomor_faktur])
                 ->with('success', 'Faktur berhasil disimpan. ' . count($dataToProcess) . ' barang berhasil diproses.');
-
         } catch (\Exception $e) {
-            DB::rollBack(); // Terjadi kesalahan saat menyimpan, batalkan semua query
+            DB::rollBack();
 
-            // Log error $e->getMessage() untuk debugging
             return redirect()->back()
-                ->with('error', 'Terjadi kesalahan server saat mencoba menyimpan data. Semua perubahan telah dibatalkan. Pesan: ' . $e->getMessage())
+                ->with('error', 'Terjadi kesalahan server saat mencoba menyimpan data. Pesan: ' . $e->getMessage())
                 ->withInput();
         }
     }

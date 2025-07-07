@@ -16,7 +16,6 @@ class SingleFakturSheet implements FromArray, WithTitle, WithHeadings, WithStyle
 {
     protected $faktur;
     protected $title;
-    protected $drawings = [];
 
     public function __construct($faktur, $title)
     {
@@ -38,8 +37,8 @@ class SingleFakturSheet implements FromArray, WithTitle, WithHeadings, WithStyle
             ['Petugas', $this->faktur->petugas],
             ['Grade', $this->faktur->grade],
             ['Keterangan', $this->faktur->keterangan],
-            [], // empty row for spacing
-            ['No', 'Lok Spk', 'Merk Tipe', 'Harga', 'Sub Total'], // Item table header
+            [], // baris kosong untuk spasi
+            ['No', 'Lok Spk', 'Merk Tipe', 'Harga', 'Sub Total'], // Header tabel barang
         ];
     }
 
@@ -47,20 +46,39 @@ class SingleFakturSheet implements FromArray, WithTitle, WithHeadings, WithStyle
     {
         $rows = [];
 
-        // Add items
+        // Menambahkan baris data barang
         foreach ($this->faktur->transaksiJuals as $index => $t) {
             $rows[] = [
                 $index + 1,
                 $t->lok_spk,
                 $t->barang->tipe ?? '-',
-                $t->harga, // Keep original value
-                $t->subtotal, // Keep original value
+                $t->harga,
+                $t->subtotal,
             ];
         }
 
-        $rows[] = ['Total Harga Keseluruhan', '', '', '', $this->faktur->totalHarga];
+        // Menambahkan baris kosong sebelum rincian total
+        $rows[] = [];
 
-        // Add proof of transfer section
+        // Menambahkan rincian subtotal, potongan, dan diskon jika ada
+        if ($this->faktur->potongan_kondisi > 0 || $this->faktur->diskon > 0) {
+            $rows[] = ['', '', '', 'Subtotal', $this->faktur->totalHarga];
+        }
+
+        if ($this->faktur->potongan_kondisi > 0) {
+            $rows[] = ['', '', '', 'Potongan Kondisi', -$this->faktur->potongan_kondisi];
+        }
+        
+        if ($this->faktur->diskon > 0) {
+            $hargaSetelahPotongan = $this->faktur->totalHarga - $this->faktur->potongan_kondisi;
+            $diskonAmount = ($hargaSetelahPotongan * $this->faktur->diskon) / 100;
+            $rows[] = ['', '', '', 'Diskon (' . $this->faktur->diskon . '%)', -$diskonAmount];
+        }
+
+        // Menambahkan baris Total Akhir yang sudah benar dari $faktur->total
+        $rows[] = ['Total Harga Keseluruhan', '', '', '', $this->faktur->total];
+
+        // Menambahkan bagian Bukti Transfer jika ada
         if (!$this->faktur->bukti->isEmpty()) {
             $rows[] = [''];
             $rows[] = [''];
@@ -79,131 +97,109 @@ class SingleFakturSheet implements FromArray, WithTitle, WithHeadings, WithStyle
 
     public function styles(Worksheet $sheet)
     {
-        // Header styles (invoice info) - Blue background
+        // Style Header Info Faktur (latar biru)
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 12],
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
-            'borders' => [
-                'outline' => [
-                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000'],
-                ],
-            ],
+            'borders' => ['outline' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
         ];
-
-        // Apply header style to the first 6 rows (invoice info)
         for ($i = 1; $i <= 6; $i++) {
-            $sheet->getStyle('A'.$i.':B'.$i)->applyFromArray($headerStyle);
-            $sheet->getStyle('A'.$i.':B'.$i)->getAlignment()->setVertical('center');
+            $sheet->getStyle('A'.$i.':B'.$i)->applyFromArray($headerStyle)->getAlignment()->setVertical('center');
         }
 
-        // Item table header style - Green background
+        // Style Header Tabel Barang (latar hijau)
         $itemHeaderStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 12],
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '70AD47']],
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000'],
-                ],
-            ],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
             'alignment' => ['vertical' => 'center'],
         ];
-
-        // Apply item header style (row 8)
         $sheet->getStyle('A8:E8')->applyFromArray($itemHeaderStyle);
+        $sheet->getRowDimension(8)->setRowHeight(25);
 
-        // Item table body style
+        // Style Badan Tabel Barang
         $itemBodyStyle = [
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000'],
-                ],
-            ],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
             'alignment' => ['vertical' => 'center'],
         ];
-
-        // Determine how many items we have
         $itemCount = count($this->faktur->transaksiJuals);
         if ($itemCount > 0) {
             $sheet->getStyle('A9:E'.(9 + $itemCount - 1))->applyFromArray($itemBodyStyle);
-            
-            // Format number columns as currency without changing the value
-            $sheet->getStyle('D9:E'.(9 + $itemCount + 2))->getNumberFormat()->setFormatCode('"Rp"#,##0;-"Rp"#,##0');
         }
+        
+        // --- LOGIKA DINAMIS UNTUK STYLE TOTAL ---
+        
+        $startOfTotalSection = 9 + $itemCount + 1; // Baris setelah item + spasi kosong
+        $finalTotalRow = $startOfTotalSection;
+        if ($this->faktur->potongan_kondisi > 0 || $this->faktur->diskon > 0) $finalTotalRow++;
+        if ($this->faktur->potongan_kondisi > 0) $finalTotalRow++;
+        if ($this->faktur->diskon > 0) $finalTotalRow++;
 
-        // Total row style - Bold with gray background
-        $totalRow = 9 + $itemCount;
-        $sheet->getStyle('A'.$totalRow.':E'.$totalRow)->applyFromArray([
+        // Format angka sebagai mata uang Rupiah dari item hingga total akhir
+        $sheet->getStyle('D9:E'.$finalTotalRow)->getNumberFormat()->setFormatCode('"Rp"#,##0;-"Rp"#,##0');
+        // Rata kanan untuk kolom angka di bagian total
+        $sheet->getStyle('E'.$startOfTotalSection.':E'.$finalTotalRow)->getAlignment()->setHorizontal('right');
+        // Rata kanan untuk label di bagian total
+        $sheet->getStyle('D'.$startOfTotalSection.':D'.$finalTotalRow)->getAlignment()->setHorizontal('right');
+
+        // Style untuk baris Total Akhir (latar abu-abu)
+        $sheet->getStyle('A'.$finalTotalRow.':E'.$finalTotalRow)->applyFromArray([
             'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '000000']],
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D9D9D9']],
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000'],
-                ],
-            ],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
             'alignment' => ['vertical' => 'center'],
         ]);
+        
+        // Menggabungkan sel untuk label total
+        $sheet->mergeCells('A'.$finalTotalRow.':D'.$finalTotalRow);
+        $sheet->getStyle('A'.$finalTotalRow)->getAlignment()->setHorizontal('center');
+        $sheet->getRowDimension($finalTotalRow)->setRowHeight(25);
 
-        // Merge cells for total label
-        $sheet->mergeCells('A'.$totalRow.':D'.$totalRow);
-        $sheet->getStyle('A'.$totalRow)->getAlignment()->setHorizontal('center');
-        $sheet->getStyle('E'.$totalRow)->getAlignment()->setHorizontal('right');
-
-        // Proof of transfer header style - Dark red background
+        // --- Penyesuaian Style Bukti Transfer ---
         if (!$this->faktur->bukti->isEmpty()) {
-            $proofHeaderRow = $totalRow + 3;
+            $proofHeaderRow = $finalTotalRow + 3;
             $sheet->getStyle('A'.$proofHeaderRow.':C'.$proofHeaderRow)->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 12],
                 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'C00000']],
                 'alignment' => ['horizontal' => 'center', 'vertical' => 'center'],
             ]);
             $sheet->mergeCells('A'.$proofHeaderRow.':C'.$proofHeaderRow);
+            $sheet->getRowDimension($proofHeaderRow)->setRowHeight(25);
 
-            // Proof details style - Light orange background
             $proofDetailsStyle = [
                 'font' => ['bold' => true],
                 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8CBAD']],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                        'color' => ['rgb' => '000000'],
-                    ],
-                ],
+                'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
                 'alignment' => ['vertical' => 'center', 'wrapText' => true],
             ];
-
             $proofStartRow = $proofHeaderRow + 1;
             foreach ($this->faktur->bukti as $index => $bukti) {
                 $sheet->getStyle('A'.$proofStartRow.':C'.$proofStartRow)->applyFromArray($proofDetailsStyle);
-                $proofStartRow += 3; // Move to next proof (each proof has 3 rows: details + 2 empty)
+                $proofStartRow += 3;
             }
         }
-
-        // Auto-size columns
+        
+        // Auto-size semua kolom
         foreach (range('A', 'E') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
-
-        // Set row heights for better appearance
-        $sheet->getRowDimension(8)->setRowHeight(25); // Item header row
-        $sheet->getRowDimension($totalRow)->setRowHeight(25); // Total row
-        if (!$this->faktur->bukti->isEmpty()) {
-            $sheet->getRowDimension($totalRow + 3)->setRowHeight(25); // Proof header row
-        }
-
-        return [];
     }
 
     public function drawings()
     {
         $drawings = [];
-        $itemCount = count($this->faktur->transaksiJuals);
-        $startRow = 9 + $itemCount + 6; // Starting row for proof images
         
         if (!$this->faktur->bukti->isEmpty()) {
+            // Kalkulasi posisi baris awal untuk gambar bukti
+            $itemCount = count($this->faktur->transaksiJuals);
+            $startOfTotalSection = 9 + $itemCount;
+            $finalTotalRow = $startOfTotalSection;
+            if ($this->faktur->potongan_kondisi > 0 || $this->faktur->diskon > 0) $finalTotalRow++;
+            if ($this->faktur->potongan_kondisi > 0) $finalTotalRow++;
+            if ($this->faktur->diskon > 0) $finalTotalRow++;
+            
+            $startRowForDrawing = $finalTotalRow + 5; // Posisi mulai untuk gambar pertama
+
             foreach ($this->faktur->bukti as $index => $bukti) {
                 if (file_exists(storage_path('app/public/' . $bukti->foto))) {
                     $drawing = new Drawing();
@@ -211,7 +207,8 @@ class SingleFakturSheet implements FromArray, WithTitle, WithHeadings, WithStyle
                     $drawing->setDescription('Bukti Transfer');
                     $drawing->setPath(storage_path('app/public/' . $bukti->foto));
                     $drawing->setHeight(500);
-                    $drawing->setCoordinates('B' . ($startRow + ($index * 4))); // 4 rows per proof (header + details + image + space)
+                    // Posisi gambar disesuaikan dengan loop
+                    $drawing->setCoordinates('B' . ($startRowForDrawing + ($index * 4)));
                     $drawing->setOffsetX(10);
                     $drawing->setOffsetY(10);
                     $drawings[] = $drawing;

@@ -59,8 +59,45 @@
                     @endforeach
                 </tbody>
             </table>
+            
+            <table class="info-table" style="margin-top: 10px;">
+                <tr>
+                    <td style="width: 50%;"></td>
+                    <td style="width: 50%; text-align: right;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            @if($faktur->potongan_kondisi > 0 || $faktur->diskon > 0)
+                                <tr>
+                                    <td style="text-align: left; padding: 2px;">Subtotal</td>
+                                    <td style="padding: 2px;">Rp. {{ number_format($faktur->totalHarga, 0, ',', '.') }}</td>
+                                </tr>
+                            @endif
 
-            <div class="total">Total Harga Keseluruhan: Rp. {{ number_format($faktur->totalHarga, 0, ',', '.') }}</div>
+                            @if($faktur->potongan_kondisi > 0)
+                                <tr>
+                                    <td style="text-align: left; padding: 2px;">Potongan Kondisi</td>
+                                    <td style="padding: 2px;">- Rp. {{ number_format($faktur->potongan_kondisi, 0, ',', '.') }}</td>
+                                </tr>
+                            @endif
+
+                            @if($faktur->diskon > 0)
+                                @php
+                                    $hargaSetelahPotongan = $faktur->totalHarga - $faktur->potongan_kondisi;
+                                    $diskonAmount = ($hargaSetelahPotongan * $faktur->diskon) / 100;
+                                @endphp
+                                <tr>
+                                    <td style="text-align: left; padding: 2px;">Diskon ({{ $faktur->diskon }}%)</td>
+                                    <td style="padding: 2px;">- Rp. {{ number_format($diskonAmount, 0, ',', '.') }}</td>
+                                </tr>
+                            @endif
+
+                            <tr class="total">
+                                <td style="text-align: left; padding: 5px; border-top: 1px solid black; border-bottom: 1px solid black; font-weight:bold;">Total Akhir</td>
+                                <td style="padding: 5px; border-top: 1px solid black; border-bottom: 1px solid black; font-weight:bold;">Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
             <div class="footer">Terima Kasih telah Berbelanja dengan Kami!</div>
         </div>
 
