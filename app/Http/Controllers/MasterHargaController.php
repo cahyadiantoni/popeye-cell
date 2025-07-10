@@ -10,17 +10,16 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\MasterHargaPivotExport;
+use App\Rules\UniqueMasterHargaTipe;
 
 class MasterHargaController extends Controller
 {
-    public function index(Request $request) 
+    public function index(Request $request)
     {
-        // 1. Ambil input filter dari request
         $selectedGrade = $request->input('grade');
         $filterStartDate = $request->input('start_date');
         $filterEndDate = $request->input('end_date');
 
-        // 2. Generate header tanggal dinamis berdasarkan filter atau default
         $tanggalHeaders = collect();
         $startDate = $filterStartDate ? Carbon::parse($filterStartDate) : Carbon::create(2025, 5, 20);
         $endDate = $filterEndDate ? Carbon::parse($filterEndDate) : Carbon::now();
@@ -34,24 +33,20 @@ class MasterHargaController extends Controller
             }
         }
         
-        // 3. Ambil data harga dengan query yang sudah difilter
         $query = MasterHarga::query();
 
         if ($selectedGrade) {
             $query->where('grade', $selectedGrade);
         }
-        // Filter data berdasarkan rentang tanggal yang digunakan untuk header
-        // Ini memastikan data yang diambil relevan dengan kolom yang ditampilkan
+        
         if ($tanggalHeaders->isNotEmpty()) {
             $query->whereBetween('tanggal', [$tanggalHeaders->first()->format('Y-m-d'), $tanggalHeaders->last()->format('Y-m-d')]);
         } else {
-            // Jika tidak ada header tanggal (rentang tidak valid), jangan ambil data sama sekali
             $query->whereRaw('1 = 0');
         }
 
         $semuaHarga = $query->get();
 
-        // 4. Olah data menjadi format pivot (logika ini tidak berubah)
         $dataPivot = $semuaHarga
             ->groupBy(fn($item) => $item->tipe . '|' . $item->grade)
             ->map(function($group) {
@@ -65,10 +60,8 @@ class MasterHargaController extends Controller
             })
             ->sortBy(['tipe', 'grade'])->values();
 
-        // 5. Ambil daftar grade unik untuk dropdown filter
         $grades = MasterHarga::select('grade')->distinct()->orderBy('grade')->pluck('grade');
 
-        // 6. Kirim semua data yang dibutuhkan ke view
         return view('pages.master-harga.index', [
             'dataPivot' => $dataPivot,
             'tanggalHeaders' => $tanggalHeaders,
@@ -77,6 +70,42 @@ class MasterHargaController extends Controller
             'filterStartDate' => $filterStartDate,
             'filterEndDate' => $filterEndDate,
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        // 1. Validasi input dari form
+        $request->validate([
+            'tipe' => [
+                'required', 
+                'string', 
+                'max:255', 
+                new UniqueMasterHargaTipe($request->input('grade')) 
+            ],
+            'grade' => 'required|string|max:255',
+            'harga' => 'required|numeric|min:0',
+            'tanggal' => 'required|date',
+        ]);
+
+        // 2. Proses data harga (jangan lupa dikali 1000)
+        $harga = $request->input('harga') * 1000;
+
+        // 3. Gunakan updateOrCreate untuk mencegah duplikat dan memungkinkan edit
+        MasterHarga::updateOrCreate(
+            [
+                // Kondisi pencarian: jika ada data dengan 3 kombinasi ini, maka akan di-update
+                'tipe'    => $request->input('tipe'),
+                'grade'   => $request->input('grade'),
+                'tanggal' => $request->input('tanggal'),
+            ],
+            [
+                // Nilai yang akan di-update atau dibuat
+                'harga'   => $harga,
+            ]
+        );
+
+        // 4. Redirect kembali ke halaman index dengan pesan sukses
+        return redirect()->route('master-harga.index')->with('success', 'Data harga berhasil disimpan!');
     }
 
     public function export()
@@ -164,5 +193,49 @@ class MasterHargaController extends Controller
         // Pesan laporan yang baru dan lebih informatif
         $message = "Proses impor selesai. Data baru dibuat: {$createdCount}, Data diperbarui: {$updatedCount}.";
         return response()->json(['success' => true, 'message' => $message]);
+    }
+
+    public function updateCell(Request $request)
+    {
+        // 1. Validasi diubah: 'harga' sekarang boleh kosong (nullable)
+        $validator = Validator::make($request->all(), [
+            'tipe'      => 'required|string',
+            'grade'     => 'required|string',
+            'tanggal'   => 'required|date_format:Y-m-d',
+            'harga'     => 'nullable|numeric|min:0', // Diubah dari 'required' menjadi 'nullable'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $harga = $request->input('harga');
+        $kondisi = [
+            'tipe'    => $request->input('tipe'),
+            'grade'   => $request->input('grade'),
+            'tanggal' => $request->input('tanggal'),
+        ];
+
+        // 2. Logika baru: Cek apakah input harga kosong atau tidak
+        if (is_null($harga) || $harga === '') {
+            // JIKA HARGA KOSONG, HAPUS DATA
+            MasterHarga::where($kondisi)->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Harga berhasil dihapus!',
+                'formatted_harga' => '-' // Kirim kembali strip untuk ditampilkan
+            ]);
+
+        } else {
+            // JIKA HARGA ADA, BUAT ATAU UPDATE DATA (seperti sebelumnya)
+            $data = MasterHarga::updateOrCreate($kondisi, ['harga' => $harga]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Harga berhasil diperbarui!',
+                'formatted_harga' => number_format($data->harga, 0, ',', '.')
+            ]);
+        }
     }
 }

@@ -77,8 +77,10 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::post('/riwayat-barang/{history}/hapus-foto', [RiwayatBarangController::class, 'hapusFoto'])->name('riwayat-barang.hapusFoto');
 
     Route::get('/master-harga', [MasterHargaController::class, 'index'])->name('master-harga.index');
+    Route::post('/master-harga', [MasterHargaController::class, 'store'])->name('master-harga.store');
     Route::get('/master-harga/export', [MasterHargaController::class, 'export'])->name('master-harga.export')->middleware('auth');
     Route::post('/master-harga/import-pivot', [MasterHargaController::class, 'importPivot'])->name('master-harga.importPivot');
+    Route::post('/master-harga/update-cell', [MasterHargaController::class, 'updateCell'])->name('master-harga.updateCell')->middleware('auth');
 
     // Route::post('/kirim-barang', [StokGudangController::class, 'kirimBarang'])->middleware('auth')->name('kirimBarang');
     Route::delete('/kirim-barang/{id}', [KirimBarangController::class, 'destroy'])->name('kirim-barang.delete');

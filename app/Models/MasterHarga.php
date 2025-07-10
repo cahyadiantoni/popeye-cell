@@ -39,4 +39,34 @@ class MasterHarga extends Model
         'harga' => 'double', // Pastikan 'harga' selalu bertipe double/float
         'tanggal' => 'date',   // Pastikan 'tanggal' selalu menjadi objek Carbon (objek tanggal)
     ];
+
+    protected static function booted()
+    {
+        // Setiap kali model akan disimpan (creating atau updating)
+        static::saving(function ($masterHarga) {
+            // Panggil helper kita untuk menormalkan 'tipe' dan isi kolom baru
+            $masterHarga->tipe_normalisasi = self::normalizeString($masterHarga->tipe);
+        });
+    }
+
+    public static function normalizeString($value)
+    {
+        // 1. Ubah ke huruf kecil
+        $lower = strtolower($value);
+
+        // 2. Hapus semua karakter selain huruf, angka, dan spasi
+        $alphanumeric = preg_replace('/[^a-z0-9\s]/', '', $lower);
+
+        // 3. Pecah menjadi kata-kata
+        $words = explode(' ', $alphanumeric);
+
+        // 4. Hapus kata-kata yang kosong (akibat spasi ganda) dan duplikat
+        $uniqueWords = array_unique(array_filter($words));
+
+        // 5. Urutkan kata-kata berdasarkan abjad (agar "Redmi Note" sama dengan "Note Redmi")
+        sort($uniqueWords);
+
+        // 6. Gabungkan kembali menjadi satu string tanpa spasi
+        return implode('', $uniqueWords);
+    }
 }
