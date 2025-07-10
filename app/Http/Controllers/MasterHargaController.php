@@ -238,4 +238,56 @@ class MasterHargaController extends Controller
             ]);
         }
     }
+
+    public function updateRow(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'original_tipe'  => 'required|string',
+            'original_grade' => 'required|string',
+            'new_tipe'       => 'required|string|max:255',
+            'new_grade'      => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $originalTipe = $request->input('original_tipe');
+        $originalGrade = $request->input('original_grade');
+        $newTipe = $request->input('new_tipe');
+        $newGrade = $request->input('new_grade');
+
+        $normOldTipe = MasterHarga::normalizeString($originalTipe);
+        $normOldGrade = MasterHarga::normalizeString($originalGrade);
+        $normNewTipe = MasterHarga::normalizeString($newTipe);
+        $normNewGrade = MasterHarga::normalizeString($newGrade);
+
+        if ($normOldTipe === $normNewTipe && $normOldGrade === $normNewGrade) {
+            return response()->json(['success' => true, 'message' => 'Tidak ada perubahan.']);
+        }
+
+        $conflictingTipes = MasterHarga::where('tipe_normalisasi', $normNewTipe)->get();
+        if ($conflictingTipes->isNotEmpty()) {
+            foreach ($conflictingTipes as $record) {
+                $normalizedDbGrade = MasterHarga::normalizeString($record->grade);
+                if ($normalizedDbGrade === $normNewGrade) {
+                    return response()->json(['success' => false, 'message' => 'Kombinasi Tipe dan Grade tersebut sudah ada.'], 422);
+                }
+            }
+        }
+        
+        // Ambil semua record yang cocok dengan KODE YANG SUDAH DIPERBAIKI
+        $recordsToUpdate = MasterHarga::where('tipe', $originalTipe)
+                                    ->where('grade', $originalGrade) // <-- PERBAIKAN DI SINI
+                                    ->get();
+
+        // Loop dan simpan satu per satu untuk memicu model event 'saving'
+        foreach ($recordsToUpdate as $record) {
+            $record->tipe = $newTipe;
+            $record->grade = $newGrade;
+            $record->save(); // Ini akan memastikan 'tipe_normalisasi' juga ter-update
+        }
+
+        return response()->json(['success' => true, 'message' => 'Data baris berhasil diperbarui. Halaman akan dimuat ulang.']);
+    }
 }

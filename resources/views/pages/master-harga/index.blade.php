@@ -6,7 +6,6 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <style>
-    /* Mengatasi masalah alignment pada tabel yang kompleks */
     table.dataTable {
         width: 100% !important;
         margin: 0 auto;
@@ -19,8 +18,6 @@
     .dataTables_scrollHead {
         margin-bottom: -1px !important;
     }
-
-    /* Style untuk sel yang bisa diedit */
     .editable-cell {
         cursor: pointer;
         position: relative;
@@ -40,6 +37,14 @@
         padding: 5px;
         display: block;
         min-height: 25px;
+    }
+    .editable-key {
+        cursor: pointer;
+        font-weight: 500;
+    }
+    .editable-key:hover {
+        background-color: #e9ecef;
+        text-decoration: underline;
     }
 </style>
 
@@ -134,8 +139,8 @@
                                     <tbody>
                                         @foreach($dataPivot as $row)
                                             <tr>
-                                                <td>{{ $row->tipe }}</td>
-                                                <td>{{ $row->grade }}</td>
+                                                <td class="editable-key" data-field="tipe" data-original-value="{{ $row->tipe }}">{{ $row->tipe }}</td>
+                                                <td class="editable-key" data-field="grade" data-original-value="{{ $row->grade }}">{{ $row->grade }}</td>
                                                 @foreach($tanggalHeaders as $tanggal)
                                                     @php
                                                         $tanggalKey = $tanggal->format('Y-m-d');
@@ -204,9 +209,7 @@
                     <div class="form-group mb-3">
                         <label for="harga" class="form-label">Harga</label>
                         <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="number" class="form-control @error('harga') is-invalid @enderror" name="harga" placeholder="Contoh: 150" value="{{ old('harga') }}" required>
-                            <span class="input-group-text">.000</span>
+                            <input type="number" class="form-control @error('harga') is-invalid @enderror" name="harga" placeholder="Contoh: 150000" value="{{ old('harga') }}" required>
                         </div>
                         @error('harga')
                             <small class="text-danger d-block mt-1">{{ $message }}</small>
@@ -361,6 +364,79 @@ $(document).ready(function() {
                 }
             });
         });
+    });
+
+    var originalRowData = {};
+    $('#tableMasterHarga tbody').on('click', 'td.editable-key', function() {
+        var cell = $(this);
+        if (cell.find('input').length > 0) return;
+    
+        if ($.isEmptyObject(originalRowData)) {
+            originalRowData.tipe = cell.closest('tr').find('td[data-field="tipe"]').data('original-value');
+            originalRowData.grade = cell.closest('tr').find('td[data-field="grade"]').data('original-value');
+        }
+    
+        var originalText = cell.text().trim();
+        var input = $('<input type="text" class="form-control form-control-sm">').val(originalText);
+        
+        cell.html(input);
+        input.focus();
+    
+        // Definisikan fungsi handler satu kali
+        var saveHandler = function(e) {
+            if (e.type === 'keydown' && e.which !== 13) return;
+            e.preventDefault();
+    
+            // --- PERBAIKAN UTAMA: LANGSUNG LEPASKAN EVENT LISTENER ---
+            // Ini memastikan fungsi ini hanya bisa berjalan satu kali per edit.
+            $(this).off('blur keydown', saveHandler);
+    
+            var currentRow = $(this).closest('tr');
+            var newTipe = currentRow.find('td[data-field="tipe"] input').val() || currentRow.find('td[data-field="tipe"]').text().trim();
+            var newGrade = currentRow.find('td[data-field="grade"] input').val() || currentRow.find('td[data-field="grade"]').text().trim();
+    
+            if (newTipe === originalRowData.tipe && newGrade === originalRowData.grade) {
+                currentRow.find('td.editable-key').each(function() {
+                    $(this).text($(this).data('original-value'));
+                });
+                originalRowData = {};
+                return;
+            }
+    
+            // Beri umpan balik visual bahwa proses sedang berjalan
+            currentRow.find('td[data-field="tipe"]').text('Menyimpan...');
+            currentRow.find('td[data-field="grade"]').text('...');
+    
+            $.ajax({
+                url: "{{ route('master-harga.updateRow') }}",
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    original_tipe: originalRowData.tipe,
+                    original_grade: originalRowData.grade,
+                    new_tipe: newTipe,
+                    new_grade: newGrade
+                },
+                success: function(response) {
+                    alert(response.message);
+                    if (response.success) {
+                        window.location.reload();
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.';
+                    alert('Gagal: ' + errorMsg);
+    
+                    // Jika gagal, kembalikan ke nilai semula (tanpa reload)
+                    currentRow.find('td[data-field="tipe"]').text(originalRowData.tipe);
+                    currentRow.find('td[data-field="grade"]').text(originalRowData.grade);
+                    originalRowData = {};
+                }
+            });
+        };
+    
+        // Pasang event listener
+        input.on('blur keydown', saveHandler);
     });
 });
 </script>
