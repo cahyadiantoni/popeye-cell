@@ -366,16 +366,37 @@ class TransaksiKesimpulanController extends Controller
 
     public function tandaiSudahDicek($id)
     {
-        try {
-            // Cari faktur berdasarkan nomor_faktur
-            $faktur = KesimpulanBawah::where('id', $id)->firstOrFail();
+        DB::beginTransaction();
 
-            $faktur->is_finish = 1;
-            $faktur->save();
-    
-            return redirect()->back()->with('success', 'KesimpulanBawah ditandai sudah selesai');
+        try {
+            $kesimpulan = KesimpulanBawah::with('fakturKesimpulans.faktur.transaksiJuals.barang')->findOrFail($id);
+
+            foreach ($kesimpulan->fakturKesimpulans as $fakturKesimpulan) {
+                $faktur = $fakturKesimpulan->faktur;
+
+                if ($faktur) {
+                    $faktur->is_finish = 1;
+                    $faktur->save();
+
+                    foreach ($faktur->transaksiJuals as $transaksi) {
+                        if ($transaksi->barang) {
+                            $transaksi->barang->status_barang = 2;
+                            $transaksi->barang->save();
+                        }
+                    }
+                }
+            }
+
+            $kesimpulan->is_finish = 1;
+            $kesimpulan->save();
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Kesimpulan, semua faktur terkait, dan status barang berhasil diperbarui.');
+
         } catch (\Exception $e) {
+            DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-    }   
+    }
 }
