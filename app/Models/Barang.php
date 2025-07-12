@@ -9,22 +9,11 @@ class Barang extends Model
 {
     use HasFactory;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
     protected $table = 't_barang';
     protected $primaryKey = 'lok_spk';
     public $incrementing = false;
     protected $keyType = 'string';
     
-
-    /**
-     * The attributes that are not mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'lok_spk', 'jenis', 'merek', 'tipe', 'imei', 'kelengkapan',
         'kerusakan', 'grade', 'qt_bunga', 'harga_jual', 'harga_beli',
@@ -32,7 +21,25 @@ class Barang extends Model
         'dt_beli', 'dt_lelang', 'dt_jatuh_tempo', 'dt_input', 'user_id','gudang_id','no_faktur','status_barang'
     ];
 
-    // Relasi ke Gudang
+    protected static function booted()
+    {
+        static::saving(function ($barang) {
+            $barang->tipe_normalisasi = self::normalizeString($barang->tipe);
+        });
+    }
+
+    public static function normalizeString($value)
+    {
+        if (is_null($value)) return null;
+        
+        $lower = strtolower($value);
+        $alphanumeric = preg_replace('/[^a-z0-9\s]/', '', $lower);
+        $words = explode(' ', $alphanumeric);
+        $uniqueWords = array_unique(array_filter($words));
+        sort($uniqueWords);
+        return implode('', $uniqueWords);
+    }
+
     public function gudang()
     {
         return $this->belongsTo(Gudang::class, 'gudang_id');
@@ -42,7 +49,6 @@ class Barang extends Model
     {
         return $this->belongsTo(Faktur::class, 'no_faktur', 'nomor_faktur');
     }
-
 
     public function barangs()
     {

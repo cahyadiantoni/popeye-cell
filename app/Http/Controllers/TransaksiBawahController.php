@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use App\Models\Kirim;
 use App\Models\FakturBawah;
 use App\Models\TransaksiJualBawah;
+use App\Models\HistoryEditBarang;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
@@ -81,10 +82,10 @@ class TransaksiBawahController extends Controller
         $request->validate([
             'pasted_data' => 'required|string',
             'create_conclusion' => 'required|boolean',
-            'fotos'      => 'nullable|array',
-            'fotos.*'    => 'nullable|image|max:2048',
-            'nominals'   => 'nullable|array',
-            'nominals.*' => 'nullable|numeric|min:1',
+            'fotos'       => 'nullable|array',
+            'fotos.*'     => 'nullable|image|max:2048',
+            'nominals'    => 'nullable|array',
+            'nominals.*'  => 'nullable|numeric|min:1',
         ]);
 
         // 2. Parsing data mentah dari textarea menjadi baris-baris data
@@ -163,39 +164,31 @@ class TransaksiBawahController extends Controller
                 }
             }
 
-            $tipe = $barang->tipe;
-
-            // 1. "Normalkan" string tipe dan grade dari barang yang sedang diproses.
-            $tipeNormalisasi = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($tipe));
-            $gradeNormalisasi = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($grade));
-
-            // 2. Cari di master harga dengan menormalkan kolom 'tipe' dan 'grade' di database.
-            $hargaMaster = MasterHarga::whereRaw(
-                'LOWER(REGEXP_REPLACE(tipe, "[^a-zA-Z0-9]", "")) = ?', 
-                [$tipeNormalisasi]
-            )->whereRaw(
-                'LOWER(REGEXP_REPLACE(grade, "[^a-zA-Z0-9]", "")) = ?', 
-                [$gradeNormalisasi]
-            )
-            ->orderBy('tanggal', 'desc')
-            ->first();
-
-            // 3. Jika kombinasi tipe & grade ini ada di master harga, lakukan perbandingan.
-            //    Jika tidak ada ($hargaMaster bernilai null), maka validasi ini dilewati (dianggap sesuai).
-            if ($hargaMaster) {
-                // 4. Bandingkan harga dari master dengan harga jual dari input.
-                if ($hargaMaster->harga != $hargaJual) {
-                    // Jika tidak cocok, buat pesan error dan lewati ke baris berikutnya.
-                    $errors[] = "Baris " . ($index + 1) . ": Harga jual untuk tipe '$tipe' dan grade '$grade' tidak sesuai. Harga master: " 
-                                . number_format($hargaMaster->harga) . ", Harga input: " . number_format($hargaJual) . ".";
-                    continue; // Lanjut ke iterasi berikutnya
+            // Logika baru untuk cek & update tipe barang
+            $tipeBaru = trim($row[6] ?? null);
+            if (!empty($tipeBaru)) {
+                $tipeBaruNormalisasi = Barang::normalizeString($tipeBaru);
+                if ($tipeBaruNormalisasi !== $barang->tipe_normalisasi) {
+                    $tipeLama = $barang->tipe;
+                    $barang->tipe = $tipeBaru;
+                    $barang->save();
+                    
+                    $pesanHistory = "1. tipe ($tipeLama) menjadi ($tipeBaru)";
+                    HistoryEditBarang::create([
+                        'lok_spk'   => $barang->lok_spk,
+                        'update'    => $pesanHistory,
+                        'user_id'   => Auth::id(),
+                    ]);
                 }
             }
+
+            $tipe = $barang->tipe;
+            $tipe_normalisasi = $barang->tipe_normalisasi;
 
             $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
                 ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
                 ->whereDate('t_faktur_bawah.tgl_jual', $tglJual)
-                ->where('t_barang.tipe', $tipe)
+                ->where('t_barang.tipe_normalisasi', $tipe_normalisasi)
                 ->where('t_faktur_bawah.grade', $grade)
                 ->pluck('t_jual_bawah.harga')
                 ->unique();
@@ -213,11 +206,9 @@ class TransaksiBawahController extends Controller
             return redirect()->back()->with('errors', $errors)->withInput();
         }
         
-        // Mulai transaksi database untuk memastikan konsistensi data
         try {
             DB::beginTransaction();
 
-            // 6. Buat record FakturBawah dan detail transaksinya
             $faktur = FakturBawah::create([
                 'nomor_faktur' => $nomorFakturBaru,
                 'pembeli' => $pembeli,
@@ -239,16 +230,13 @@ class TransaksiBawahController extends Controller
             }
             
             $kesimpulan = null;
-            // 7. Jika user memilih untuk membuat kesimpulan, jalankan logika pembuatan kesimpulan
             if ($request->input('create_conclusion') == '1') {
                 
-                // 7.1. Generate nomor kesimpulan baru yang unik
                 $bulanTahun = date('my', strtotime($tglJual));
                 $prefix = 'K-BW-' . $bulanTahun;
                 $count = KesimpulanBawah::where('nomor_kesimpulan', 'like', "$prefix-%")->count();
                 $nomor_kesimpulan = "$prefix-" . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
 
-                // 7.2. Buat record KesimpulanBawah dan relasinya ke faktur
                 $kesimpulan = KesimpulanBawah::create([
                     'nomor_kesimpulan' => $nomor_kesimpulan,
                     'tgl_jual' => $tglJual,
@@ -259,7 +247,6 @@ class TransaksiBawahController extends Controller
                 ]);
                 FakturKesimpulan::create(['kesimpulan_id' => $kesimpulan->id, 'faktur_id' => $faktur->id]);
 
-                // 7.3. Proses dan simpan bukti transfer jika ada
                 $totalNominal = 0;
                 if ($request->has('nominals')) {
                     foreach ($request->input('nominals') as $key => $nominal) {
@@ -276,17 +263,14 @@ class TransaksiBawahController extends Controller
                     }
                 }
 
-                // 7.4. Update status lunas pada kesimpulan berdasarkan total pembayaran
                 if ($totalNominal >= $kesimpulan->grand_total && $kesimpulan->grand_total > 0) {
                     $kesimpulan->is_lunas = 1;
                     $kesimpulan->save();
                 }
             }
             
-            // Simpan semua perubahan ke database jika tidak ada error
             DB::commit();
 
-            // 8. Redirect user ke halaman detail yang sesuai dengan pesan sukses
             if ($kesimpulan) {
                 return redirect()->route('transaksi-kesimpulan.show', ['kesimpulan_id' => $kesimpulan->id])
                     ->with('success', 'Faktur dan Kesimpulan berhasil dibuat!');
@@ -296,7 +280,6 @@ class TransaksiBawahController extends Controller
             }
 
         } catch (\Exception $e) {
-            // Batalkan semua operasi jika terjadi error
             DB::rollBack();
             return back()->withInput()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
