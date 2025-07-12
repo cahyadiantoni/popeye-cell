@@ -12,10 +12,12 @@ use Illuminate\Http\Request;
 use App\Models\Kirim;
 use App\Models\Faktur;
 use App\Models\TransaksiJual;
+use App\Models\HistoryEditFakturAtas;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
 use App\Exports\FakturExport;
+use Illuminate\Support\Facades\DB;
 
 class TransaksiFakturController extends Controller
 {
@@ -178,186 +180,104 @@ class TransaksiFakturController extends Controller
 
     public function update(Request $request, $id)
     {
+        // Validasi data input
+        $validated = $request->validate([
+            'nomor_faktur' => 'required|string|max:255|unique:t_faktur,nomor_faktur,' . $id,
+            'pembeli' => 'required|string|max:255',
+            'tgl_jual' => 'required|date',
+            'petugas' => 'required|string|max:255',
+            'grade' => 'required',
+            'keterangan' => 'nullable|string',
+        ]);
+        
         try {
-            // Validasi data input
-            $validated = $request->validate([
-                'nomor_faktur' => 'required|string|max:255|unique:t_faktur,nomor_faktur,' . $id,
-                'pembeli' => 'required|string|max:255',
-                'tgl_jual' => 'required|date',
-                'petugas' => 'required|string|max:255',
-                'grade' => 'required',
-                'keterangan' => 'nullable|string',
-            ]);            
-    
-            // Cari faktur berdasarkan nomor faktur
-            $faktur = Faktur::where('id', $id)->firstOrFail();
+            DB::transaction(function () use ($validated, $id, $request) { // <-- Mulai transaksi
+                // Cari faktur berdasarkan ID
+                $faktur = Faktur::findOrFail($id);
+                $nomorFakturLama = $faktur->nomor_faktur;
+                $perubahan = []; // Array untuk menampung deskripsi perubahan
 
-            // Simpan nomor_faktur sebelum diupdate
-            $nomorFakturLama = $faktur->nomor_faktur;
+                //--- LOGIKA UNTUK MENCATAT PERUBAHAN ---
+                if ($faktur->nomor_faktur !== $validated['nomor_faktur']) {
+                    $perubahan[] = "No Faktur diubah dari '{$faktur->nomor_faktur}' menjadi '{$validated['nomor_faktur']}'";
+                }
+                if ($faktur->pembeli !== $validated['pembeli']) {
+                    $perubahan[] = "Pembeli diubah dari '{$faktur->pembeli}' menjadi '{$validated['pembeli']}'";
+                }
+                if (Carbon::parse($faktur->tgl_jual)->notEqualTo(Carbon::parse($validated['tgl_jual']))) {
+                    $perubahan[] = "Tgl Jual diubah dari '" . Carbon::parse($faktur->tgl_jual)->format('d-m-Y') . "' menjadi '" . Carbon::parse($validated['tgl_jual'])->format('d-m-Y') . "'";
+                }
+                if ($faktur->petugas !== $validated['petugas']) {
+                    $perubahan[] = "Petugas diubah dari '{$faktur->petugas}' menjadi '{$validated['petugas']}'";
+                }
+                if ($faktur->grade !== $validated['grade']) {
+                    $perubahan[] = "Grade diubah dari '{$faktur->grade}' menjadi '{$validated['grade']}'";
+                }
+                if ($faktur->keterangan !== $validated['keterangan']) {
+                    $perubahan[] = "Keterangan diubah.";
+                }
 
-            // Update data faktur
-            $faktur->update([
-                'nomor_faktur' => $validated['nomor_faktur'],
-                'pembeli' => $validated['pembeli'],
-                'tgl_jual' => $validated['tgl_jual'],
-                'petugas' => $validated['petugas'],
-                'grade' => $validated['grade'],
-                'keterangan' => $validated['keterangan'],
-            ]);
+                // Jika ada perubahan, catat ke history
+                if (!empty($perubahan)) {
+                    HistoryEditFakturAtas::create([
+                        'faktur_id' => $faktur->id,
+                        'update'    => implode('<br>', $perubahan), // Gabungkan semua perubahan jadi 1 string
+                        'user_id'   => auth()->id(),
+                    ]);
+                }
 
-            // Update Transaksijual yang memiliki nomor_faktur lama menjadi nomor_faktur baru
-            Transaksijual::where('nomor_faktur', $nomorFakturLama)
-                ->update(['nomor_faktur' => $validated['nomor_faktur']]);
-    
-            // Flash session message
+                // Update data faktur
+                $faktur->update($validated);
+
+                // Update Transaksijual jika nomor faktur berubah
+                if ($nomorFakturLama !== $validated['nomor_faktur']) {
+                    TransaksiJual::where('nomor_faktur', $nomorFakturLama)
+                        ->update(['nomor_faktur' => $validated['nomor_faktur']]);
+                }
+            }); // <-- Selesai transaksi
+
             session()->flash('success', 'Faktur berhasil diupdate');
             return redirect()->route('transaksi-faktur.index');
         } catch (\Exception $e) {
-            // Flash session message on failure
             session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
             return redirect()->back();
         }
     }    
 
-    public function addbarang(Request $request)
-    {
-        $request->validate([
-            'filedata' => 'required|file|mimes:xlsx,xls',
-            'total' => 'required',
-            'nomor_faktur' => 'required',
-        ]);
-
-        // Inisialisasi variabel
-        $errors = [];
-        $totalHargaJual = $request->input('total');
-        $validLokSpk = [];
-        $processedLokSpk = []; // Untuk memeriksa duplikat di file Excel
-
-        // Membaca file Excel
-        $file = $request->file('filedata');
-        $data = Excel::toArray([], $file);
-
-        foreach ($data[0] as $index => $row) {
-            // Lewati baris pertama jika merupakan header
-            if ($index === 0) continue;
-
-            // Validasi kolom di Excel
-            if (isset($row[0]) && isset($row[1])) {
-                $lokSpk = $row[0]; // Lok SPK
-                $hargaJual = $row[1] * 1000; // Harga Jual
-
-                // Cek duplikat lok_spk di dalam file Excel
-                if (in_array($lokSpk, $processedLokSpk)) {
-                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
-                    continue;
-                }
-
-                // Tambahkan lok_spk ke daftar yang sudah diproses
-                $processedLokSpk[] = $lokSpk;
-
-                // Cek duplikat kombinasi lok_spk dan nomor_faktur di database
-                $existsInDatabase = TransaksiJual::where('lok_spk', $lokSpk)
-                    ->where('nomor_faktur', $request->input('nomor_faktur'))
-                    ->exists();
-
-                if ($existsInDatabase) {
-                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' dengan Nomor Faktur '{$request->input('nomor_faktur')}' sudah ada di database.";
-                    continue;
-                }
-
-                // Cari barang berdasarkan lok_spk
-                $barang = Barang::where('lok_spk', $lokSpk)->first();
-
-                if ($barang) {
-                    // Cek apakah status_barang adalah 0 atau 1
-                    if (in_array($barang->status_barang, [0, 1])) {
-                        // Tambahkan harga_jual ke total
-                        $totalHargaJual += $hargaJual;
-
-                        // Simpan lok_spk untuk update nanti
-                        $validLokSpk[] = [
-                            'lok_spk' => $lokSpk,
-                            'harga_jual' => $hargaJual,
-                        ];
-                    } else {
-                        $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
-                    }
-                } else {
-                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan.";
-                }
-            } else {
-                $errors[] = "Row " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
-            }
-        }
-
-        // Simpan data Faktur jika ada data valid
-        if (!empty($validLokSpk)) {
-            Faktur::where('nomor_faktur', $request->input('nomor_faktur'))
-                ->update([
-                    'total' => $totalHargaJual,
-                ]);
-
-            // Update Barang untuk lok_spk yang valid
-            foreach ($validLokSpk as $item) {
-                $tipe = Barang::where('lok_spk', $item['lok_spk'])
-               ->pluck('tipe')
-               ->first();
-                
-                $grade = $request->input('grade');
-
-                $negoan = Negoan::where('tipe', $tipe)
-                        ->where('grade', $grade)
-                        ->where('status', 1)
-                        ->orderBy('updated_at', 'desc')
-                        ->first();
-
-                Barang::where('lok_spk', $item['lok_spk'])->update([
-                    'no_faktur' => $request->input('nomor_faktur'),
-                    'harga_jual' => $item['harga_jual'], // Update harga_jual dari Excel
-                ]);
-
-                TransaksiJual::create([
-                    'lok_spk' => $item['lok_spk'],
-                    'nomor_faktur' => $request->input('nomor_faktur'),
-                    'harga' => $item['harga_jual'],
-                    'harga_acc' => $negoan->harga_acc ?? 0,
-                ]);
-            }
-
-            // Tampilkan pesan sukses dan error
-            return redirect()->back()
-                ->with('success', 'Faktur berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.')
-                ->with('errors', $errors);
-        }
-
-        // Jika tidak ada data valid, hanya tampilkan error
-        return redirect()->back()
-            ->with('errors', $errors);
-    }
-
     public function destroy($nomor_faktur)
     {
         try {
-            // Cari faktur berdasarkan nomor_faktur
-            $faktur = Faktur::where('nomor_faktur', $nomor_faktur)->firstOrFail();
-    
-            // Ambil data lok_spk dari TransaksiJual berdasarkan nomor_faktur
-            $lokSpkList = TransaksiJual::where('nomor_faktur', $nomor_faktur)->pluck('lok_spk');
-    
-            // Hapus semua baris di TransaksiJual yang memiliki nomor_faktur tersebut
-            TransaksiJual::where('nomor_faktur', $nomor_faktur)->delete();
-    
-            // Update data pada tabel Barang
-            Barang::whereIn('lok_spk', $lokSpkList)
-                ->update([
-                    'status_barang' => 1,
-                    'no_faktur' => null,
-                    'harga_jual' => 0,
+            DB::transaction(function () use ($nomor_faktur) { // <-- Mulai transaksi
+                // Cari faktur berdasarkan nomor_faktur
+                $faktur = Faktur::where('nomor_faktur', $nomor_faktur)->firstOrFail();
+                
+                // Ambil data lok_spk dari TransaksiJual berdasarkan nomor_faktur
+                $lokSpkList = TransaksiJual::where('nomor_faktur', $nomor_faktur)->pluck('lok_spk');
+                
+                // <-- BUAT HISTORY SEBELUM DATA DIHAPUS -->
+                HistoryEditFakturAtas::create([
+                    'faktur_id' => $faktur->id,
+                    'update'    => "Menghapus faktur dengan nomor: {$faktur->nomor_faktur}",
+                    'user_id'   => auth()->id(),
                 ]);
-    
-            // Hapus Faktur
-            $faktur->delete();
-    
+
+                // Hapus semua baris di TransaksiJual yang memiliki nomor_faktur tersebut
+                TransaksiJual::where('nomor_faktur', $nomor_faktur)->delete();
+                
+                // Update data pada tabel Barang
+                if ($lokSpkList->isNotEmpty()) {
+                    Barang::whereIn('lok_spk', $lokSpkList)
+                        ->update([
+                            'status_barang' => 1,
+                            'no_faktur' => null,
+                            'harga_jual' => 0,
+                        ]);
+                }
+                
+                // Hapus Faktur
+                $faktur->delete();
+            }); // <-- Selesai transaksi
+
             return redirect()->back()->with('success', 'Faktur dan data terkait berhasil dihapus');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());

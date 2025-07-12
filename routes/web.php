@@ -33,6 +33,7 @@ use App\Http\Controllers\TokpedDepositController;
 use App\Http\Controllers\TokpedOrderController;
 use App\Http\Controllers\RiwayatBarangController;
 use App\Http\Controllers\MasterHargaController;
+use App\Http\Controllers\HistoryEditFakturAtasController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckMacAccess;
 use App\Exports\BarangExport;
@@ -125,10 +126,9 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
 
     Route::get('/transaksi-jual/data', [TransaksiController::class, 'getData'])->name('transaksi-jual.data');
     Route::resource('/transaksi-jual', TransaksiController::class)->middleware('auth');
-    Route::delete('/transaksi-jual/{id}', [TransaksiController::class, 'destroy'])->name('transaksi-jual.delete');
-    Route::put('/transaksi-jual/update', [TransaksiController::class, 'update'])->name('transaksi-jual.update');
-    Route::post('/transaksi-jual/addbarang', [TransaksiFakturController::class, 'addbarang'])->name('transaksi-jual.addbarang');
+    Route::post('/transaksi-jual/addbarang', [TransaksiController::class, 'addbarang'])->name('transaksi-jual.addbarang');
     Route::get('/suggest-no-fak', [TransaksiController::class, 'getSuggestNoFak'])->name('suggest.no.fak');
+    Route::get('/history-edit-faktur-atas', [HistoryEditFakturAtasController::class, 'index'])->name('history-edit-faktur-atas.index')->middleware('auth');
 
     Route::get('/transaksi-faktur-bawah/print-kesimpulan', [TransaksiFakturBawahController::class, 'printKesimpulan'])->name('transaksi-faktur-bawah.printKesimpulan');
     Route::get('/transaksi-faktur-bawah/print-multiple', [TransaksiFakturBawahController::class, 'printMultiple'])->name('transaksi-faktur-bawah.printMultiple');

@@ -87,8 +87,8 @@ class MasterHargaController extends Controller
             'tanggal' => 'required|date',
         ]);
 
-        // 2. Proses data harga (jangan lupa dikali 1000)
-        $harga = $request->input('harga') * 1000;
+        // 2. Proses data harga
+        $harga = $request->input('harga');
 
         // 3. Gunakan updateOrCreate untuk mencegah duplikat dan memungkinkan edit
         MasterHarga::updateOrCreate(

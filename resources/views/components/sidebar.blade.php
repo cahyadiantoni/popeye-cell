@@ -270,6 +270,12 @@
                         <span class="pcoded-mtext">Pulsa Report</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('history-edit-faktur-atas') ? 'active' : '' }}">
+                    <a href="{{ url('/history-edit-faktur-atas') }}">
+                        <span class="pcoded-micon"><i class="fas fa-history"></i></span>
+                        <span class="pcoded-mtext">Riwayat Edit Faktur Atas</span>
+                    </a>
+                </li>
             </ul>
             @endif
         @endif

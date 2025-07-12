@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Auth;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\DB;
 
 class DataBarangController extends Controller
 {
@@ -47,7 +48,7 @@ class DataBarangController extends Controller
 
                             $deleteButton = '
                                 <!-- Tombol Delete -->
-                                <form action="' . route('data-barang.destroy', urlencode($barang->lok_spk)) . '" method="POST" style="display:inline;">
+                                <form action="' . route('data-barang.destroy', $barang->lok_spk) . '" method="POST" style="display:inline;">
                                     ' . csrf_field() . '
                                     ' . method_field('DELETE') . '
                                     <button type="submit" class="btn btn-danger btn-round" 
@@ -375,13 +376,28 @@ class DataBarangController extends Controller
         return false;
     }
 
-    public function destroy($lokSpk)
+    public function destroy(Barang $data_barang)
     {
-        // Cari barang berdasarkan lok_spk dan hapus
-        $barang = Barang::findOrFail($lokSpk);
-        $barang->delete();
+        try {
+            DB::transaction(function () use ($data_barang) {
+                
+                // 1. Catat riwayat SEBELUM menghapus
+                HistoryEditBarang::create([
+                    'lok_spk'   => $data_barang->lok_spk, // Simpan LOK SPK-nya
+                    'update'    => "Barang dengan tipe '{$data_barang->tipe}' dihapus dari sistem.",
+                    'user_id'   => auth()->id(),
+                ]);
 
-        return redirect()->route('data-barang.index')->with('success', 'Barang deleted successfully!');
+                // 2. Hapus barang setelah riwayat dicatat
+                $data_barang->delete();
+
+            });
+
+            return redirect()->route('data-barang.index')->with('success', 'Barang berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus barang: ' . $e->getMessage());
+        }
     }
 
     public function updateDataBarang(Request $request, $lok_spk)

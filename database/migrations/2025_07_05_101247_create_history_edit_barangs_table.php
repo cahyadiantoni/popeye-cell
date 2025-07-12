@@ -20,7 +20,6 @@ return new class extends Migration
             $table->text('update');
             $table->unsignedBigInteger('user_id');
             $table->timestamps();
-            $table->foreign('lok_spk')->references('lok_spk')->on('t_barang')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
