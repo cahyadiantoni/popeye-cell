@@ -57,6 +57,19 @@
                 </div>
             @endif
 
+            @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Terjadi Kesalahan Validasi:</strong>
+                    <ul>
+                        {{-- Loop semua pesan error sebagai sebuah daftar --}}
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
             <!-- Informasi Faktur -->
             <div class="card">
                 <div class="card-header">
@@ -102,7 +115,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
                     <h5>Daftar Barang</h5>
-                    @if($roleUser=='admin' && $faktur->is_finish==0)
+                    @if($roleUser=='admin')
                         <button class="btn btn-success" id="addBarangBtn">Add Barang</button>
                     @endif
                 </div>
@@ -115,7 +128,7 @@
                                 <th>Tipe Barang</th>
                                 <th>Grade</th>
                                 <th>Harga</th>
-                                @if($roleUser=='admin' && $faktur->is_finish==0)
+                                @if($roleUser=='admin')
                                 <th>Harga Acc Negoan</th>
                                 <th>Aksi</th>
                                 @endif
@@ -129,11 +142,11 @@
                                 <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
                                 <td>{{ $faktur->grade ?? '-' }}</td>
                                 <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
-                                @if($roleUser=='admin' && $faktur->is_finish==0)
+                                @if($roleUser=='admin')
                                 <td>Rp. {{ number_format($transaksi->harga_acc, 0, ',', '.') }}</td>
                                 <td>
                                     <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $transaksi->id }}" data-lok_spk="{{ $transaksi->lok_spk }}" data-harga="{{ $transaksi->harga }}">Edit</button>
-                                    <form action="{{ route('transaksi-jual-bawah.delete', $transaksi->id) }}" method="POST" class="d-inline delete-form">
+                                    <form action="{{ route('transaksi-jual-bawah.destroy', $transaksi->id) }}" method="POST" class="d-inline delete-form">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
@@ -155,27 +168,27 @@
 <div class="modal fade" id="addBarangModal" tabindex="-1" aria-labelledby="addBarangModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="{{ route('transaksi-jual-bawah.addbarang') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('transaksi-jual-bawah.addbarang') }}" method="POST">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addBarangModalLabel">Add Barang</h5>
+                    <h5 class="modal-title" id="addBarangModalLabel">Tambah Barang Ke Faktur</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <a href="{{ asset('files/template jual barang.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
+                        <label for="lok_spk" class="form-label">LOK SPK</label>
+                        <input type="text" class="form-control" id="lok_spk" name="lok_spk" placeholder="Masukkan LOK SPK" required>
                     </div>
                     <div class="mb-3">
-                        <label for="fileExcel" class="form-label">Upload File Excel</label>
-                        <input type="file" class="form-control" id="filedata" name="filedata" required>
-                        <input type="hidden" class="form-control" id="nomor_faktur" name="nomor_faktur" value="<?= $faktur->nomor_faktur ?>" required>
-                        <input type="hidden" class="form-control" id="grade" name="grade" value="<?= $faktur->grade ?>" required>
-                        <input type="hidden" class="form-control" id="total" name="total" value="<?= $faktur->total ?>" required>
+                        <label for="harga" class="form-label">Harga Jual</label>
+                        <input type="number" class="form-control" id="harga" name="harga" placeholder="Contoh: 100 untuk Rp.100.000" required>
                     </div>
+                    <input type="hidden" name="nomor_faktur" value="{{ $faktur->nomor_faktur }}">
+                    <input type="hidden" name="grade" value="{{ $faktur->grade }}">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Upload</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
                 </div>
             </form>
         </div>
@@ -197,7 +210,7 @@
                     <div class="mb-3">
                         <label for="editTransaksiId" class="form-label">LOK SPK</label>
                         <input type="hidden" class="form-control" id="editTransaksiId" name="id" required readonly>
-                        <input type="text" class="form-control" id="editTransaksiLokSpk" name="lok_spk" required readonly>
+                        <input type="text" class="form-control" id="editTransaksiLokSpk" name="lok_spk" required>
                     </div>
                     <div class="mb-3">
                         <label for="editHarga" class="form-label">Harga</label>
@@ -232,7 +245,7 @@
                 editTransaksiLokSpk.value = transaksiLokSpk;
                 editHarga.value = harga;
 
-                editForm.action = '{{ route("transaksi-jual-bawah.update") }}';
+                editForm.action = `{{ url('transaksi-jual-bawah') }}/${transaksiId}`;
                 editModal.show();
             });
         });

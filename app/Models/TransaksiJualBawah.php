@@ -16,5 +16,10 @@ class TransaksiJualBawah extends Model
     {
         return $this->belongsTo(Barang::class, 'lok_spk', 'lok_spk');
     }
+
+    public function faktur()
+    {
+        return $this->belongsTo(FakturBawah::class, 'nomor_faktur', 'nomor_faktur');
+    }
 }
 

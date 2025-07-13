@@ -34,6 +34,7 @@ use App\Http\Controllers\TokpedOrderController;
 use App\Http\Controllers\RiwayatBarangController;
 use App\Http\Controllers\MasterHargaController;
 use App\Http\Controllers\HistoryEditFakturAtasController;
+use App\Http\Controllers\HistoryEditFakturBawahController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckMacAccess;
 use App\Exports\BarangExport;
@@ -142,10 +143,9 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
 
     Route::get('/transaksi-jual-bawah/data', [TransaksiBawahController::class, 'getData'])->name('transaksi-jual-bawah.data');
     Route::resource('/transaksi-jual-bawah', TransaksiBawahController::class)->middleware('auth');
-    Route::delete('/transaksi-jual-bawah/{id}', [TransaksiBawahController::class, 'destroy'])->name('transaksi-jual-bawah.delete');
-    Route::put('/transaksi-jual-bawah/update', [TransaksiBawahController::class, 'update'])->name('transaksi-jual-bawah.update');
-    Route::post('/transaksi-jual-bawah/addbarang', [TransaksiFakturBawahController::class, 'addbarang'])->name('transaksi-jual-bawah.addbarang');
+    Route::post('/transaksi-jual-bawah/addbarang', [TransaksiBawahController::class, 'addbarang'])->name('transaksi-jual-bawah.addbarang');
     Route::get('/suggest-no-fak-bawah', [TransaksiBawahController::class, 'getSuggestNoFak'])->name('suggest.no.fak.bawah');
+    Route::get('/history-edit-faktur-bawah', [HistoryEditFakturBawahController::class, 'index'])->name('history-edit-faktur-bawah.index')->middleware('auth');
 
     Route::resource('/transaksi-kesimpulan', TransaksiKesimpulanController::class)->middleware('auth');
     Route::delete('/transaksi-kesimpulan/{kesimpulan_id}', [TransaksiKesimpulanController::class, 'destroy'])->name('transaksi-kesimpulan.delete');
@@ -163,7 +163,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::delete('/transaksi-jual-online/{id}', [TransaksiOnlineController::class, 'destroy'])->name('transaksi-jual-online.delete');
     Route::put('/transaksi-jual-online/update', [TransaksiOnlineController::class, 'update'])->name('transaksi-jual-online.update');
     Route::post('/transaksi-jual-online/addbarang', [TransaksiFakturOnlineController::class, 'addbarang'])->name('transaksi-jual-online.addbarang');
-    Route::get('/-bawah-online', [TransaksiOnlineController::class, 'getSuggestNoFak'])->name('suggest.no.fak.online');
+    Route::get('/suggest-no-fak-online', [TransaksiOnlineController::class, 'getSuggestNoFak'])->name('suggest.no.fak.online');
     
     Route::get('/transaksi-faktur-online/print-kesimpulan', [TransaksiFakturOnlineController::class, 'printKesimpulan'])->name('transaksi-faktur-online.printKesimpulan');
     Route::resource('/transaksi-faktur-online', TransaksiFakturOnlineController::class)->middleware('auth');

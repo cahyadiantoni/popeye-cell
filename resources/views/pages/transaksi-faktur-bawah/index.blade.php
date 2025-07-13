@@ -168,7 +168,7 @@
                                                 <td>
                                                     <!-- Tombol View -->
                                                     <a href="{{ route('transaksi-faktur-bawah.show', $faktur->nomor_faktur) }}" class="btn btn-info btn-sm">View</a>
-                                                    @if ($faktur->is_finish==0)
+                                                    @if ($faktur->is_finish==0 || $roleUser == 'admin')
                                                     <!-- Tombol Edit -->
                                                     <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $faktur->id }}" data-nomor_faktur="{{ $faktur->nomor_faktur }}" data-pembeli="{{ $faktur->pembeli }}" data-tgl-jual="{{ $faktur->tgl_jual }}" data-petugas="{{ $faktur->petugas }}" data-keterangan="{{ $faktur->keterangan }}" data-grade="{{ $faktur->grade }}">Edit</button>
                                                     <form action="{{ route('transaksi-faktur-bawah.delete', $faktur->nomor_faktur) }}" method="POST" class="d-inline delete-form">
@@ -234,6 +234,10 @@
                             <input type="text" class="form-control" id="editPetugas" name="petugas" required>
                         </div>
                         <div class="mb-3">
+                            <label for="editGrade" class="form-label">Grade</label>
+                            <input type="text" class="form-control" id="editGrade" name="grade" required>
+                        </div>
+                        <div class="mb-3">
                             <label for="editKeterangan" class="form-label">Keterangan</label>
                             <textarea class="form-control" id="editKeterangan" name="keterangan"></textarea>
                         </div>
@@ -256,6 +260,7 @@
             const editPembeli = document.getElementById('editPembeli');
             const editTglJual = document.getElementById('editTglJual');
             const editPetugas = document.getElementById('editPetugas');
+            const editGrade = document.getElementById('editGrade');
             const editKeterangan = document.getElementById('editKeterangan');
 
             editButtons.forEach(button => {
@@ -265,6 +270,7 @@
                     const pembeli = button.dataset.pembeli;
                     const tglJual = button.dataset.tglJual;
                     const petugas = button.dataset.petugas;
+                    const grade = button.dataset.grade;
                     const keterangan = button.dataset.keterangan;
 
                     // Isi form modal dengan data
@@ -272,6 +278,7 @@
                     editPembeli.value = pembeli;
                     editTglJual.value = tglJual;
                     editPetugas.value = petugas;
+                    editGrade.value = grade;
                     editKeterangan.value = keterangan;
 
                     // Update action form dan tampilkan modal
