@@ -16,5 +16,10 @@ class TransaksiJualOnline extends Model
     {
         return $this->belongsTo(Barang::class, 'lok_spk', 'lok_spk');
     }
+
+    public function faktur()
+    {
+        return $this->belongsTo(FakturOnline::class, 'faktur_online_id');
+    }
 }
 

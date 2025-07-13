@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use App\Models\Kirim;
 use App\Models\FakturOnline;
 use App\Models\TransaksiJualOnline;
+use App\Models\HistoryEditFakturOnline;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
@@ -206,71 +208,136 @@ class TransaksiOnlineController extends Controller
         }
     }
 
+    public function addbarang(Request $request)
+    {
+        $validated = $request->validate([
+            'lok_spk' => 'required|string',
+            'harga' => 'required|numeric|min:0',
+            'pj' => 'required|numeric|min:0',
+            'invoice' => 'required|string',
+            'faktur_online_id' => 'required|exists:t_faktur_online,id',
+        ]);
+
+        try {
+            DB::transaction(function () use ($validated) {
+                $hargaJual = $validated['harga'] * 1000;
+                $hargaPj = $validated['pj'] * 1000;
+
+                $barang = Barang::where('lok_spk', $validated['lok_spk'])->firstOrFail();
+                
+                if ($barang->status_barang != 1) {
+                    throw new \Exception("LOK SPK '{$validated['lok_spk']}' sudah terjual atau statusnya tidak valid.");
+                }
+
+                $isExist = TransaksiJualOnline::where('lok_spk', $validated['lok_spk'])->where('faktur_online_id', $validated['faktur_online_id'])->exists();
+                if($isExist) {
+                    throw new \Exception("LOK SPK '{$validated['lok_spk']}' sudah ada di faktur ini.");
+                }
+
+                TransaksiJualOnline::create([
+                    'lok_spk' => $validated['lok_spk'],
+                    'invoice' => $validated['invoice'],
+                    'faktur_online_id' => $validated['faktur_online_id'],
+                    'harga' => $hargaJual,
+                    'pj' => $hargaPj,
+                ]);
+
+                $barang->update(['status_barang' => 5, 'no_faktur' => $validated['faktur_online_id'], 'harga_jual' => $hargaJual]);
+                
+                HistoryEditFakturOnline::create([
+                    'faktur_id' => $validated['faktur_online_id'],
+                    'update'    => "Menambahkan barang (LOK SPK: {$validated['lok_spk']}) dengan harga Rp " . number_format($hargaJual),
+                    'user_id'   => auth()->id(),
+                ]);
+
+                $faktur = FakturOnline::find($validated['faktur_online_id']);
+                $faktur->total += $hargaJual;
+                $faktur->save();
+            });
+
+            return redirect()->back()->with('success', 'Barang berhasil ditambahkan ke faktur.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'lok_spk' => 'required|string|exists:t_barang,lok_spk',
+            'harga' => 'required|numeric|min:0',
+            'pj' => 'required|numeric|min:0',
+            'invoice' => 'required|string',
+        ]);
+
+        try {
+            DB::transaction(function () use ($id, $validated) {
+                $transaksi = TransaksiJualOnline::with('faktur')->findOrFail($id);
+                $historyMessage = [];
+
+                if ($transaksi->lok_spk !== $validated['lok_spk']) {
+                    $barangBaru = Barang::where('lok_spk', $validated['lok_spk'])->first();
+                    if ($barangBaru->status_barang != 1) {
+                        throw ValidationException::withMessages(['lok_spk' => 'LOK SPK baru sudah digunakan atau statusnya tidak valid.']);
+                    }
+                    Barang::where('lok_spk', $transaksi->lok_spk)->update(['status_barang' => 1, 'harga_jual' => null, 'no_faktur' => null]);
+                    $barangBaru->update(['status_barang' => 5, 'harga_jual' => $validated['harga'], 'no_faktur' => $transaksi->faktur_online_id]);
+                    $historyMessage[] = "Barang diubah dari '{$transaksi->lok_spk}' menjadi '{$validated['lok_spk']}'";
+                }
+
+                if ($transaksi->harga != $validated['harga']) $historyMessage[] = "Harga '{$transaksi->lok_spk}' diubah dari " . number_format($transaksi->harga) . " menjadi " . number_format($validated['harga']);
+                if ($transaksi->pj != $validated['pj']) $historyMessage[] = "PJ '{$transaksi->lok_spk}' diubah dari " . number_format($transaksi->pj) . " menjadi " . number_format($validated['pj']);
+                if ($transaksi->invoice != $validated['invoice']) $historyMessage[] = "Invoice '{$transaksi->lok_spk}' diubah dari '{$transaksi->invoice}' menjadi '{$validated['invoice']}'";
+                
+                $transaksi->update($validated);
+                
+                if (!empty($historyMessage)) {
+                    HistoryEditFakturOnline::create([
+                        'faktur_id' => $transaksi->faktur_online_id,
+                        'update'    => implode('<br>', $historyMessage),
+                        'user_id'   => auth()->id(),
+                    ]);
+                }
+
+                $totalBaru = TransaksiJualOnline::where('faktur_online_id', $transaksi->faktur_online_id)->sum('harga');
+                $transaksi->faktur()->update(['total' => $totalBaru]);
+            });
+
+            return redirect()->back()->with('success', 'Transaksi berhasil diupdate!');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
     public function destroy($id)
     {
         try {
-            $transaksi = TransaksiJualOnline::where('id', $id)->firstOrFail();
+            DB::transaction(function () use ($id) {
+                $transaksi = TransaksiJualOnline::with('faktur')->findOrFail($id);
+                
+                HistoryEditFakturOnline::create([
+                    'faktur_id' => $transaksi->faktur_online_id,
+                    'update'    => "Menghapus barang (LOK SPK: {$transaksi->lok_spk}) dari faktur.",
+                    'user_id'   => auth()->id(),
+                ]);
 
-            // Mendapatkan lok_spk dari transaksi
-            $lok_spk = $transaksi->lok_spk;
+                Barang::where('lok_spk', $transaksi->lok_spk)->update(['status_barang' => 1, 'no_faktur' => null, 'harga_jual' => 0]);
+                
+                $fakturOnlineId = $transaksi->faktur_online_id;
+                $transaksi->delete();
 
-            Barang::where('lok_spk', $lok_spk)->update([
-                'status_barang' => 1,
-                'no_faktur' => null,
-                'harga_jual' => 0, 
-            ]);
+                $totalBaru = TransaksiJualOnline::where('faktur_online_id', $fakturOnlineId)->sum('harga');
+                FakturOnline::where('id', $fakturOnlineId)->update(['total' => $totalBaru]);
+            });
 
-            // Hapus Transaksi
-            $nomorFaktur = $transaksi->faktur_online_id;
-            $transaksi->delete();
-
-            // Hitung ulang total pada Faktur
-            $totalBaru = TransaksiJualOnline::where('faktur_online_id', $nomorFaktur)->sum('harga');
-            FakturOnline::where('id', $nomorFaktur)->update(['total' => $totalBaru]);
-
-            return redirect()->back()->with('success', 'Barang berhasil dihapus');
+            return redirect()->back()->with('success', 'Barang berhasil dihapus dari transaksi.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-
-
-    public function update(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'invoice' => 'required',
-                'id' => 'required|exists:t_jual_online,id',
-                'lok_spk' => 'required|exists:t_jual_online,lok_spk',
-                'harga' => 'required|numeric|min:0',
-                'pj' => 'required|numeric|min:0',
-            ]);
-    
-            // Gunakan firstOrFail() untuk pencarian berdasarkan 'id'
-            $transaksi = TransaksiJualOnline::where('id', $validated['id'])->firstOrFail();
-
-            // Perbarui data dengan kolom tambahan
-            $transaksi->update([
-                'harga' => $validated['harga'],
-                'pj' => $validated['pj'], // Update kolom pj
-                'invoice' => $validated['invoice'], // Update kolom invoice
-            ]);
-    
-            // Update harga_jual pada model Barang
-            $barang = $transaksi->barang;
-            $barang->update(['harga_jual' => $validated['harga']]);
-    
-            // Hitung ulang total pada Faktur
-            $nomorFaktur = $transaksi->faktur_online_id;
-            $totalBaru = TransaksiJualOnline::where('faktur_online_id', $nomorFaktur)->sum('harga');
-            FakturOnline::where('id', $nomorFaktur)->update(['total' => $totalBaru]);
-    
-            return redirect()->back()->with('success', 'Data berhasil diupdate');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-        }
-    }
-    
     
     public function getSuggestNoFak(Request $request)
     {

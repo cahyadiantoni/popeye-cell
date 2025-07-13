@@ -282,6 +282,12 @@
                         <span class="pcoded-mtext">Riwayat Edit Faktur Bawah</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('history-edit-faktur-online') ? 'active' : '' }}">
+                    <a href="{{ url('/history-edit-faktur-online') }}">
+                        <span class="pcoded-micon"><i class="fas fa-history"></i></span>
+                        <span class="pcoded-mtext">Riwayat Edit Faktur Online</span>
+                    </a>
+                </li>
             </ul>
             @endif
         @endif
