@@ -116,10 +116,21 @@ class TransaksiBawahController extends Controller
         // 4. Generate nomor faktur baru yang unik berdasarkan bulan dan tahun
         $kodeFaktur = "BW";
         $currentMonthYear = Carbon::parse($tglJual)->format('my');
+        
+        // [PERBAIKAN 1] Ubah SUBSTRING agar dimulai dari posisi 9
         $lastFaktur = FakturBawah::where('nomor_faktur', 'like', "$kodeFaktur-$currentMonthYear-%")
-            ->orderByRaw("CAST(SUBSTRING(nomor_faktur, 10, LENGTH(nomor_faktur) - 9) AS UNSIGNED) DESC")
+            ->orderByRaw("CAST(SUBSTRING(nomor_faktur, 9) AS UNSIGNED) DESC")
             ->first();
-        $newNumber = $lastFaktur ? str_pad((int)substr($lastFaktur->nomor_faktur, -3) + 1, 3, '0', STR_PAD_LEFT) : '001';
+        
+        if ($lastFaktur) {
+            // [PERBAIKAN 2] Ambil bagian angka dari posisi ke-9, bukan dari 3 karakter terakhir
+            $lastNumber = (int)substr($lastFaktur->nomor_faktur, 8); // Prefix 'BW-mmyy-' panjangnya 8
+            $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+        } else {
+            // Jika belum ada faktur di bulan ini, mulai dari 001
+            $newNumber = '001';
+        }
+        
         $nomorFakturBaru = "$kodeFaktur-$currentMonthYear-$newNumber";
 
         // 5. Validasi setiap baris data (cek duplikat, status barang, konsistensi harga, dll.)
