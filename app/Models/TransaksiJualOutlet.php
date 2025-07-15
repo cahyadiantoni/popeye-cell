@@ -16,5 +16,10 @@ class TransaksiJualOutlet extends Model
     {
         return $this->belongsTo(Barang::class, 'lok_spk', 'lok_spk');
     }
+
+    public function faktur()
+    {
+        return $this->belongsTo(FakturOutlet::class, 'nomor_faktur', 'nomor_faktur');
+    }
 }
 

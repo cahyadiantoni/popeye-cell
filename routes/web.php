@@ -36,6 +36,7 @@ use App\Http\Controllers\MasterHargaController;
 use App\Http\Controllers\HistoryEditFakturAtasController;
 use App\Http\Controllers\HistoryEditFakturBawahController;
 use App\Http\Controllers\HistoryEditFakturOnlineController;
+use App\Http\Controllers\HistoryEditFakturOutletController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckMacAccess;
 use App\Exports\BarangExport;
@@ -188,10 +189,9 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
 
     Route::get('/transaksi-jual-outlet/data', [TransaksiOutletController::class, 'getData'])->name('transaksi-jual-outlet.data');
     Route::resource('/transaksi-jual-outlet', TransaksiOutletController::class)->middleware('auth');
-    Route::delete('/transaksi-jual-outlet/{id}', [TransaksiOutletController::class, 'destroy'])->name('transaksi-jual-outlet.delete');
-    Route::put('/transaksi-jual-outlet/update', [TransaksiOutletController::class, 'update'])->name('transaksi-jual-outlet.update');
-    Route::post('/transaksi-jual-outlet/addbarang', [TransaksiFakturOutletController::class, 'addbarang'])->name('transaksi-jual-outlet.addbarang');
+    Route::post('/transaksi-jual-outlet/addbarang', [TransaksiOutletController::class, 'addbarang'])->name('transaksi-jual-outlet.addbarang');
     Route::get('/suggest-no-fak-outlet', [TransaksiOutletController::class, 'getSuggestNoFak'])->name('suggest.no.fak.outlet');
+    Route::get('/history-edit-faktur-outlet', [HistoryEditFakturOutletController::class, 'index'])->name('history-edit-faktur-outlet.index')->middleware('auth');
     
     Route::resource('/cek-so', CekSOController::class)->middleware('auth');
     Route::get('/get-last-kode/{gudang_id}', [CekSOController::class, 'getLastKode']);

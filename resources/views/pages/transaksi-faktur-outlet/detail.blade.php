@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Detail Faktur')
+@section('title', 'Detail Faktur Outlet')
 @section('content')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -31,25 +31,22 @@
         </div>
 
         <div class="page-body">
-            <!-- Pesan Success atau Error -->
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     {{ session('success') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
-
             @if(session('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
-
-            @if(session('errors'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @if(session('errors') && session('errors')->any())
+                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <ul>
-                        @foreach (session('errors') as $error)
+                        @foreach (session('errors')->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
@@ -57,79 +54,78 @@
                 </div>
             @endif
 
-            <!-- Informasi Faktur -->
             <div class="card">
                 <div class="card-header">
                     <h5>Informasi Faktur</h5>
                 </div>
                 <div class="card-block">
-                <table class="table table-bordered table-striped">
-                    <tbody>
-                        <tr>
-                            <th width="30%">No Faktur</th>
-                            <td>{{ $faktur->nomor_faktur }}</td>
-                        </tr>
-                        <tr>
-                            <th>Pembeli</th>
-                            <td>{{ $faktur->pembeli }}</td>
-                        </tr>
-                        <tr>
-                            <th>Tanggal Jual</th>
-                            <td>{{ \Carbon\Carbon::parse($faktur->tgl_jual)->translatedFormat('d F Y') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Petugas</th>
-                            <td>{{ $faktur->petugas }}</td>
-                        </tr>
-                        <tr>
-                            <th>Total Harga</th>
-                            <td>Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Total Bayar</th>
-                            <td>Rp. {{ number_format($totalNominal, 0, ',', '.') }}</td>
-                        </tr>
-                        @php
-                            $sisa = $faktur->total - $totalNominal;
-                        @endphp
-                        <tr>
-                            <th>
-                                @if ($sisa < 0)
-                                    Lebih Bayar
-                                @else
-                                    Sisa Hutang
-                                @endif
-                            </th>
-                            <td>
-                                @if ($sisa < 0)
-                                    <span style="color: green; font-weight: bold;">
-                                        Rp. {{ number_format(abs($sisa), 0, ',', '.') }}
-                                    </span>
-                                @elseif ($sisa > 0)
-                                    <span style="color: red; font-weight: bold;">
+                    <table class="table table-bordered table-striped">
+                        <tbody>
+                            <tr>
+                                <th width="30%">No Faktur</th>
+                                <td>{{ $faktur->nomor_faktur }}</td>
+                            </tr>
+                            <tr>
+                                <th>Pembeli</th>
+                                <td>{{ $faktur->pembeli }}</td>
+                            </tr>
+                            <tr>
+                                <th>Tanggal Jual</th>
+                                <td>{{ \Carbon\Carbon::parse($faktur->tgl_jual)->translatedFormat('d F Y') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Petugas</th>
+                                <td>{{ $faktur->petugas }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total Harga</th>
+                                <td>Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total Bayar</th>
+                                <td>Rp. {{ number_format($totalNominal, 0, ',', '.') }}</td>
+                            </tr>
+                            @php
+                                $sisa = $faktur->total - $totalNominal;
+                            @endphp
+                            <tr>
+                                <th>
+                                    @if ($sisa < 0)
+                                        Lebih Bayar
+                                    @else
+                                        Sisa Hutang
+                                    @endif
+                                </th>
+                                <td>
+                                    @if ($sisa < 0)
+                                        <span style="color: green; font-weight: bold;">
+                                            Rp. {{ number_format(abs($sisa), 0, ',', '.') }}
+                                        </span>
+                                    @elseif ($sisa > 0)
+                                        <span style="color: red; font-weight: bold;">
+                                            Rp. {{ number_format($sisa, 0, ',', '.') }}
+                                        </span>
+                                    @else
                                         Rp. {{ number_format($sisa, 0, ',', '.') }}
-                                    </span>
-                                @else
-                                    Rp. {{ number_format($sisa, 0, ',', '.') }}
-                                @endif
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Pembayaran</th>
-                            <td>
-                                @if ($faktur->is_lunas == 0)
-                                    <span class="badge bg-warning">Hutang</span>
-                                @else
-                                    <span class="badge bg-success">Lunas</span>
-                                @endif
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Keterangan</th>
-                            <td>{{ $faktur->keterangan }}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Pembayaran</th>
+                                <td>
+                                    @if ($faktur->is_lunas == 0)
+                                        <span class="badge bg-warning">Hutang</span>
+                                    @else
+                                        <span class="badge bg-success">Lunas</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Keterangan</th>
+                                <td>{{ $faktur->keterangan }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -164,7 +160,7 @@
                                 </td>
                                 @if($faktur->is_finish == 0 || $faktur->is_lunas == 0)
                                 <td>
-                                    <form action="{{ route('transaksi-faktur-outlet.bukti.delete', $bukti->id) }}" method="POST">
+                                    <form action="{{ route('transaksi-faktur-outlet.bukti.delete', $bukti->id) }}" method="POST" class="delete-form">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
@@ -178,12 +174,11 @@
                 </div>
             </div>
 
-            <!-- Tabel Barang -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
                     <h5>Daftar Barang</h5>
-                    @if($roleUser=='admin' && $faktur->is_finish==0)
-                        <button class="btn btn-success" id="addBarangBtn">Add Barang</button>
+                    @if($roleUser=='admin')
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addBarangModal">Tambah Barang</button>
                     @endif
                 </div>
                 <div class="card-block table-responsive">
@@ -195,9 +190,9 @@
                                 <th>Tipe Barang</th>
                                 <th>Grade</th>
                                 <th>Harga</th>
-                                @if($roleUser=='admin' && $faktur->is_finish==0)
-                                <th>Harga Acc Negoan</th>
-                                <th>Aksi</th>
+                                @if($roleUser=='admin')
+                                    <th>Harga Acc Negoan</th>
+                                    <th>Aksi</th>
                                 @endif
                             </tr>
                         </thead>
@@ -209,14 +204,14 @@
                                 <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
                                 <td>{{ $faktur->grade ?? '-' }}</td>
                                 <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
-                                @if($roleUser=='admin' && $faktur->is_finish==0)
+                                @if($roleUser=='admin')
                                 <td>Rp. {{ number_format($transaksi->harga_acc, 0, ',', '.') }}</td>
                                 <td>
-                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $transaksi->id }}" data-lok_spk="{{ $transaksi->lok_spk }}" data-harga="{{ $transaksi->harga }}">Edit</button>
-                                    <form action="{{ route('transaksi-jual-outlet.delete', $transaksi->id) }}" method="POST" class="d-inline delete-form">
+                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $transaksi->id }}" data-lok_spk="{{ $transaksi->lok_spk }}" data-harga="{{ $transaksi->harga / 1000 }}">Edit</button>
+                                    <form action="{{ route('transaksi-jual-outlet.destroy', $transaksi->id) }}" method="POST" class="d-inline delete-form">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm delete-btn">Delete</button>
+                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                     </form>
                                 </td>
                                 @endif
@@ -231,38 +226,35 @@
     </div>
 </div>
 
-<!-- Modal Add Barang -->
 <div class="modal fade" id="addBarangModal" tabindex="-1" aria-labelledby="addBarangModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="{{ route('transaksi-jual-outlet.addbarang') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('transaksi-jual-outlet.addbarang') }}" method="POST">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addBarangModalLabel">Add Barang</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="addBarangModalLabel">Tambah Barang Manual</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <input type="hidden" name="nomor_faktur" value="{{ $faktur->nomor_faktur }}">
                     <div class="mb-3">
-                        <a href="{{ asset('files/template jual barang.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a>
+                        <label for="addLokSpk" class="form-label">LOK SPK</label>
+                        <input type="text" class="form-control" id="addLokSpk" name="lok_spk" required>
                     </div>
                     <div class="mb-3">
-                        <label for="fileExcel" class="form-label">Upload File Excel</label>
-                        <input type="file" class="form-control" id="filedata" name="filedata" required>
-                        <input type="hidden" class="form-control" id="nomor_faktur" name="nomor_faktur" value="<?= $faktur->nomor_faktur ?>" required>
-                        <input type="hidden" class="form-control" id="grade" name="grade" value="<?= $faktur->grade ?>" required>
-                        <input type="hidden" class="form-control" id="total" name="total" value="<?= $faktur->total ?>" required>
+                        <label for="addHarga" class="form-label">Harga (input dalam ribuan, cth: 50 untuk 50.000)</label>
+                        <input type="number" class="form-control" id="addHarga" name="harga" required>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Upload</button>
+                    <button type="submit" class="btn btn-primary">Simpan Barang</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Modal Edit Barang -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -271,16 +263,16 @@
                 @method('PUT')
                 <div class="modal-header">
                     <h5 class="modal-title" id="editModalLabel">Edit Harga</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <input type="hidden" id="editTransaksiId" name="id">
                     <div class="mb-3">
-                        <label for="editTransaksiId" class="form-label">LOK SPK</label>
-                        <input type="hidden" class="form-control" id="editTransaksiId" name="id" required readonly>
-                        <input type="text" class="form-control" id="editTransaksiLokSpk" name="lok_spk" required readonly>
+                        <label for="editTransaksiLokSpk" class="form-label">LOK SPK</label>
+                        <input type="text" class="form-control" id="editTransaksiLokSpk" name="lok_spk" required>
                     </div>
                     <div class="mb-3">
-                        <label for="editHarga" class="form-label">Harga</label>
+                        <label for="editHarga" class="form-label">Harga (input dalam ribuan, cth: 50 untuk 50.000)</label>
                         <input type="number" class="form-control" id="editHarga" name="harga" required>
                     </div>
                 </div>
@@ -293,7 +285,6 @@
     </div>
 </div>
 
-<!-- Modal Tambah Bukti -->
 <div class="modal fade" id="addBuktiModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -307,8 +298,8 @@
                     <input type="hidden" name="t_faktur_id" value="{{ $faktur->id }}">
                     <input type="text" class="form-control mb-2" name="keterangan" placeholder="Keterangan" required>
                     <input type="number" class="form-control mb-2" id="nominal" name="nominal" placeholder="Nominal Transfer" required>
-                    <small class="form-text text-muted" id="nominal_display">{{ 'Rp. 0' }}</small>
-                    <input type="file" class="form-control" name="foto" required>
+                    <small class="form-text text-muted" id="nominal_display">Rp. 0</small>
+                    <input type="file" class="form-control mt-2" name="foto" required>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -320,59 +311,54 @@
 </div>
 
 <script>
+    // Script untuk format nominal di modal bukti
     $(document).ready(function() {
-        // Function to format number as currency
-        function formatCurrency(value) {
-            return 'Rp. ' + new Intl.NumberFormat('id-ID').format(value);
-        }
-
-        // Update display for nominal
         $('#nominal').on('input', function() {
             const value = $(this).val();
-            $('#nominal_display').text(formatCurrency(value));
+            const formattedValue = 'Rp. ' + new Intl.NumberFormat('id-ID').format(value || 0);
+            $('#nominal_display').text(formattedValue);
         });
     });
-</script>
 
-<script>
+    // Script untuk modal dan konfirmasi delete
     document.addEventListener('DOMContentLoaded', function () {
-        const editButtons = document.querySelectorAll('.edit-btn');
+        // Edit Modal Logic
         const editModal = new bootstrap.Modal(document.getElementById('editModal'));
-        const editForm = document.getElementById('editForm');
-        const editTransaksiId = document.getElementById('editTransaksiId');
-        const editTransaksiLokSpk = document.getElementById('editTransaksiLokSpk');
-        const editHarga = document.getElementById('editHarga');
-
-        editButtons.forEach(button => {
+        document.querySelectorAll('.edit-btn').forEach(button => {
             button.addEventListener('click', () => {
-                const transaksiId = button.dataset.id;
-                const transaksiLokSpk = button.dataset.lok_spk;
-                const harga = button.dataset.harga;
-
-                editTransaksiId.value = transaksiId;
-                editTransaksiLokSpk.value = transaksiLokSpk;
-                editHarga.value = harga;
-
-                editForm.action = '{{ route("transaksi-jual-outlet.update") }}';
+                document.getElementById('editTransaksiId').value = button.dataset.id;
+                document.getElementById('editTransaksiLokSpk').value = button.dataset.lok_spk;
+                document.getElementById('editHarga').value = button.dataset.harga;
+                document.getElementById('editForm').action = `/transaksi-jual-outlet/${button.dataset.id}`;
                 editModal.show();
             });
         });
 
-        const deleteForms = document.querySelectorAll('.delete-form');
-        deleteForms.forEach(form => {
-            form.addEventListener('submit', function (event) {
-                event.preventDefault(); // Mencegah submit form langsung
-                if (confirm('Yakin ingin menghapus data ini?')) {
-                    form.submit(); // Submit form jika konfirmasi "OK"
+        // Delete Confirmation Logic
+        document.querySelectorAll('.delete-form').forEach(form => {
+            form.addEventListener('submit', (e) => {
+                if (!confirm('Yakin ingin menghapus data ini?')) {
+                    e.preventDefault();
                 }
             });
         });
 
+        // Add Barang Modal Trigger
         const addBarangBtn = document.getElementById('addBarangBtn');
-        const addBarangModal = new bootstrap.Modal(document.getElementById('addBarangModal'));
-        addBarangBtn.addEventListener('click', () => {
-            addBarangModal.show();
-        });
+        if (addBarangBtn) {
+            const addBarangModal = new bootstrap.Modal(document.getElementById('addBarangModal'));
+            addBarangBtn.addEventListener('click', () => addBarangModal.show());
+        }
+
+        // Finish Confirmation
+        const finishForm = document.querySelector('.finish-form');
+        if(finishForm) {
+            finishForm.addEventListener('submit', function(event) {
+                if (!confirm('Apakah Anda yakin ingin menandai transaksi ini sebagai sudah dicek?')) {
+                    event.preventDefault();
+                }
+            });
+        }
     });
 </script>
 

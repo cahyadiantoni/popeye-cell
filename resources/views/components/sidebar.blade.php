@@ -288,6 +288,12 @@
                         <span class="pcoded-mtext">Riwayat Edit Faktur Online</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('history-edit-faktur-outlet') ? 'active' : '' }}">
+                    <a href="{{ url('/history-edit-faktur-outlet') }}">
+                        <span class="pcoded-micon"><i class="fas fa-history"></i></span>
+                        <span class="pcoded-mtext">Riwayat Edit Faktur Outlet</span>
+                    </a>
+                </li>
             </ul>
             @endif
         @endif

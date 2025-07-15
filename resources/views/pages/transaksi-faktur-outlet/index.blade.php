@@ -163,7 +163,7 @@
                                                 <td>
                                                     <!-- Tombol View -->
                                                     <a href="{{ route('transaksi-faktur-outlet.show', $faktur->nomor_faktur) }}" class="btn btn-info btn-sm">View</a>
-                                                    @if ($faktur->is_finish==0)
+                                                    @if ($faktur->is_finish==0 || $roleUser == 'admin')
                                                     <!-- Tombol Edit -->
                                                     <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $faktur->id }}" data-nomor_faktur="{{ $faktur->nomor_faktur }}" data-pembeli="{{ $faktur->pembeli }}" data-tgl-jual="{{ $faktur->tgl_jual }}" data-petugas="{{ $faktur->petugas }}" data-keterangan="{{ $faktur->keterangan }}" data-grade="{{ $faktur->grade }}">Edit</button>
                                                     <form action="{{ route('transaksi-faktur-outlet.delete', $faktur->nomor_faktur) }}" method="POST" class="d-inline delete-form">
