@@ -350,15 +350,13 @@ class TransaksiController extends Controller
     public function getSuggestNoFak(Request $request)
     {
         $kodeFaktur = $request->kode_faktur;
-        $tglJual = $request->tgl_jual ? Carbon::parse($request->tgl_jual) : Carbon::now(); 
-        $currentMonthYear = $tglJual->format('my'); // Menggunakan tanggal yang dipilih user
+        $tglJual = $request->tgl_jual ? Carbon::parse($request->tgl_jual) : Carbon::now();
+        $currentMonthYear = $tglJual->format('my');
 
-        // Ambil faktur terakhir dengan format yang sesuai
         $lastFaktur = Faktur::where('nomor_faktur', 'like', "$kodeFaktur-$currentMonthYear-%")
-            ->orderByRaw("CAST(SUBSTRING(nomor_faktur, 10, LENGTH(nomor_faktur) - 9) AS UNSIGNED) DESC")
+            ->orderByRaw('LENGTH(nomor_faktur) DESC, nomor_faktur DESC')
             ->first();
 
-        // Tentukan nomor urut
         if ($lastFaktur) {
             preg_match('/-(\d+)$/', $lastFaktur->nomor_faktur, $matches);
             $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
@@ -367,7 +365,6 @@ class TransaksiController extends Controller
             $newNumber = '001';
         }
 
-        // Format nomor faktur baru
         $suggestedNoFak = "$kodeFaktur-$currentMonthYear-$newNumber";
 
         return response()->json(['suggested_no_fak' => $suggestedNoFak]);
