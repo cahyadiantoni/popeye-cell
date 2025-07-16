@@ -162,7 +162,7 @@ class MasterHargaController extends Controller
                 $hargaStr = trim($columns[$columnIndex] ?? '');
 
                 if (!empty($hargaStr) && is_numeric(str_replace('.', '', $hargaStr))) {
-                    $harga = (float)str_replace('.', '', $hargaStr) * 1000;
+                    $harga = (float)str_replace('.', '', $hargaStr);
 
                     // Cari data yang cocok, atau buat instance baru jika tidak ada
                     $masterHarga = MasterHarga::firstOrNew([

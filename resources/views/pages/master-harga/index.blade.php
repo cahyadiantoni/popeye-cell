@@ -209,7 +209,7 @@
                     <div class="form-group mb-3">
                         <label for="harga" class="form-label">Harga</label>
                         <div class="input-group">
-                            <input type="number" class="form-control @error('harga') is-invalid @enderror" name="harga" placeholder="Contoh: 100000 untuk Rp.100.000" value="{{ old('harga') }}" required>
+                            <input type="number" class="form-control @error('harga') is-invalid @enderror" name="harga" placeholder="Masukan harga" value="{{ old('harga') }}" required>
                         </div>
                         @error('harga')
                             <small class="text-danger d-block mt-1">{{ $message }}</small>
