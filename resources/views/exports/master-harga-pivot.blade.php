@@ -20,7 +20,7 @@
                             $harga = $row->harga_per_tanggal[$tanggalKey] ?? null;
                         @endphp
                         @if(isset($harga))
-                            {{ $harga / 1000 }}
+                            {{ $harga }}
                         @endif
                     </td>
                 @endforeach
