@@ -145,7 +145,7 @@ class TransaksiBawahController extends Controller
         foreach ($rows as $index => $rowString) {
             $row = str_getcsv($rowString, "\t");
             $lokSpk = $row[3] ?? null;
-            $hargaJual = isset($row[5]) ? (int)trim($row[5]) * 1000 : null;
+            $hargaJual = isset($row[5]) ? (float)str_replace(',', '.', trim($row[5])) * 1000 : null;
             
             if (!$lokSpk || is_null($hargaJual)) {
                 $errors[] = "Baris " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
