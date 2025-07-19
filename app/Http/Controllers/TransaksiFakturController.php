@@ -370,6 +370,30 @@ class TransaksiFakturController extends Controller
         }
     }
 
+    public function tandaiBelumDicek($id)
+    {
+        try {
+            // Ambil faktur beserta transaksi jual dan barang-nya
+            $faktur = Faktur::with('transaksiJuals.barang')->where('id', $id)->firstOrFail();
+
+            // Update is_finish
+            $faktur->is_finish = 0;
+            $faktur->save();
+
+            // Loop semua transaksi jual
+            foreach ($faktur->transaksiJuals as $transaksi) {
+                if ($transaksi->barang) {
+                    $transaksi->barang->status_barang = 5;
+                    $transaksi->barang->save();
+                }
+            }
+
+            return redirect()->back()->with('success', 'Faktur ditandai belum dicek dan barang diperbarui.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
     public function rekap(Request $request)
     {
         // Definisi nama gudang

@@ -124,6 +124,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::put('/transaksi-faktur/update/{nomor_faktur}', [TransaksiFakturController::class, 'update'])->name('transaksi-faktur.update');
     Route::post('/transaksi-faktur/upload-bukti', [TransaksiFakturController::class, 'uploadBukti'])->name('transaksi-faktur.upload-bukti');
     Route::put('/transaksi-faktur/{id}/tandai-sudah-dicek', [TransaksiFakturController::class, 'tandaiSudahDicek'])->name('transaksi-faktur.tandai-sudah-dicek');
+    Route::put('/transaksi-faktur/{id}/tandai-belum-dicek', [TransaksiFakturController::class, 'tandaiBelumDicek'])->name('transaksi-faktur.tandai-belum-dicek');
     Route::post('/transaksi-faktur/bukti', [TransaksiFakturController::class, 'storeBukti'])->name('transaksi-faktur.bukti.store');
     Route::delete('/transaksi-faktur/bukti/{id}', [TransaksiFakturController::class, 'deleteBukti'])->name('transaksi-faktur.bukti.delete');
 
@@ -142,6 +143,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/transaksi-faktur-bawah/{nomor_faktur}/print', [TransaksiFakturBawahController::class, 'printPdf'])->name('transaksi-faktur-bawah.print');
     Route::put('/transaksi-faktur-bawah/update/{nomor_faktur}', [TransaksiFakturBawahController::class, 'update'])->name('transaksi-faktur-bawah.update');
     Route::put('/transaksi-faktur-bawah/{id}/tandai-sudah-dicek', [TransaksiFakturBawahController::class, 'tandaiSudahDicek'])->name('transaksi-faktur-bawah.tandai-sudah-dicek');
+    Route::put('/transaksi-faktur-bawah/{id}/tandai-belum-dicek', [TransaksiFakturBawahController::class, 'tandaiBelumDicek'])->name('transaksi-faktur-bawah.tandai-belum-dicek');
 
     Route::get('/transaksi-jual-bawah/data', [TransaksiBawahController::class, 'getData'])->name('transaksi-jual-bawah.data');
     Route::resource('/transaksi-jual-bawah', TransaksiBawahController::class)->middleware('auth');
@@ -175,6 +177,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::put('/transaksi-faktur-online/update/{nomor_faktur}', [TransaksiFakturOnlineController::class, 'update'])->name('transaksi-faktur-online.update');
     Route::post('/transaksi-faktur-online/upload-bukti', [TransaksiFakturOnlineController::class, 'uploadBukti'])->name('transaksi-faktur-online.upload-bukti');
     Route::put('/transaksi-faktur-online/{id}/tandai-sudah-dicek', [TransaksiFakturOnlineController::class, 'tandaiSudahDicek'])->name('transaksi-faktur-online.tandai-sudah-dicek');
+    Route::put('/transaksi-faktur-online/{id}/tandai-belum-dicek', [TransaksiFakturOnlineController::class, 'tandaiBelumDicek'])->name('transaksi-faktur-online.tandai-belum-dicek');
 
     Route::resource('/transaksi-faktur-outlet', TransaksiFakturOutletController::class)->middleware('auth');
     Route::delete('/transaksi-faktur-outlet/{nomor_faktur}', [TransaksiFakturOutletController::class, 'destroy'])->name('transaksi-faktur-outlet.delete');
@@ -184,6 +187,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::put('/transaksi-faktur-outlet/update/{nomor_faktur}', [TransaksiFakturOutletController::class, 'update'])->name('transaksi-faktur-outlet.update');
     Route::post('/transaksi-faktur-outlet/upload-bukti', [TransaksiFakturOutletController::class, 'uploadBukti'])->name('transaksi-faktur-outlet.upload-bukti');
     Route::put('/transaksi-faktur-outlet/{id}/tandai-sudah-dicek', [TransaksiFakturOutletController::class, 'tandaiSudahDicek'])->name('transaksi-faktur-outlet.tandai-sudah-dicek');
+    Route::put('/transaksi-faktur-outlet/{id}/tandai-belum-dicek', [TransaksiFakturOutletController::class, 'tandaiBelumDicek'])->name('transaksi-faktur-outlet.tandai-belum-dicek');
     Route::post('/transaksi-faktur-outlet/bukti', [TransaksiFakturOutletController::class, 'storeBukti'])->name('transaksi-faktur-outlet.bukti.store');
     Route::delete('/transaksi-faktur-outlet/bukti/{id}', [TransaksiFakturOutletController::class, 'deleteBukti'])->name('transaksi-faktur-outlet.bukti.delete');
 

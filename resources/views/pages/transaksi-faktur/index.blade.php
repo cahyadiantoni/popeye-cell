@@ -152,8 +152,15 @@
                                                         <span class="badge bg-warning">Belum Dicek</span>
                                                         @endif
                                                     @else
-                                                        <!-- Keterangan Sudah Dicek -->
-                                                        <span class="badge bg-success">Sudah Dicek</span>
+                                                        @if($roleUser == 'admin')
+                                                            <form action="{{ route('transaksi-faktur.tandai-belum-dicek', $faktur->id) }}" method="POST" class="d-inline back-form">
+                                                                @csrf
+                                                                @method('PUT')
+                                                                <button type="submit" class="btn btn-warning btn-sm back-btn">Batalkan Dicek</button>
+                                                            </form>
+                                                        @else
+                                                            <span class="badge bg-success">Sudah Dicek</span>
+                                                        @endif
                                                     @endif
                                                 </td>
                                                 <td>
@@ -332,6 +339,16 @@
                 form.addEventListener('submit', function (event) {
                     event.preventDefault(); // Mencegah submit form langsung
                     if (confirm('Apakah Anda yakin ingin menandai transaksi ini sebagai sudah dicek?')) {
+                        form.submit(); // Submit form jika konfirmasi "OK"
+                    }
+                });
+            });
+
+            const backForms = document.querySelectorAll('.back-form');
+            backForms.forEach(form => {
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault(); // Mencegah submit form langsung
+                    if (confirm('Apakah Anda yakin ingin batalkan cek?')) {
                         form.submit(); // Submit form jika konfirmasi "OK"
                     }
                 });
