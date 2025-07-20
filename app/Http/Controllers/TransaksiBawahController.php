@@ -85,7 +85,7 @@ class TransaksiBawahController extends Controller
             'pasted_data' => 'required|string',
             'create_conclusion' => 'required|boolean',
             'fotos'       => 'nullable|array',
-            'fotos.*'     => 'nullable|image|max:2048',
+            'fotos.*'     => 'nullable|image',
             'nominals'    => 'nullable|array',
             'nominals.*'  => 'nullable|numeric|min:1',
         ]);

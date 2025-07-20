@@ -84,11 +84,28 @@ class SingleFakturSheet implements FromArray, WithTitle, WithHeadings, WithStyle
             $rows[] = [''];
             $rows[] = ['--- Bukti Transfer ---'];
             foreach ($this->faktur->bukti as $index => $bukti) {
-                $rows[] = [
-                    'Bukti ' . ($index + 1),
-                    'Keterangan: ' . ($bukti->keterangan ?? '-'),
-                    'Nominal: Rp' . number_format($bukti->nominal, 0, ',', '.'),
-                ];
+                
+                // KUNCI PERUBAHAN: Cek apakah file punya ekstensi gambar yang valid
+                $filename = $bukti->foto;
+                $extension = strtolower(pathinfo((string)$filename, PATHINFO_EXTENSION));
+                $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+                $filePath = storage_path('app/public/' . $filename);
+
+                if (in_array($extension, $allowed_extensions) && file_exists($filePath)) {
+                    // Jika valid, tampilkan data normal
+                    $rows[] = [
+                        'Bukti ' . ($index + 1),
+                        'Keterangan: ' . ($bukti->keterangan ?? '-'),
+                        'Nominal: Rp' . number_format($bukti->nominal, 0, ',', '.'),
+                    ];
+                } else {
+                    // Jika tidak valid (tidak ada ekstensi/file tidak ada), tampilkan error
+                    $rows[] = [
+                        'Bukti ' . ($index + 1),
+                        'gambar tidak valid/error',
+                        '', // Kosongkan kolom nominal
+                    ];
+                }
             }
         }
 
@@ -129,7 +146,7 @@ class SingleFakturSheet implements FromArray, WithTitle, WithHeadings, WithStyle
         
         // --- LOGIKA DINAMIS UNTUK STYLE TOTAL ---
         
-        $startOfTotalSection = 9 + $itemCount + 1; // Baris setelah item + spasi kosong
+        $startOfTotalSection = 9 + $itemCount; // Baris setelah item + spasi kosong
         $finalTotalRow = $startOfTotalSection;
         if ($this->faktur->potongan_kondisi > 0 || $this->faktur->diskon > 0) $finalTotalRow++;
         if ($this->faktur->potongan_kondisi > 0) $finalTotalRow++;
@@ -175,7 +192,7 @@ class SingleFakturSheet implements FromArray, WithTitle, WithHeadings, WithStyle
             $proofStartRow = $proofHeaderRow + 1;
             foreach ($this->faktur->bukti as $index => $bukti) {
                 $sheet->getStyle('A'.$proofStartRow.':C'.$proofStartRow)->applyFromArray($proofDetailsStyle);
-                $proofStartRow += 3;
+                $proofStartRow++; // Diubah dari +=3 menjadi ++ karena setiap bukti hanya 1 baris teks
             }
         }
         
@@ -201,11 +218,19 @@ class SingleFakturSheet implements FromArray, WithTitle, WithHeadings, WithStyle
             $startRowForDrawing = $finalTotalRow + 5; // Posisi mulai untuk gambar pertama
 
             foreach ($this->faktur->bukti as $index => $bukti) {
-                if (file_exists(storage_path('app/public/' . $bukti->foto))) {
+
+                // KUNCI PERUBAHAN: Gunakan logic yang SAMA PERSIS dengan di method array()
+                $filename = $bukti->foto;
+                $extension = strtolower(pathinfo((string)$filename, PATHINFO_EXTENSION));
+                $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+                $filePath = storage_path('app/public/' . $filename);
+
+                // Hanya proses file jika valid (punya ekstensi & ada filenya)
+                if (in_array($extension, $allowed_extensions) && file_exists($filePath)) {
                     $drawing = new Drawing();
                     $drawing->setName('Bukti ' . ($index + 1));
                     $drawing->setDescription('Bukti Transfer');
-                    $drawing->setPath(storage_path('app/public/' . $bukti->foto));
+                    $drawing->setPath($filePath); // Sekarang baris ini aman
                     $drawing->setHeight(500);
                     // Posisi gambar disesuaikan dengan loop
                     $drawing->setCoordinates('B' . ($startRowForDrawing + ($index * 4)));
@@ -213,6 +238,7 @@ class SingleFakturSheet implements FromArray, WithTitle, WithHeadings, WithStyle
                     $drawing->setOffsetY(10);
                     $drawings[] = $drawing;
                 }
+                // Jika tidak valid, tidak ada 'else'. Cukup lewati dan jangan buat gambar.
             }
         }
         

@@ -86,6 +86,8 @@ class TransaksiController extends Controller
             'grade' => 'required|string',
             'potongan_kondisi' => 'nullable|numeric|min:0',
             'diskon' => 'nullable|numeric|min:0|max:100',
+            'foto' => 'nullable|image',
+            'nominal' => 'nullable|numeric',
         ]);
 
         // 2. Cek Duplikat Nomor Faktur di Database

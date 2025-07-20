@@ -84,6 +84,8 @@ class TransaksiOutletController extends Controller
             'pembeli' => 'required|string',
             'petugas' => 'required|string',
             'grade' => 'required|string',
+            'foto' => 'nullable|image',
+            'nominal' => 'nullable|numeric',
         ]);
 
         // Cek duplikat nomor faktur di database (Fail-Fast)
