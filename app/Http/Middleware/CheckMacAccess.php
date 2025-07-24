@@ -28,7 +28,7 @@ class CheckMacAccess
                     'mac' => $mac,
                     'status' => 0
                 ]);
-                return response('MAC address pending approval.', 403);
+                return response('Perangkat pending approval.', 403);
             }
 
             if ($macEntry->status == 1) {
@@ -38,12 +38,12 @@ class CheckMacAccess
             }
 
             if ($macEntry->status == 2) {
-                return response('MAC address ditolak.', 403);
+                return response('Perangkat ditolak.', 403);
             }
 
-            return response('MAC address pending approval.', 403);
+            return response('Perangkat pending approval.', 403);
         }
 
-        return response('MAC address tidak ditemukan di cookies.', 403);
+        return response('Perangkat tidak terdaftar.', 403);
     }
 }

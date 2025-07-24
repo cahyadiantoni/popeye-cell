@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Verifikasi MAC Address</title>
+    <title>Verifikasi Perangkat</title>
 </head>
 <body>
     <h3 id="status-message">Memverifikasi akses perangkat Anda...</h3>
