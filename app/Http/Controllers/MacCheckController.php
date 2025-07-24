@@ -24,7 +24,7 @@ class MacCheckController extends Controller
         ]);
 
         MacAddress::create($request->all());
-        return redirect()->back()->with('success', 'MAC address berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Perangkat berhasil ditambahkan.');
     }
 
     public function update(Request $request, $id)
@@ -37,7 +37,7 @@ class MacCheckController extends Controller
         $mac = MacAddress::findOrFail($id);
         $mac->update($request->all());
 
-        return redirect()->back()->with('success', 'MAC address berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Perangkat berhasil diperbarui.');
     }
 
     public function destroy($id)
@@ -45,7 +45,7 @@ class MacCheckController extends Controller
         $mac = MacAddress::findOrFail($id);
         $mac->delete();
 
-        return redirect()->back()->with('success', 'MAC address berhasil dihapus.');
+        return redirect()->back()->with('success', 'Perangkat berhasil dihapus.');
     }
 
     public function check(Request $request)
@@ -53,7 +53,7 @@ class MacCheckController extends Controller
         $mac = $request->input('mac');
 
         if (!$mac) {
-            return response()->json(['message' => 'MAC address tidak ditemukan!'], 400);
+            return response()->json(['message' => 'Perangkat tidak terdaftar!'], 400);
         }
 
         $macEntry = MacAddress::where('mac', $mac)->first();
