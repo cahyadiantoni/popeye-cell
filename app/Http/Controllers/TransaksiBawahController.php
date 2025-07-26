@@ -195,51 +195,51 @@ class TransaksiBawahController extends Controller
                 }
             }
 
-            // $tipe = $barang->tipe;
-            // $tipe_normalisasi = $barang->tipe_normalisasi;
-
-            // $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
-            //     ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
-            //     ->whereDate('t_faktur_bawah.tgl_jual', $tglJual)
-            //     ->where('t_barang.tipe_normalisasi', $tipe_normalisasi)
-            //     ->where('t_faktur_bawah.grade', $grade)
-            //     ->pluck('t_jual_bawah.harga')
-            //     ->unique();
-
-            // if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
-            //     $hargaList = $hargaSebelumnya->implode(', ');
-            //     $errors[] = "Baris " . ($index + 1) . ": Harga jual " . ($hargaJual / 1000) . " berbeda dengan transaksi sebelumnya untuk tipe '$tipe', grade '$grade' pada tanggal " . Carbon::parse($tglJual)->format('d-M-Y') . " (harga sebelumnya: ".($hargaList/1000).").";
-            //     continue;
-            // }
-            
-
-            // 1. Dapatkan tipe dan tipe_normalisasi dari barang yang sedang diproses
             $tipe = $barang->tipe;
             $tipe_normalisasi = $barang->tipe_normalisasi;
 
-            // 2. Tentukan rentang tanggal (hari ini dan 13 hari sebelumnya, total 14 hari)
-            $tanggalAkhir = Carbon::parse($tglJual)->endOfDay();
-            $tanggalMulai = Carbon::parse($tglJual)->subDays(13)->startOfDay();
-
-            // 3. Cari semua harga unik untuk tipe dan grade yang sama dalam 14 hari terakhir
             $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
                 ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
-                ->whereBetween('t_faktur_bawah.tgl_jual', [$tanggalMulai, $tanggalAkhir])
+                ->whereDate('t_faktur_bawah.tgl_jual', $tglJual)
                 ->where('t_barang.tipe_normalisasi', $tipe_normalisasi)
                 ->where('t_faktur_bawah.grade', $grade)
                 ->pluck('t_jual_bawah.harga')
                 ->unique();
 
-            // 4. Jika ada harga sebelumnya dan harga saat ini tidak ada dalam daftar, berikan error
             if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
-                // Format daftar harga sebelumnya untuk pesan error
-                $hargaList = $hargaSebelumnya->map(function($harga) {
-                    return $harga / 1000;
-                })->implode(', ');
-
-                $errors[] = "Baris " . ($index + 1) . ": Harga jual (" . ($hargaJual / 1000) . ") tidak konsisten. Harga untuk tipe '$tipe' dan grade '$grade' dalam 7 hari terakhir adalah: [$hargaList].";
+                $hargaList = $hargaSebelumnya->implode(', ');
+                $errors[] = "Baris " . ($index + 1) . ": Harga jual " . ($hargaJual / 1000) . " berbeda dengan transaksi sebelumnya untuk tipe '$tipe', grade '$grade' pada tanggal " . Carbon::parse($tglJual)->format('d-M-Y') . " (harga sebelumnya: ".($hargaList/1000).").";
                 continue;
             }
+            
+
+            // // 1. Dapatkan tipe dan tipe_normalisasi dari barang yang sedang diproses
+            // $tipe = $barang->tipe;
+            // $tipe_normalisasi = $barang->tipe_normalisasi;
+
+            // // 2. Tentukan rentang tanggal (hari ini dan 13 hari sebelumnya, total 14 hari)
+            // $tanggalAkhir = Carbon::parse($tglJual)->endOfDay();
+            // $tanggalMulai = Carbon::parse($tglJual)->subDays(13)->startOfDay();
+
+            // // 3. Cari semua harga unik untuk tipe dan grade yang sama dalam 14 hari terakhir
+            // $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
+            //     ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
+            //     ->whereBetween('t_faktur_bawah.tgl_jual', [$tanggalMulai, $tanggalAkhir])
+            //     ->where('t_barang.tipe_normalisasi', $tipe_normalisasi)
+            //     ->where('t_faktur_bawah.grade', $grade)
+            //     ->pluck('t_jual_bawah.harga')
+            //     ->unique();
+
+            // // 4. Jika ada harga sebelumnya dan harga saat ini tidak ada dalam daftar, berikan error
+            // if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
+            //     // Format daftar harga sebelumnya untuk pesan error
+            //     $hargaList = $hargaSebelumnya->map(function($harga) {
+            //         return $harga / 1000;
+            //     })->implode(', ');
+
+            //     $errors[] = "Baris " . ($index + 1) . ": Harga jual (" . ($hargaJual / 1000) . ") tidak konsisten. Harga untuk tipe '$tipe' dan grade '$grade' dalam 7 hari terakhir adalah: [$hargaList].";
+            //     continue;
+            // }
             
             $totalHargaJual += $hargaJual;
             $validLokSpk[] = [ 'lok_spk' => $lokSpk, 'harga_jual' => $hargaJual ];
