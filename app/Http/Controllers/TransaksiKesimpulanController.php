@@ -374,10 +374,15 @@ class TransaksiKesimpulanController extends Controller
             foreach ($kesimpulan->fakturKesimpulans as $fakturKesimpulan) {
                 $faktur = $fakturKesimpulan->faktur;
 
-                if ($faktur) {
+                // PENAMBAHAN KONDISI:
+                // Hanya jalankan kode di bawah jika faktur ada DAN is_finish-nya BUKAN 1.
+                if ($faktur && $faktur->is_finish != 1) {
+
+                    // 1. Ubah status is_finish pada faktur
                     $faktur->is_finish = 1;
                     $faktur->save();
 
+                    // 2. Ubah status_barang untuk semua item terkait
                     foreach ($faktur->transaksiJuals as $transaksi) {
                         if ($transaksi->barang) {
                             $transaksi->barang->status_barang = 2;
@@ -385,14 +390,17 @@ class TransaksiKesimpulanController extends Controller
                         }
                     }
                 }
+                // Jika is_finish sudah 1, blok kode di atas akan dilewati.
             }
 
+            // Tetap tandai kesimpulan sebagai selesai setelah loop berakhir.
             $kesimpulan->is_finish = 1;
             $kesimpulan->save();
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Kesimpulan, semua faktur terkait, dan status barang berhasil diperbarui.');
+            // Pesan sukses yang lebih akurat
+            return redirect()->back()->with('success', 'Proses selesai. Status kesimpulan dan faktur yang relevan telah diperbarui.');
 
         } catch (\Exception $e) {
             DB::rollBack();
