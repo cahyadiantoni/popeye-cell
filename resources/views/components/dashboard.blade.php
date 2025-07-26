@@ -13,7 +13,7 @@
                                         <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[1]->total ?? 0 }} </h5>
                                         <h6 class="text-white m-b-0">Box : {{ $stokBox[1]->total ?? 0 }} </h6>
                                         <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[1]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[1]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">Box/Btg : {{ $stokNa[1]->total ?? 0 }} </h6>
                                     </div>
                                     <div class="col-4 text-end">
                                         <canvas id="update-chart-1" height="50"></canvas>
@@ -37,7 +37,7 @@
                                         <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[2]->total ?? 0 }} </h5>
                                         <h6 class="text-white m-b-0">Box : {{ $stokBox[2]->total ?? 0 }} </h6>
                                         <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[2]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[2]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">Box/Btg : {{ $stokNa[2]->total ?? 0 }} </h6>
                                     </div>
                                     <div class="col-4 text-end">
                                         <canvas id="update-chart-2" height="50"></canvas>
@@ -61,7 +61,7 @@
                                         <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[3]->total ?? 0 }} </h5>
                                         <h6 class="text-white m-b-0">Box : {{ $stokBox[3]->total ?? 0 }} </h6>
                                         <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[3]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[3]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">Box/Btg : {{ $stokNa[3]->total ?? 0 }} </h6>
                                     </div>
                                     <div class="col-4 text-end">
                                         <canvas id="update-chart-3" height="50"></canvas>
@@ -111,7 +111,7 @@
                                         <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[8]->total ?? 0 }} </h5>
                                         <h6 class="text-white m-b-0">Box : {{ $stokBox[8]->total ?? 0 }} </h6>
                                         <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[8]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[8]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">Box/Btg : {{ $stokNa[8]->total ?? 0 }} </h6>
                                     </div>
                                     <div class="col-4 text-end">
                                         <canvas id="update-chart-1" height="50"></canvas>
@@ -135,7 +135,7 @@
                                         <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[9]->total ?? 0 }} </h5>
                                         <h6 class="text-white m-b-0">Box : {{ $stokBox[9]->total ?? 0 }} </h6>
                                         <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[9]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[9]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">Box/Btg : {{ $stokNa[9]->total ?? 0 }} </h6>
                                     </div>
                                     <div class="col-4 text-end">
                                         <canvas id="update-chart-2" height="50"></canvas>
@@ -159,7 +159,7 @@
                                         <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[10]->total ?? 0 }} </h5>
                                         <h6 class="text-white m-b-0">Box : {{ $stokBox[10]->total ?? 0 }} </h6>
                                         <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[10]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[10]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">Box/Btg : {{ $stokNa[10]->total ?? 0 }} </h6>
                                     </div>
                                     <div class="col-4 text-end">
                                         <canvas id="update-chart-3" height="50"></canvas>
@@ -183,7 +183,7 @@
                                         <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[6]->total ?? 0 }} </h5>
                                         <h6 class="text-white m-b-0">Box : {{ $stokBox[6]->total ?? 0 }} </h6>
                                         <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[6]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[6]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">Box/Btg : {{ $stokNa[6]->total ?? 0 }} </h6>
                                     </div>
                                     <div class="col-4 text-end">
                                         <canvas id="update-chart-4" height="50"></canvas>
@@ -207,7 +207,7 @@
                                         <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[11]->total ?? 0 }} </h5>
                                         <h6 class="text-white m-b-0">Box : {{ $stokBox[11]->total ?? 0 }} </h6>
                                         <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[11]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[11]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">Box/Btg : {{ $stokNa[11]->total ?? 0 }} </h6>
                                     </div>
                                     <div class="col-4 text-end">
                                         <canvas id="update-chart-4" height="50"></canvas>
@@ -231,7 +231,7 @@
                                         <h5 class="text-white m-b-0">Total Stok : {{ $stokGudangs[7]->total ?? 0 }} </h5>
                                         <h6 class="text-white m-b-0">Box : {{ $stokBox[7]->total ?? 0 }} </h6>
                                         <h6 class="text-white m-b-0">Batangan : {{ $stokBtg[7]->total ?? 0 }} </h6>
-                                        <h6 class="text-white m-b-0">N/A : {{ $stokNa[7]->total ?? 0 }} </h6>
+                                        <h6 class="text-white m-b-0">Box/Btg : {{ $stokNa[7]->total ?? 0 }} </h6>
                                     </div>
                                     <div class="col-4 text-end">
                                         <canvas id="update-chart-4" height="50"></canvas>
