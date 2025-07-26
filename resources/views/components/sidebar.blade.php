@@ -240,6 +240,12 @@
                         <span class="pcoded-mtext">Transaksi Return</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('transaksi-return-riwayat') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-return-riwayat') }}">
+                        <span class="pcoded-micon"><i class="fas fa-history"></i></span>
+                        <span class="pcoded-mtext">Riwayat Barang Return</span>
+                    </a>
+                </li>
                 <li class="{{ Request::is('tokped-deposit') ? 'active' : '' }}">
                     <a href="{{ url('/tokped-deposit') }}">
                         <span class="pcoded-micon"><i class="fas fa-wallet"></i></span>

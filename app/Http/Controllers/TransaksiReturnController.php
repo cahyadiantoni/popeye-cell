@@ -426,5 +426,19 @@ class TransaksiReturnController extends Controller
         }
     }
 
+    public function riwayat()
+    {
+        // 1. Ambil semua data dari ReturnBarang
+        $riwayat_barang = ReturnBarang::with(['returnModel', 'barang'])
+                            // 2. Gabungkan dengan tabel t_return
+                            ->join('t_return', 't_return_barang.t_return_id', '=', 't_return.id')
+                            // 3. Urutkan berdasarkan kolom tgl_return dari tabel t_return (desc = terbaru dulu)
+                            ->orderBy('t_return.tgl_return', 'desc')
+                            // 4. Pilih semua kolom dari tabel asal untuk menghindari konflik
+                            ->select('t_return_barang.*')
+                            ->get();
 
+        // 5. Kirim data ke view
+        return view('pages.transaksi-return.riwayat', compact('riwayat_barang'));
+    }
 }

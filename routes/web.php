@@ -102,6 +102,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::post('/terima-barang/tolak', [TerimaBarangController::class, 'tolak'])->name('terima-barang.tolak');
     Route::get('/terima-barang/export/{id}', [TerimaBarangController::class, 'export'])->name('terima-barang.export');
 
+    Route::get('/transaksi-return/riwayat', [TransaksiReturnController::class, 'riwayat'])->name('transaksi-return.riwayat');
     Route::get('/transaksi-return/suggest', [TransaksiReturnController::class, 'getSuggest'])->name('transaksi-return.suggest');
     Route::resource('/transaksi-return', TransaksiReturnController::class)->middleware('auth');
     Route::delete('/transaksi-return-barang/{id}', [TransaksiReturnController::class, 'destroyBarang'])->name('transaksi-return-barang.delete');
