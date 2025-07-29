@@ -41,6 +41,7 @@
                 <th>Jml Barang</th>
                 <th>Ttl Harga</th>
                 <th>Sub Total</th>
+                <th>Note Manual</th>
             </tr>
         </thead>
         <tbody>
@@ -60,6 +61,7 @@
                 <td class="text-center">{{ $faktur->total_barang }}</td>
                 <td class="text-right">Rp. {{ number_format($faktur->total, 0, ',', '.') }}</td>
                 <td class="text-right">Rp. {{ number_format($subtotal, 0, ',', '.') }}</td>
+                <td></td>
             </tr>
             @endforeach
         </tbody>

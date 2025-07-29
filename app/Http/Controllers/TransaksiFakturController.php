@@ -149,6 +149,7 @@ class TransaksiFakturController extends Controller
     }
     public function printPdf($nomor_faktur)
     {
+        $roleUser = optional(Auth::user())->role;
         // Ambil data faktur dan transaksi jual
         $faktur = Faktur::with('barangs', 'bukti')
             ->where('nomor_faktur', $nomor_faktur)
@@ -172,7 +173,7 @@ class TransaksiFakturController extends Controller
         $totalHarga = $transaksiJuals->sum('harga');
 
         // Kirim data ke template PDF
-        $pdf = \PDF::loadView('pages.transaksi-faktur.print', compact('faktur', 'transaksiJuals', 'totalHarga'));
+        $pdf = \PDF::loadView('pages.transaksi-faktur.print', compact('faktur', 'transaksiJuals', 'totalHarga', 'roleUser'));
 
         // Unduh atau tampilkan PDF
         return $pdf->stream('Faktur_Penjualan_' . $faktur->nomor_faktur . '.pdf');

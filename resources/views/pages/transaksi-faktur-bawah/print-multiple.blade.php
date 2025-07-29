@@ -45,6 +45,10 @@
                         <th>Merk Tipe</th>
                         <th>Harga</th>
                         <th>Sub Total</th>
+                        {{-- Tampilkan kolom ini hanya untuk admin --}}
+                        @if(isset($roleUser) && $roleUser == 'admin')
+                            <th>Status Harga & Notes</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -55,6 +59,19 @@
                         <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
                         <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
                         <td>Rp. {{ number_format($transaksi->subtotal, 0, ',', '.') }}</td>
+                        
+                        {{-- Tampilkan data kolom ini hanya untuk admin --}}
+                        @if(isset($roleUser) && $roleUser == 'admin')
+                            <td style="text-align: left;">
+                                @if($transaksi->status_harga == 'Beda')
+                                    <span style="color: red; font-weight: bold;">Beda</span>
+                                @elseif($transaksi->status_harga == 'Sama')
+                                    <span style="color: green;">Sama</span>
+                                @else
+                                    <span>{{ $transaksi->status_harga }}</span>
+                                @endif
+                            </td>
+                        @endif
                     </tr>
                     @endforeach
                 </tbody>

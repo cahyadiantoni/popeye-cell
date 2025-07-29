@@ -45,6 +45,7 @@
                         <th>Merk Tipe</th>
                         <th>Harga</th>
                         <th>Sub Total</th>
+                        <th>Note Manual</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -55,6 +56,7 @@
                         <td>{{ $transaksi->barang->tipe ?? '-' }}</td>
                         <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
                         <td>Rp. {{ number_format($transaksi->subtotal, 0, ',', '.') }}</td>
+                        <td></td>
                     </tr>
                     @endforeach
                 </tbody>

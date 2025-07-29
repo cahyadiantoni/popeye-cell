@@ -82,21 +82,58 @@ class TransaksiFakturBawahController extends Controller
             ->where('nomor_faktur', $nomor_faktur)
             ->get();
 
-        // Hitung subtotal tiap barang
-        $subtotalKumulatif = 0; // Variabel untuk menyimpan subtotal kumulatif
+        // Dapatkan role user saat ini
+        $roleUser = optional(Auth::user())->role;
 
-        $transaksiJuals->map(function ($transaksi) use (&$subtotalKumulatif) {
-            $subtotalKumulatif += $transaksi->harga; // Tambahkan harga pada baris ini
-            $transaksi->subtotal = $subtotalKumulatif; // Tetapkan subtotal kumulatif sebagai subtotal
+        // Variabel untuk subtotal kumulatif
+        $subtotalKumulatif = 0; 
+
+        // Proses setiap transaksi untuk menghitung subtotal dan mengecek konsistensi harga
+        $transaksiJuals->map(function ($transaksi) use (&$subtotalKumulatif, $faktur) {
+            
+            // 1. Hitung subtotal kumulatif
+            $subtotalKumulatif += $transaksi->harga;
+            $transaksi->subtotal = $subtotalKumulatif;
+
+            // 2. Logika pengecekan konsistensi harga (hanya jika barang ada)
+            if ($transaksi->barang) {
+                $tipe_normalisasi = $transaksi->barang->tipe_normalisasi;
+                $hargaJual = $transaksi->harga;
+                $grade = $faktur->grade;
+                $tglJual = $faktur->tgl_jual;
+
+                // Tentukan rentang tanggal 14 hari
+                $tanggalAkhir = Carbon::parse($tglJual)->endOfDay();
+                $tanggalMulai = Carbon::parse($tglJual)->subDays(13)->startOfDay();
+
+                // Cari semua harga unik dalam 14 hari terakhir
+                $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
+                    ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
+                    ->whereBetween('t_faktur_bawah.tgl_jual', [$tanggalMulai, $tanggalAkhir])
+                    ->where('t_barang.tipe_normalisasi', $tipe_normalisasi)
+                    ->where('t_faktur_bawah.grade', $grade)
+                    ->where('t_jual_bawah.nomor_faktur', '!=', $faktur->nomor_faktur) // Abaikan faktur saat ini
+                    ->pluck('t_jual_bawah.harga')
+                    ->unique();
+
+                // Tentukan status harga
+                if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
+                    $transaksi->status_harga = 'Beda'; // Harga berbeda
+                } else {
+                    $transaksi->status_harga = 'Sama'; // Harga sama atau tidak ada data pembanding
+                }
+            } else {
+                $transaksi->status_harga = 'N/A'; // Tidak ada data barang untuk dicek
+            }
+
             return $transaksi;
         });
         
-
         // Total keseluruhan
         $totalHarga = $transaksiJuals->sum('harga');
 
-        // Kirim data ke template PDF
-        $pdf = \PDF::loadView('pages.transaksi-faktur-bawah.print', compact('faktur', 'transaksiJuals', 'totalHarga'));
+        // Kirim data ke template PDF, termasuk roleUser
+        $pdf = \PDF::loadView('pages.transaksi-faktur-bawah.print', compact('faktur', 'transaksiJuals', 'totalHarga', 'roleUser'));
 
         // Unduh atau tampilkan PDF
         return $pdf->stream('Faktur_Penjualan_' . $faktur->nomor_faktur . '.pdf');
@@ -235,7 +272,11 @@ class TransaksiFakturBawahController extends Controller
 
     public function printMultiple(Request $request)
     {
-        $query = FakturBawah::with(['barangs', 'transaksiJuals.barang'])->orderBy('tgl_jual', 'desc');
+        // Ambil role user saat ini
+        $roleUser = optional(Auth::user())->role;
+
+        // Query dasar dengan eager loading untuk menghindari N+1 query
+        $query = FakturBawah::with(['transaksiJuals.barang'])->orderBy('tgl_jual', 'desc');
 
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
             $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
@@ -255,23 +296,52 @@ class TransaksiFakturBawahController extends Controller
 
         $fakturs = $query->get();
 
-        // Ambil transaksi jual masing-masing faktur
+        // Proses setiap faktur untuk kalkulasi dan pengecekan harga
         foreach ($fakturs as $faktur) {
-            $faktur->transaksiJuals = TransaksiJualBawah::with('barang')
-                ->where('nomor_faktur', $faktur->nomor_faktur)
-                ->get();
-
+            
             $subtotalKumulatif = 0;
-            $faktur->transaksiJuals->map(function ($transaksi) use (&$subtotalKumulatif) {
+            
+            // Map transaksi untuk subtotal dan status harga
+            $faktur->transaksiJuals->map(function ($transaksi) use (&$subtotalKumulatif, $faktur) {
+                
+                // 1. Hitung subtotal kumulatif
                 $subtotalKumulatif += $transaksi->harga;
                 $transaksi->subtotal = $subtotalKumulatif;
+
+                // 2. Logika pengecekan konsistensi harga
+                if ($transaksi->barang) {
+                    $tipe_normalisasi = $transaksi->barang->tipe_normalisasi;
+                    $hargaJual = $transaksi->harga;
+
+                    $tanggalAkhir = Carbon::parse($faktur->tgl_jual)->endOfDay();
+                    $tanggalMulai = Carbon::parse($faktur->tgl_jual)->subDays(13)->startOfDay();
+
+                    $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
+                        ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
+                        ->whereBetween('t_faktur_bawah.tgl_jual', [$tanggalMulai, $tanggalAkhir])
+                        ->where('t_barang.tipe_normalisasi', $tipe_normalisasi)
+                        ->where('t_faktur_bawah.grade', $faktur->grade)
+                        ->where('t_jual_bawah.nomor_faktur', '!=', $faktur->nomor_faktur)
+                        ->pluck('t_jual_bawah.harga')
+                        ->unique();
+
+                    if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
+                        $transaksi->status_harga = 'Beda';
+                    } else {
+                        $transaksi->status_harga = 'Sama';
+                    }
+                } else {
+                    $transaksi->status_harga = 'N/A';
+                }
+
                 return $transaksi;
             });
 
+            // Hitung total harga untuk faktur ini
             $faktur->totalHarga = $faktur->transaksiJuals->sum('harga');
         }
 
-        $pdf = \PDF::loadView('pages.transaksi-faktur-bawah.print-multiple', compact('fakturs'))
+        $pdf = \PDF::loadView('pages.transaksi-faktur-bawah.print-multiple', compact('fakturs', 'roleUser'))
             ->setPaper('A4', 'portrait');
 
         return $pdf->stream('Daftar_Faktur.pdf');

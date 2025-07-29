@@ -48,6 +48,9 @@
                 <th>PJ</th>
                 <th>Harga</th>
                 <th>Sub Total</th>
+                @if(isset($roleUser) && $roleUser == 'admin')
+                    <th>Note Manual</th>
+                @endif
             </tr>
         </thead>
         <tbody>
@@ -60,6 +63,9 @@
                 <td>Rp. {{ number_format($transaksi->pj, 0, ',', '.') }}</td>
                 <td>Rp. {{ number_format($transaksi->harga, 0, ',', '.') }}</td>
                 <td>Rp. {{ number_format($transaksi->subtotal, 0, ',', '.') }}</td>
+                @if(isset($roleUser) && $roleUser == 'admin')
+                    <td></td>
+                @endif
             </tr>
             @endforeach
         </tbody>
