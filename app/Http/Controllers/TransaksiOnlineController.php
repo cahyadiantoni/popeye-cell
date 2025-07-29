@@ -242,7 +242,7 @@ class TransaksiOnlineController extends Controller
                     'pj' => $hargaPj,
                 ]);
 
-                $barang->update(['status_barang' => 5, 'no_faktur' => $validated['faktur_online_id'], 'harga_jual' => $hargaJual]);
+                $barang->update(['status_barang' => 2, 'no_faktur' => $validated['faktur_online_id'], 'harga_jual' => $hargaJual]);
                 
                 HistoryEditFakturOnline::create([
                     'faktur_id' => $validated['faktur_online_id'],
@@ -282,7 +282,7 @@ class TransaksiOnlineController extends Controller
                         throw ValidationException::withMessages(['lok_spk' => 'LOK SPK baru sudah digunakan atau statusnya tidak valid.']);
                     }
                     Barang::where('lok_spk', $transaksi->lok_spk)->update(['status_barang' => 1, 'harga_jual' => null, 'no_faktur' => null]);
-                    $barangBaru->update(['status_barang' => 5, 'harga_jual' => $validated['harga'], 'no_faktur' => $transaksi->faktur_online_id]);
+                    $barangBaru->update(['status_barang' => 2, 'harga_jual' => $validated['harga'], 'no_faktur' => $transaksi->faktur_online_id]);
                     $historyMessage[] = "Barang diubah dari '{$transaksi->lok_spk}' menjadi '{$validated['lok_spk']}'";
                 }
 

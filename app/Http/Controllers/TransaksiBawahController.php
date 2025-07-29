@@ -357,7 +357,7 @@ class TransaksiBawahController extends Controller
                 ]);
 
                 $barang->update([
-                    'status_barang' => 5, // Status terjual tapi belum dicek
+                    'status_barang' => 2, 
                     'no_faktur' => $validated['nomor_faktur'],
                     'harga_jual' => $validated['harga'],
                 ]);
@@ -404,7 +404,7 @@ class TransaksiBawahController extends Controller
                     }
 
                     Barang::where('lok_spk', $lok_spk_lama)->update(['status_barang' => 1, 'harga_jual' => null, 'no_faktur' => null]);
-                    $barang_baru->update(['status_barang' => 5, 'harga_jual' => $hargaBaru, 'no_faktur' => $nomor_faktur]);
+                    $barang_baru->update(['status_barang' => 2, 'harga_jual' => $hargaBaru, 'no_faktur' => $nomor_faktur]);
                     $historyMessage = "Mengganti barang dari LOK SPK '{$lok_spk_lama}' ke '{$lok_spk_baru}' dengan harga baru Rp " . number_format($hargaBaru) . ".";
                 } else {
                     $transaksi_jual->barang()->update(['harga_jual' => $hargaBaru]);

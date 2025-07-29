@@ -246,7 +246,7 @@ class TransaksiOutletController extends Controller
                 $hargaJual = $validated['harga'] * 1000;
                 
                 TransaksiJualOutlet::create(['lok_spk' => $validated['lok_spk'], 'nomor_faktur' => $validated['nomor_faktur'], 'harga' => $hargaJual, 'harga_acc' => 0]);
-                $barang->update(['status_barang' => 5, 'no_faktur' => $validated['nomor_faktur'], 'harga_jual' => $hargaJual]);
+                $barang->update(['status_barang' => 2, 'no_faktur' => $validated['nomor_faktur'], 'harga_jual' => $hargaJual]);
                 HistoryEditFakturOutlet::create(['faktur_id' => $faktur->id, 'update' => "Menambah barang (LOK SPK: {$validated['lok_spk']}) harga " . number_format($hargaJual), 'user_id' => auth()->id()]);
                 $faktur->total += $hargaJual;
                 $faktur->save();
@@ -290,7 +290,7 @@ class TransaksiOutletController extends Controller
                     Barang::where('lok_spk', $lok_spk_lama)->update(['status_barang' => 1, 'harga_jual' => null, 'no_faktur' => null]);
                     
                     // Ubah status barang BARU menjadi terjual
-                    $barang_baru->update(['status_barang' => 5, 'harga_jual' => $harga_baru, 'no_faktur' => $nomor_faktur]);
+                    $barang_baru->update(['status_barang' => 2, 'harga_jual' => $harga_baru, 'no_faktur' => $nomor_faktur]);
                     
                     $historyMessage = "Ganti barang dari '{$lok_spk_lama}' ke '{$lok_spk_baru}' dengan harga Rp " . number_format($harga_baru);
                 } else {
