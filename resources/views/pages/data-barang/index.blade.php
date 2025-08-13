@@ -40,6 +40,56 @@
                     <div class="col-sm-12">
                         <!-- Zero config.table start -->
                         <div class="card">
+                            <div class="card-header">
+                                <form id="formFilterDataBarang" action="{{ route('data-barang.index') }}" method="GET">
+                                <div class="row">
+                                    @if($roleUser == 'admin')
+                                    <div class="col-md-3">
+                                    <label for="gudang_nama">Gudang</label>
+                                    <select name="gudang_nama" id="gudang_nama" class="form-control">
+                                        <option value="">-- Semua gudang --</option>
+                                        @foreach($gudangs as $g)
+                                        <option value="{{ $g->nama_gudang }}">{{ $g->nama_gudang }}</option>
+                                        @endforeach
+                                    </select>
+                                    </div>
+                                    @endif
+
+                                    <div class="col-md-3">
+                                    <label for="start_date">Tanggal Mulai Upload</label>
+                                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ request('start_date') }}">
+                                    </div>
+
+                                    <div class="col-md-3">
+                                    <label for="end_date">Tanggal Selesai Upload</label>
+                                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ request('end_date') }}">
+                                    </div>
+
+                                    <div class="col-md-3">
+                                    <label for="status_barang_filter">Status Barang</label>
+                                    <select name="status_barang_filter" id="status_barang_filter" class="form-control">
+                                        <option value="">-- Semua status --</option>
+                                        <option value="terjual" {{ request('status_barang_filter')=='terjual'?'selected':'' }}>Terjual</option>
+                                        <option value="belum"   {{ request('status_barang_filter')=='belum'?'selected':'' }}>Belum Terjual</option>
+                                    </select>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end mt-3">
+                                    <button type="submit" class="btn btn-primary" id="btnFilter">Filter</button>
+
+                                    <a href="{{ route('data-barang.index') }}" class="btn btn-secondary mx-2" id="btnResetLink">
+                                    Reset
+                                    </a>
+
+                                    <a href="#" class="btn btn-success" id="btnExport">
+                                    Export Excel
+                                    </a>
+                                </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="card">
                             @if(session('success'))
                                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                                     {{ session('success') }}
@@ -154,50 +204,88 @@
 
 
 <script>
+    let tableBarang;
+
+    function getFilterParams() {
+        // Ambil langsung dari field form
+        return {
+        start_date: $('#start_date').val(),
+        end_date: $('#end_date').val(),
+        status_barang_filter: $('#status_barang_filter').val(),
+        gudang_nama: $('#gudang_nama').val()
+        };
+    }
+
     $(document).ready(function () {
-        $('#tablebarang').DataTable({
-            processing: true,
-            serverSide: true,
-            ajax: "{{ route('data-barang.index') }}", // Pastikan rute ini mengarah ke metode `index` di controller
-            columns: [
-                { data: 'lok_spk', name: 'lok_spk' },
-                { data: 'created_at', name: 'created_at' },
-                { data: 'jenis', name: 'jenis' },
-                { data: 'tipe', name: 'tipe' },
-                { data: 'imei', name: 'imei' },
-                { data: 'grade', name: 'grade' },
-                { data: 'kelengkapan', name: 'kelengkapan' },
-                { data: 'gudang.nama_gudang', name: 'gudang.nama_gudang' },
-                { 
-                    data: 'action', 
-                    name: 'action', 
-                    orderable: false, 
-                    searchable: false 
-                },
-            ]
+        tableBarang = $('#tablebarang').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{{ route('data-barang.index') }}",
+            data: function (d) {
+            const f = getFilterParams();
+            d.start_date = f.start_date;
+            d.end_date   = f.end_date;
+            d.status_barang_filter = f.status_barang_filter;
+            d.gudang_nama = f.gudang_nama;
+            }
+        },
+        columns: [
+            { data: 'lok_spk', name: 'lok_spk' },
+            { data: 'created_at', name: 'created_at' },
+            { data: 'jenis', name: 'jenis' },
+            { data: 'tipe', name: 'tipe' },
+            { data: 'imei', name: 'imei' },
+            { data: 'grade', name: 'grade' },
+            { data: 'kelengkapan', name: 'kelengkapan' },
+            { data: 'gudang.nama_gudang', name: 'gudang.nama_gudang' },
+            { data: 'action', name: 'action', orderable: false, searchable: false },
+        ]
+        });
+
+        // Tombol Filter (gunakan AJAX reload, cegah submit form)
+        $('#btnFilter').on('click', function (e) {
+        e.preventDefault();
+        tableBarang.ajax.reload();
+        });
+
+        // Tombol Reset: kosongkan field + reload tabel (tanpa refresh halaman)
+        $('#btnResetLink').on('click', function (e) {
+        e.preventDefault();
+        $('#start_date').val('');
+        $('#end_date').val('');
+        $('#status_barang_filter').val('');
+        $('#gudang_nama').val('');
+        tableBarang.ajax.reload();
+        // kalau tetap ingin benar2 reload page, hapus e.preventDefault() di atas
+        // window.location = "{{ route('data-barang.index') }}";
+        });
+
+        // Tombol Export: pakai filter yang aktif
+        $('#btnExport').on('click', function (e) {
+        e.preventDefault();
+        const f = getFilterParams();
+        const qs = new URLSearchParams(f).toString();
+        window.location.href = "{{ route('data-barang.export') }}" + "?" + qs;
         });
     });
 
+    // (Tetap) handler modal edit
     $(document).on('click', '.edit-barang-btn', function () {
-        // Ambil data dari tombol
         const lok_spk = $(this).data('lok_spk');
         const jenis = $(this).data('jenis');
         const tipe = $(this).data('tipe');
         const grade = $(this).data('grade');
         const kelengkapan = $(this).data('kelengkapan');
 
-        // Isi data ke dalam modal
-        $('#lok_spk_original').val(lok_spk); // Lok SPK original
+        $('#lok_spk_original').val(lok_spk);
         $('#lok_spk').val(lok_spk);
         $('#jenis').val(jenis);
         $('#tipe').val(tipe);
         $('#grade').val(grade);
         $('#kelengkapan').val(kelengkapan);
 
-        // Atur action form modal edit
         $('#editBarangForm').attr('action', `/update-data-barang/${lok_spk}`);
-
-        // Tampilkan modal
         $('#editBarangModal').modal('show');
     });
 </script>

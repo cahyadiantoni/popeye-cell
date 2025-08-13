@@ -13,27 +13,29 @@ use Auth;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
+use App\Exports\DataBarangExport;
 
 class DataBarangController extends Controller
 {
     public function index(Request $request)
     {
         $roleUser = optional(Auth::user())->role;
-    
+
         if ($request->ajax()) {
             $query = Barang::with('gudang');
+            $this->applyFilters($query, $request);
+
             return DataTables::of($query)
                 ->editColumn('created_at', function ($row) {
                     return Carbon::parse($row->created_at)->translatedFormat('d F Y');
                 })
                 ->addColumn('action', function ($barang) use ($roleUser) {
                     $deleteButton = '';
-                    $editButton = '';
-                    $terjual = '';
-                
+                    $editButton   = '';
+                    $terjual      = '';
+
                     if ($barang->status_barang != 2) {
                         $editButton = '
-                            <!-- Tombol Edit -->
                             <button type="button" class="btn btn-warning btn-round edit-barang-btn" 
                                 data-lok_spk="' . htmlspecialchars($barang->lok_spk) . '" 
                                 data-jenis="' . htmlspecialchars($barang->jenis) . '" 
@@ -41,33 +43,22 @@ class DataBarangController extends Controller
                                 data-grade="' . htmlspecialchars($barang->grade) . '"
                                 data-kelengkapan="' . htmlspecialchars($barang->kelengkapan) . '">
                                 Edit
-                            </button>
-                        ';
+                            </button>';
 
                         if ($roleUser === 'admin') {
-
                             $deleteButton = '
-                                <!-- Tombol Delete -->
                                 <form action="' . route('data-barang.destroy', $barang->lok_spk) . '" method="POST" style="display:inline;">
-                                    ' . csrf_field() . '
-                                    ' . method_field('DELETE') . '
+                                    ' . csrf_field() . method_field('DELETE') . '
                                     <button type="submit" class="btn btn-danger btn-round" 
                                         onclick="return confirm(\'Are you sure you want to delete this barang?\')">
                                         Delete
                                     </button>
-                                </form>
-                            ';
+                                </form>';
                         }
-                    }else{
-                        $terjual = '
-                            <!-- Tombol Edit -->
-                            <button type="button" class="btn btn-success btn-round">
-                                Terjual
-                            </button>
-                        ';
+                    } else {
+                        $terjual = '<button type="button" class="btn btn-success btn-round">Terjual</button>';
                     }
-    
-    
+
                     return $editButton . ' ' . $deleteButton  . ' ' . $terjual;
                 })
                 ->editColumn('gudang.nama_gudang', function ($barang) {
@@ -76,9 +67,11 @@ class DataBarangController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-    
-        return view('pages.data-barang.index', compact('roleUser'));
-    }    
+
+        // Tambahkan daftar gudang untuk filter dropdown
+        $gudangs = Gudang::orderBy('nama_gudang')->get(['id','nama_gudang']);
+        return view('pages.data-barang.index', compact('roleUser', 'gudangs'));
+    }
 
     public function edit($lok_spk)
     {
@@ -570,4 +563,45 @@ class DataBarangController extends Controller
         return redirect()->route('data-barang-pendingan.index')->with('success', 'Status barang berhasil diubah menjadi 1!');
     }
 
+    public function export(Request $request)
+    {
+        // export sesuai filter yang sedang dipilih di tabel
+        $filename = 'data-barang-' . now()->format('Ymd_His') . '.xlsx';
+        return Excel::download(new DataBarangExport(
+            $request->get('start_date'),
+            $request->get('end_date'),
+            $request->get('status_barang_filter'),
+            $request->get('gudang_nama')
+        ), $filename);
+    }
+
+    /**
+     * Terapkan filter ke query utama (dipakai oleh DataTables & Export)
+     */
+    private function applyFilters($query, Request $request): void
+    {
+        // dukung 2 nama parameter
+        $start = $request->get('start_date', $request->get('tanggal_mulai'));
+        $end   = $request->get('end_date',   $request->get('tanggal_selesai'));
+
+        if ($start || $end) {
+            $startDate = $start ? Carbon::parse($start)->startOfDay() : Carbon::minValue();
+            $endDate   = $end   ? Carbon::parse($end)->endOfDay()   : Carbon::maxValue();
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        $status = $request->get('status_barang_filter', $request->get('status'));
+        if ($status === 'terjual') {
+            $query->where('status_barang', 2);
+        } elseif ($status === 'belum') {
+            $query->where('status_barang', '!=', 2);
+        }
+
+        $gudangNama = $request->get('gudang_nama', $request->get('kode_faktur'));
+        if (!empty($gudangNama)) {
+            $query->whereHas('gudang', function ($q) use ($gudangNama) {
+                $q->where('nama_gudang', $gudangNama);
+            });
+        }
+    }
 }

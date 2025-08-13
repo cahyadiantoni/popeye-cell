@@ -21,5 +21,11 @@ class TransaksiJualBawah extends Model
     {
         return $this->belongsTo(FakturBawah::class, 'nomor_faktur', 'nomor_faktur');
     }
+
+    public function setLokSpkAttribute($value)
+    {
+        // Hapus spasi di awal & akhir, spasi di tengah tetap
+        $this->attributes['lok_spk'] = is_string($value) ? trim($value) : $value;
+    }
 }
 

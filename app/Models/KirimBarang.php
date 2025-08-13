@@ -17,4 +17,10 @@ class KirimBarang extends Model
     {
         return $this->belongsTo(Barang::class, 'lok_spk', 'lok_spk');
     }
+
+    public function setLokSpkAttribute($value)
+    {
+        // Hapus spasi di awal & akhir, spasi di tengah tetap
+        $this->attributes['lok_spk'] = is_string($value) ? trim($value) : $value;
+    }
 }

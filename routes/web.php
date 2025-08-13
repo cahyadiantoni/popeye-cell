@@ -64,6 +64,9 @@ Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->middlewa
 Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sales'])->group(function () {
     Route::resource('/data-user', DataUSerController::class)->middleware('auth');
     Route::resource('/data-gudang', DataGudangController::class)->middleware('auth');
+    Route::get('/data-barang/export', [DataBarangController::class, 'export'])
+    ->name('data-barang.export')
+    ->middleware('auth');
     Route::resource('/data-barang', DataBarangController::class)->middleware('auth');
     Route::get('/mass-edit-barang', [DataBarangController::class, 'massedit'])->middleware('auth');
     Route::post('/mass-update-data-barang', [DataBarangController::class, 'massUpdateDataBarang'])->middleware('auth')->name('mass-update.dataBarang');
