@@ -42,6 +42,7 @@ use App\Http\Middleware\CheckMacAccess;
 use App\Exports\BarangExport;
 use App\Exports\FakturOnlineExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Controllers\InventarisController;
 
 
 Auth::routes();
@@ -237,6 +238,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/pulsa-report/export', [PulsaReportController::class, 'exportExcel'])->name('pulsa-report.exportExcel');
     Route::resource('/pulsa-report', PulsaReportController::class)->middleware('auth');
 
+    Route::resource('/data-inventaris', InventarisController::class)->middleware('auth');
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {

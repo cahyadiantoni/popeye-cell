@@ -36,6 +36,12 @@
                             <span class="pcoded-mtext">Data Gudang</span>
                         </a>
                     </li>
+                    <li class="{{ Request::is('data-inventaris*') ? 'active' : '' }}">
+                        <a href="{{ route('data-inventaris.index') }}">
+                            <span class="pcoded-micon"><i class="fas fa-clipboard-list"></i></span>
+                            <span class="pcoded-mtext">Data Inventaris</span>
+                        </a>
+                    </li>
                 @endif
                 <li class="{{ Request::is('data-barang') ? 'active' : '' }}">
                     <a href="{{ url('/data-barang') }}">
