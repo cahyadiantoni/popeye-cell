@@ -565,5 +565,103 @@ class CekSOController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
+
+    public function manualInput(Request $request)
+    {
+        $request->validate([
+            't_cek_so_id' => 'required|integer',
+            'lok_spk'     => 'required|string'
+        ]);
+
+        try {
+            $t_cek_so_id = (int) $request->t_cek_so_id;
+            $lok_spk_raw = trim($request->lok_spk);
+
+            // Cek duplikat (case-insensitive) dalam sesi cek_so ini
+            $isDuplicate = CekSOBarang::where('t_cek_so_id', $t_cek_so_id)
+                ->whereRaw('LOWER(lok_spk) = ?', [mb_strtolower($lok_spk_raw)])
+                ->exists();
+
+            if ($isDuplicate) {
+                // Bisa JSON untuk AJAX atau redirect biasa
+                if ($request->wantsJson()) {
+                    return response()->json(['status' => 'duplicate', 'message' => 'LOK_SPK sudah pernah diinput.']);
+                }
+                return back()->with('error', 'LOK_SPK sudah pernah diinput pada sesi ini.');
+            }
+
+            // Insert sebagai manual upload (status = 3)
+            CekSOBarang::create([
+                't_cek_so_id' => $t_cek_so_id,
+                'lok_spk'     => $lok_spk_raw,
+                'status'      => 3,
+            ]);
+
+            // === Recount seperti di method upload() ===
+            $cekso = CekSO::findOrFail($t_cek_so_id);
+
+            // Total baris di t_cek_so_barang (manual maupun non-manual)
+            $jumlahScanTotal = CekSOBarang::where('t_cek_so_id', $cekso->id)->count();
+
+            // Hitung manual (status = 3)
+            $jumlahManual = CekSOBarang::where('t_cek_so_id', $cekso->id)->where('status', 3)->count();
+
+            // Hitung non-manual (status != 3) agar tampilan di index tetap terpisah
+            $jumlahScanNonManual = $jumlahScanTotal - $jumlahManual;
+
+            // Jumlah stok aktif di gudang
+            $jumlahStok = Barang::where('gudang_id', $cekso->gudang_id)
+                ->where('status_barang', 1)
+                ->count();
+
+            // Adakah item yang discan tetapi tidak ada di master stok gudang?
+            $ceksoBarangnas = CekSOBarang::where('t_cek_so_id', $cekso->id)
+                ->whereNotIn('lok_spk', function ($q) use ($cekso) {
+                    $q->select('lok_spk')
+                        ->from('t_barang')
+                        ->where('gudang_id', $cekso->gudang_id)
+                        ->where('status_barang', 1);
+                })
+                ->exists();
+
+            // Penentuan hasil -> mengikuti logika upload()
+            // (membandingkan TOTAL scan (manual+non-manual) vs stok)
+            if ($jumlahScanTotal != $jumlahStok) {
+                $hasil = 0; // Belum Sesuai
+            } elseif ($jumlahScanTotal == $jumlahStok && !$ceksoBarangnas) {
+                $hasil = 1; // Sesuai
+            } else { // $jumlahScanTotal == $jumlahStok && $ceksoBarangnas
+                $hasil = 2; // Lok_SPK Belum Sesuai
+            }
+
+            // Update ringkasan di t_cek_so
+            $cekso->update([
+                'jumlah_scan'   => $jumlahScanNonManual, // agar konsisten dengan tampilan (scan non-manual)
+                'jumlah_manual' => $jumlahManual,        // manual upload
+                'jumlah_stok'   => $jumlahStok,
+                'hasil'         => $hasil,
+            ]);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'LOK_SPK berhasil ditambahkan.',
+                    'summary' => [
+                        'jumlah_scan'   => $jumlahScanNonManual,
+                        'jumlah_manual' => $jumlahManual,
+                        'jumlah_stok'   => $jumlahStok,
+                        'hasil'         => $hasil,
+                    ]
+                ]);
+            }
+
+            return back()->with('success', 'LOK_SPK berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
     
 }

@@ -49,7 +49,7 @@
                         <span class="pcoded-mtext">Data Barang</span>
                     </a>
                 </li>
-                @if(auth()->user()->role=="admin")
+                @if(auth()->user()->id==10 || auth()->user()->id==19)
                     <li class="{{ Request::is('master-harga') ? 'active' : '' }}">
                         <a href="{{ url('/master-harga') }}">
                             <span class="pcoded-micon"><i class="fas fa-money-bill-wave"></i></span>

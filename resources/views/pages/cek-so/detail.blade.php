@@ -20,6 +20,7 @@
                 <div class="col-lg-4 text-end">
                     @if($cekso->is_finished == 0)
                         <button class="btn btn-success" id="addBarangBtn">Upload Excel</button>
+                        <button class="btn btn-primary" id="addManualBtn">Input Manual</button>
                     @endif
                 </div>
             </div>
@@ -54,47 +55,49 @@
             <!-- Informasi Cek SO Barang -->
             <div class="card">
                 <div class="card-block">
-                    <table class="table table-bordered text-center">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Kode SO</th>
-                                <th>Gudang / Petugas</th>
-                                <th>Scan</th>
-                                <th>Manual</th>
-                                <th>Jumlah Barang / Stok</th>
-                                <th>Waktu Mulai / Waktu Berakhir</th>
-                                <th>Durasi</th>
-                                <th>Hasil SO</th>
-                                <th>Status SO</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>{{ $cekso->kode }}</td>
-                                <td>{{ $cekso->nama_gudang }} / {{ $cekso->petugas }}</td>
-                                <td>{{ $cekso->jumlah_scan ?? 0 }}</td>
-                                <td>{{ $cekso->jumlah_manual ?? 0 }}</td>
-                                <td>{{ $cekso->jumlah_scan + $cekso->jumlah_manual }} / {{ $cekso->jumlah_stok }}</td>
-                                <td>{{ $cekso->waktu_mulai }} / {{ $cekso->waktu_selesai }}</td>
-                                <td>{{ $cekso->durasi }}</td>
-                                <td>
-                                    @switch($cekso->hasil)
-                                        @case(0) <span class="badge bg-danger">Belum Sesuai</span> @break
-                                        @case(1) <span class="badge bg-success">Sesuai</span> @break
-                                        @case(2) <span class="badge bg-warning text-dark">Lok_SPK Belum Sesuai</span> @break
-                                        @default <span class="badge bg-secondary">Tidak Diketahui</span>
-                                    @endswitch
-                                </td>
-                                <td>
-                                    @switch($cekso->is_finished)
-                                        @case(0) <span class="badge bg-warning text-dark">Belum Selesai</span> @break
-                                        @case(1) <span class="badge bg-success">Selesai</span> @break
-                                        @default <span class="badge bg-secondary">Tidak Diketahui</span>
-                                    @endswitch
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Kode SO</th>
+                                    <th>Gudang / Petugas</th>
+                                    <th>Scan</th>
+                                    <th>Manual</th>
+                                    <th>Jumlah Barang / Stok</th>
+                                    <th>Waktu Mulai / Waktu Berakhir</th>
+                                    <th>Durasi</th>
+                                    <th>Hasil SO</th>
+                                    <th>Status SO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ $cekso->kode }}</td>
+                                    <td>{{ $cekso->nama_gudang }} / {{ $cekso->petugas }}</td>
+                                    <td>{{ $cekso->jumlah_scan ?? 0 }}</td>
+                                    <td>{{ $cekso->jumlah_manual ?? 0 }}</td>
+                                    <td>{{ $cekso->jumlah_scan + $cekso->jumlah_manual }} / {{ $cekso->jumlah_stok }}</td>
+                                    <td>{{ $cekso->waktu_mulai }} / {{ $cekso->waktu_selesai }}</td>
+                                    <td>{{ $cekso->durasi }}</td>
+                                    <td>
+                                        @switch($cekso->hasil)
+                                            @case(0) <span class="badge bg-danger">Belum Sesuai</span> @break
+                                            @case(1) <span class="badge bg-success">Sesuai</span> @break
+                                            @case(2) <span class="badge bg-warning text-dark">Lok_SPK Belum Sesuai</span> @break
+                                            @default <span class="badge bg-secondary">Tidak Diketahui</span>
+                                        @endswitch
+                                    </td>
+                                    <td>
+                                        @switch($cekso->is_finished)
+                                            @case(0) <span class="badge bg-warning text-dark">Belum Selesai</span> @break
+                                            @case(1) <span class="badge bg-success">Selesai</span> @break
+                                            @default <span class="badge bg-secondary">Tidak Diketahui</span>
+                                        @endswitch
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -210,6 +213,33 @@
             </form>
         </div>
     </div>
+</div>
+
+<!-- Modal Input Manual LOK_SPK -->
+<div class="modal fade" id="addManualModal" tabindex="-1" aria-labelledby="addManualModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formManualLokSpk" method="POST">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title" id="addManualModalLabel">Input Manual LOK_SPK</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="t_cek_so_id" value="{{ $cekso->id }}">
+          <div class="mb-3">
+            <label for="lok_spk" class="form-label">LOK_SPK</label>
+            <input type="text" class="form-control" id="lok_spk" name="lok_spk" placeholder="Masukkan LOK_SPK" required>
+          </div>
+          <div id="manualAlert"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -467,6 +497,55 @@
         const addBarangModal = new bootstrap.Modal(document.getElementById('addBarangModal'));
         addBarangBtn.addEventListener('click', () => {
             addBarangModal.show();
+        });
+    });
+
+    $(document).ready(function () {
+        const addManualBtn = document.getElementById('addManualBtn');
+        const addManualModal = new bootstrap.Modal(document.getElementById('addManualModal'));
+
+        addManualBtn.addEventListener('click', () => {
+            $('#formManualLokSpk')[0].reset();
+            $('#manualAlert').html('');
+            addManualModal.show();
+        });
+
+        // Submit AJAX manual input
+        $('#formManualLokSpk').submit(function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: "{{ route('cekso.manual') }}",
+                method: "POST",
+                data: $(this).serialize(),
+                dataType: 'json', // <--- TAMBAHKAN INI
+                headers: {        // <--- DAN TAMBAHKAN INI
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}' // Header tambahan yang baik
+                },
+                success: function (res) {
+                    if (res.status == 'success') {
+                        // Sembunyikan modal SEBELUM menampilkan SweetAlert
+                        $('#addManualModal').modal('hide'); 
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: res.message || 'Berhasil!',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else if (res.status == 'duplicate') {
+                        $('#manualAlert').html('<div class="alert alert-warning">' + (res.message || 'LOK_SPK sudah ada.') + '</div>');
+                    } else {
+                        $('#manualAlert').html('<div class="alert alert-danger">' + (res.message || 'Terjadi kesalahan.') + '</div>');
+                    }
+                },
+                error: function () {
+                    $('#manualAlert').html('<div class="alert alert-danger">Gagal simpan data.</div>');
+                }
+            });
         });
     });
 

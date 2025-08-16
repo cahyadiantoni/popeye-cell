@@ -210,6 +210,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::post('/finish-cek-so', [CekSOController::class, 'finish'])->name('cekso.finish');
     Route::get('/finish-cek-so/{id}', [CekSOController::class, 'showFinish'])->name('cekso.showFinish');
     Route::get('/get-cek-so-finish/{id}', [CekSOController::class, 'getCekSOFinish'])->name('get-cekso.finish');
+    Route::post('/manual-cek-so', [CekSOController::class, 'manualInput'])->name('cekso.manual');
 
     Route::get('/negoan/harga-awal', [NegoanController::class, 'getHargaAwal'])->name('negoan.harga-awal');
     Route::post('/negoan/chat', [NegoanController::class, 'storeChat'])->name('negoan.chat.store');
