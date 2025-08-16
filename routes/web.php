@@ -240,6 +240,9 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/pulsa-report/export', [PulsaReportController::class, 'exportExcel'])->name('pulsa-report.exportExcel');
     Route::resource('/pulsa-report', PulsaReportController::class)->middleware('auth');
 
+    Route::post('/data-inventaris/{inventari}/gantian', [InventarisController::class, 'gantian'])->name('data-inventaris.gantian')->middleware('auth');
+    Route::post('/data-inventaris/batch-upload', [InventarisController::class, 'batchUpload'])->name('data-inventaris.batchUpload')->middleware('auth');
+    Route::get('/data-inventaris/export', [InventarisController::class, 'exportExcel'])->name('data-inventaris.export')->middleware('auth');
     Route::resource('/data-inventaris', InventarisController::class)->middleware('auth');
 });
 

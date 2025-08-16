@@ -4,6 +4,7 @@
 @section('content')
     <div class="main-body">
         <div class="page-wrapper">
+            {{-- Header Halaman --}}
             <div class="page-header">
                 <div class="row align-items-end">
                     <div class="col-lg-8">
@@ -13,23 +14,69 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4">
-                        <div class="page-header-breadcrumb">
-                            <ul class="breadcrumb-title">
-                                <li class="breadcrumb-item" style="float: left;">
-                                    <a href="{{ url('/') }}"> <i class="feather icon-home"></i> </a>
-                                </li>
-                                <li class="breadcrumb-item" style="float: left;"><a href="#!">Data Inventaris</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
                 </div>
             </div>
+
+            {{-- Body Halaman --}}
             <div class="page-body">
                 <div class="row">
                     <div class="col-sm-12">
+
+                        {{-- =================================================== --}}
+                        {{-- FORM FILTER BARU --}}
+                        {{-- =================================================== --}}
                         <div class="card">
+                            <div class="card-header">
+                                <h5>Filter Data</h5>
+                            </div>
+                            <div class="card-block">
+                                <form action="{{ route('data-inventaris.index') }}" method="GET">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label for="start_date">Tanggal Mulai</label>
+                                            <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="end_date">Tanggal Selesai</label>
+                                            <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="gudang_id">Gudang</label>
+                                            <select name="gudang_id" class="form-control">
+                                                <option value="">-- Semua Gudang --</option>
+                                                @foreach($filterGudangs as $gudang)
+                                                    <option value="{{ $gudang->id }}" {{ request('gudang_id') == $gudang->id ? 'selected' : '' }}>
+                                                        {{ $gudang->nama_gudang }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="kode_toko">Kode Toko</label>
+                                            <select name="kode_toko" class="form-control">
+                                                <option value="">-- Semua Kode Toko --</option>
+                                                 @foreach($filterKodeTokos as $kode)
+                                                    <option value="{{ $kode }}" {{ request('kode_toko') == $kode ? 'selected' : '' }}>
+                                                        {{ $kode }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end mt-3">
+                                        <button type="submit" class="btn btn-primary">Filter</button>
+                                        <a href="{{ route('data-inventaris.index') }}" class="btn btn-secondary mx-2">Reset</a>
+                                        <a href="{{ route('data-inventaris.export', request()->query()) }}" class="btn btn-success">
+                                            <i class="feather icon-download"></i> Export Excel
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        {{-- KARTU TABEL DATA --}}
+                        <div class="card">
+                            {{-- Notifikasi Sukses/Error --}}
                             @if(session('success'))
                                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                                     {{ session('success') }}
@@ -47,65 +94,86 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             @endif
+                            @if(session('error'))
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    {!! session('error') !!} {{-- Gunakan {!! !!} agar tag <br> bisa dirender --}}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            @endif
+
                             <div class="card-block">
                                 <button type="button" class="btn btn-primary btn-round" data-bs-toggle="modal" data-bs-target="#addModal">
                                     Add Inventaris
                                 </button>
+                                <button type="button" class="btn btn-success btn-round" data-bs-toggle="modal" data-bs-target="#batchUploadModal">
+                                    Upload Excel
+                                </button>
                                 <hr>
                                 <div class="dt-responsive table-responsive">
+                                    {{-- KONTEN TABEL (SAMA SEPERTI SEBELUMNYA) --}}
                                     <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                         <thead>
                                             <tr>
                                                 <th>Tgl</th>
                                                 <th>Nama</th>
-                                                <th>Kode Toko</th>
-                                                <th>Nama Toko</th>
+                                                <th>Toko</th>
                                                 <th>Lok SPK</th>
                                                 <th>Jenis</th>
                                                 <th>Tipe</th>
-                                                <th>Kelengkapan</th>
-                                                <th>Keterangan</th>
+                                                <th>Gudang</th>
+                                                <th>Status</th>
+                                                <th>Tgl Gantian</th>
+                                                <th>Alasan Gantian</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($inventaris as $item)
+                                            @forelse($inventaris as $item)
                                             <tr>
-                                                <td>{{ $item->tgl }}</td>
+                                                <td>{{ $item->tgl ? \Carbon\Carbon::parse($item->tgl)->format('d M Y') : '-' }}</td>
                                                 <td>{{ $item->nama }}</td>
-                                                <td>{{ $item->kode_toko }}</td>
-                                                <td>{{ $item->nama_toko }}</td>
+                                                <td>{{ $item->kode_toko }} - {{ $item->nama_toko }}</td>
                                                 <td>{{ $item->lok_spk }}</td>
                                                 <td>{{ $item->jenis }}</td>
                                                 <td>{{ $item->tipe }}</td>
-                                                <td>{{ $item->kelengkapan }}</td>
-                                                <td>{{ $item->keterangan }}</td>
+                                                <td>{{ $item->gudang->nama_gudang ?? '-' }}</td>
                                                 <td>
-                                                    <button type="button" class="btn btn-warning btn-round btn-edit"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#editModal"
-                                                        data-id="{{ $item->id }}"
-                                                        data-tgl="{{ $item->tgl }}"
-                                                        data-nama="{{ $item->nama }}"
-                                                        data-kode_toko="{{ $item->kode_toko }}"
-                                                        data-nama_toko="{{ $item->nama_toko }}"
-                                                        data-lok_spk="{{ $item->lok_spk }}"
-                                                        data-jenis="{{ $item->jenis }}"
-                                                        data-tipe="{{ $item->tipe }}"
-                                                        data-kelengkapan="{{ $item->kelengkapan }}"
-                                                        data-keterangan="{{ $item->keterangan }}">
-                                                        Edit
-                                                    </button>
-
-                                                    <form action="{{ route('data-inventaris.destroy', $item->id) }}" method="POST" style="display:inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-round"
-                                                                onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?')">Delete</button>
-                                                    </form>
+                                                    @switch($item->status)
+                                                        @case(1) <span class="badge bg-success">Pengambilan</span> @break
+                                                        @case(2) <span class="badge bg-info">Gantian</span> @break
+                                                        @default <span class="badge bg-secondary">Lainnya</span>
+                                                    @endswitch
+                                                </td>
+                                                <td>{{ $item->tgl_gantian ? \Carbon\Carbon::parse($item->tgl_gantian)->format('d M Y') : '-' }}</td>
+                                                <td>
+                                                    @if($item->status == 2 && !empty($item->alasan_gantian))
+                                                        {{ $item->alasan_gantian }}
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($item->status != 2)
+                                                        <button type="button" class="btn btn-info btn-round btn-sm gantian-btn" data-id="{{ $item->id }}" data-lok-spk="{{ $item->lok_spk }}">Gantian</button>
+                                                        <button type="button" class="btn btn-warning btn-round btn-sm btn-edit"
+                                                            data-bs-toggle="modal" data-bs-target="#editModal" data-id="{{ $item->id }}"
+                                                            data-gudang-id="{{ $item->gudang_id }}" data-nama="{{ $item->nama }}"
+                                                            data-kode_toko="{{ $item->kode_toko }}" data-nama_toko="{{ $item->nama_toko }}"
+                                                            data-lok_spk="{{ $item->lok_spk }}" data-jenis="{{ $item->jenis }}" data-tipe="{{ $item->tipe }}"
+                                                            data-kelengkapan="{{ $item->kelengkapan }}" data-keterangan="{{ $item->keterangan }}">
+                                                            Edit
+                                                        </button>
+                                                    @else
+                                                        <button class="btn btn-light btn-round btn-sm" disabled>Gantian</button>
+                                                        <button class="btn btn-light btn-round btn-sm" disabled>Edit</button>
+                                                    @endif
                                                 </td>
                                             </tr>
-                                            @endforeach
+                                            @empty
+                                            <tr>
+                                                <td colspan="11" class="text-center">Tidak ada data yang cocok dengan filter.</td>
+                                            </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>
@@ -114,64 +182,39 @@
                     </div>
                 </div>
             </div>
-            </div>
+        </div>
     </div>
+
+    {{-- ================================= MODALS ================================= --}}
+
     <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addModalLabel">Tambah Data Inventaris</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
                 <form action="{{ route('data-inventaris.store') }}" method="POST">
                     @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addModalLabel">Tambah Data Inventaris</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="tgl" class="form-label">Tanggal</label>
-                            <input type="date" class="form-control" id="tgl" name="tgl">
-                        </div>
-                        <div class="mb-3">
-                            <label for="nama" class="form-label">Nama</label>
-                            <input type="text" class="form-control" id="nama" name="nama">
-                        </div>
-                        <div class="mb-3">
-                            <label for="kode_toko" class="form-label">Kode Toko</label>
-                            <input type="text" class="form-control" id="kode_toko" name="kode_toko">
-                        </div>
-                         <div class="mb-3">
-                            <label for="nama_toko" class="form-label">Nama Toko</label>
-                            <input type="text" class="form-control" id="nama_toko" name="nama_toko">
-                        </div>
-                        <div class="mb-3">
-                            <label for="lok_spk" class="form-label">Lok SPK</label>
-                            <input type="text" class="form-control" id="lok_spk" name="lok_spk">
-                        </div>
-                        <div class="mb-3">
-                            <label for="jenis" class="form-label">Jenis</label>
-                            <select class="form-control" id="jenis" name="jenis">
-                                <option value="">Pilih Jenis</option>
-                                <option value="TAB">TAB</option>
-                                <option value="HP">HP</option>
-                                <option value="LP">LP</option>
-                                <option value="LAIN LAIN">LAIN LAIN</option>
+                            <label for="gudang_id" class="form-label">Gudang</label>
+                            <select class="form-control" name="gudang_id">
+                                <option value="">Pilih Gudang</option>
+                                @foreach($gudangs as $gudang)
+                                    <option value="{{ $gudang->id }}">{{ $gudang->nama_gudang }}</option>
+                                @endforeach
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="tipe" class="form-label">Tipe</label>
-                            <input type="text" class="form-control" id="tipe" name="tipe" placeholder="cth: Samsung A55 8/256">
-                        </div>
-                         <div class="mb-3">
-                            <label for="kelengkapan" class="form-label">Kelengkapan</label>
-                            <select class="form-control" id="kelengkapan" name="kelengkapan">
-                                <option value="">Pilih Kelengkapan</option>
-                                <option value="BOX">BOX</option>
-                                <option value="BTG">BTG</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="keterangan" class="form-label">Keterangan</label>
-                            <textarea class="form-control" id="keterangan" name="keterangan" rows="3"></textarea>
-                        </div>
+                        {{-- Field Status Dihapus --}}
+                        <div class="mb-3"><label for="nama" class="form-label">Nama</label><input type="text" class="form-control" name="nama"></div>
+                        <div class="mb-3"><label for="kode_toko" class="form-label">Kode Toko</label><input type="text" class="form-control" name="kode_toko"></div>
+                        <div class="mb-3"><label for="nama_toko" class="form-label">Nama Toko</label><input type="text" class="form-control" name="nama_toko"></div>
+                        <div class="mb-3"><label for="lok_spk" class="form-label">Lok SPK</label><input type="text" class="form-control" name="lok_spk"></div>
+                        <div class="mb-3"><label for="jenis" class="form-label">Jenis</label><select class="form-control" name="jenis"><option value="">Pilih Jenis</option><option value="TAB">TAB</option><option value="HP">HP</option><option value="LP">LP</option><option value="LAIN LAIN">LAIN LAIN</option></select></div>
+                        <div class="mb-3"><label for="tipe" class="form-label">Tipe</label><input type="text" class="form-control" name="tipe"></div>
+                        <div class="mb-3"><label for="kelengkapan" class="form-label">Kelengkapan</label><select class="form-control" name="kelengkapan"><option value="">Pilih</option><option value="BOX">BOX</option><option value="BTG">BTG</option></select></div>
+                        <div class="mb-3"><label for="keterangan" class="form-label">Keterangan</label><textarea class="form-control" name="keterangan" rows="3"></textarea></div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -185,60 +228,32 @@
     <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit Data Inventaris</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
                 <form id="editForm" method="POST">
                     @csrf
                     @method('PUT')
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editModalLabel">Edit Data Inventaris</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                     <div class="modal-body">
                          <div class="mb-3">
-                            <label for="edit_tgl" class="form-label">Tanggal</label>
-                            <input type="date" class="form-control" id="edit_tgl" name="tgl">
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit_nama" class="form-label">Nama</label>
-                            <input type="text" class="form-control" id="edit_nama" name="nama">
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit_kode_toko" class="form-label">Kode Toko</label>
-                            <input type="text" class="form-control" id="edit_kode_toko" name="kode_toko">
-                        </div>
-                         <div class="mb-3">
-                            <label for="edit_nama_toko" class="form-label">Nama Toko</label>
-                            <input type="text" class="form-control" id="edit_nama_toko" name="nama_toko">
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit_lok_spk" class="form-label">Lok SPK</label>
-                            <input type="text" class="form-control" id="edit_lok_spk" name="lok_spk">
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit_jenis" class="form-label">Jenis</label>
-                            <select class="form-control" id="edit_jenis" name="jenis">
-                                <option value="">Pilih Jenis</option>
-                                <option value="TAB">TAB</option>
-                                <option value="HP">HP</option>
-                                <option value="LP">LP</option>
-                                <option value="LAIN LAIN">LAIN LAIN</option>
+                            <label for="edit_gudang_id" class="form-label">Gudang</label>
+                            <select class="form-control" id="edit_gudang_id" name="gudang_id">
+                                <option value="">Pilih Gudang</option>
+                                @foreach($gudangs as $gudang)
+                                    <option value="{{ $gudang->id }}">{{ $gudang->nama_gudang }}</option>
+                                @endforeach
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="edit_tipe" class="form-label">Tipe</label>
-                            <input type="text" class="form-control" id="edit_tipe" name="tipe" placeholder="cth: Samsung A55 8/256">
-                        </div>
-                         <div class="mb-3">
-                            <label for="edit_kelengkapan" class="form-label">Kelengkapan</label>
-                            <select class="form-control" id="edit_kelengkapan" name="kelengkapan">
-                                <option value="">Pilih Kelengkapan</option>
-                                <option value="BOX">BOX</option>
-                                <option value="BTG">BTG</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit_keterangan" class="form-label">Keterangan</label>
-                            <textarea class="form-control" id="edit_keterangan" name="keterangan" rows="3"></textarea>
-                        </div>
+                        {{-- Field Status Dihapus --}}
+                        <div class="mb-3"><label for="edit_nama" class="form-label">Nama</label><input type="text" class="form-control" id="edit_nama" name="nama"></div>
+                        <div class="mb-3"><label for="edit_kode_toko" class="form-label">Kode Toko</label><input type="text" class="form-control" id="edit_kode_toko" name="kode_toko"></div>
+                        <div class="mb-3"><label for="edit_nama_toko" class="form-label">Nama Toko</label><input type="text" class="form-control" id="edit_nama_toko" name="nama_toko"></div>
+                        <div class="mb-3"><label for="edit_lok_spk" class="form-label">Lok SPK</label><input type="text" class="form-control" id="edit_lok_spk" name="lok_spk"></div>
+                        <div class="mb-3"><label for="edit_jenis" class="form-label">Jenis</label><select class="form-control" id="edit_jenis" name="jenis"><option value="">Pilih Jenis</option><option value="TAB">TAB</option><option value="HP">HP</option><option value="LP">LP</option><option value="LAIN LAIN">LAIN LAIN</option></select></div>
+                        <div class="mb-3"><label for="edit_tipe" class="form-label">Tipe</label><input type="text" class="form-control" id="edit_tipe" name="tipe"></div>
+                        <div class="mb-3"><label for="edit_kelengkapan" class="form-label">Kelengkapan</label><select class="form-control" id="edit_kelengkapan" name="kelengkapan"><option value="">Pilih</option><option value="BOX">BOX</option><option value="BTG">BTG</option></select></div>
+                        <div class="mb-3"><label for="edit_keterangan" class="form-label">Keterangan</label><textarea class="form-control" id="edit_keterangan" name="keterangan" rows="3"></textarea></div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -248,43 +263,149 @@
             </div>
         </div>
     </div>
-@endsection
 
-<script>
-    // Script untuk mengisi data ke modal edit
-    document.addEventListener('DOMContentLoaded', function () {
-        var editModal = document.getElementById('editModal');
-        editModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget; // Tombol yang membuka modal
+    <div class="modal fade" id="gantianModal" tabindex="-1" aria-labelledby="gantianModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="gantianForm" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="gantianModalLabel">Konfirmasi Gantian Barang</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Anda akan mengubah status barang <strong id="gantianLokSpk"></strong> menjadi "Gantian".</p>
+                        <div class="mb-3">
+                            <label for="alasan_gantian" class="form-label">Alasan Gantian <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="alasan_gantian" name="alasan_gantian" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Yakin & Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="batchUploadModal" tabindex="-1" aria-labelledby="batchUploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ route('data-inventaris.batchUpload') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="batchUploadModalLabel">Upload Data Inventaris (Batch)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <p>Silakan unduh template di bawah ini untuk memastikan format data sesuai.</p>
+                            <a href="{{ asset('files/template data inventaris.xlsx') }}" class="btn btn-info btn-round" download>
+                                <i class="feather icon-download"></i> Download Template
+                            </a>
+                        </div>
+                        <hr>
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Pilih File Excel</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".xlsx, .xls" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Upload dan Proses</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Skrip untuk Modal Edit
+            const editModal = document.getElementById('editModal');
+            editModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const form = document.getElementById('editForm');
+                
+                // 'tgl' sudah dihapus
+                const id = button.getAttribute('data-id');
+                const gudangId = button.getAttribute('data-gudang-id');
+                const nama = button.getAttribute('data-nama');
+                const kode_toko = button.getAttribute('data-kode_toko');
+                const nama_toko = button.getAttribute('data-nama_toko');
+                const lok_spk = button.getAttribute('data-lok_spk');
+                const jenis = button.getAttribute('data-jenis');
+                const tipe = button.getAttribute('data-tipe');
+                const kelengkapan = button.getAttribute('data-kelengkapan');
+                const keterangan = button.getAttribute('data-keterangan');
+
+                let url = "{{ route('data-inventaris.update', ':id') }}";
+                url = url.replace(':id', id);
+                form.action = url;
+
+                // 'tgl' sudah dihapus
+                form.querySelector('#edit_gudang_id').value = gudangId || '';
+                form.querySelector('#edit_nama').value = nama || '';
+                form.querySelector('#edit_kode_toko').value = kode_toko || '';
+                form.querySelector('#edit_nama_toko').value = nama_toko || '';
+                form.querySelector('#edit_lok_spk').value = lok_spk || '';
+                form.querySelector('#edit_jenis').value = jenis || '';
+                form.querySelector('#edit_tipe').value = tipe || '';
+                form.querySelector('#edit_kelengkapan').value = kelengkapan || '';
+                form.querySelector('#edit_keterangan').value = keterangan || '';
+            });
+
+            // Skrip untuk Modal Gantian
+            const gantianModalEl = document.getElementById('gantianModal');
+            const gantianModal = new bootstrap.Modal(gantianModalEl);
             
-            // Ambil data dari atribut data-*
-            var id = button.getAttribute('data-id');
-            var tgl = button.getAttribute('data-tgl');
-            var nama = button.getAttribute('data-nama');
-            var kode_toko = button.getAttribute('data-kode_toko');
-            var nama_toko = button.getAttribute('data-nama_toko');
-            var lok_spk = button.getAttribute('data-lok_spk');
-            var jenis = button.getAttribute('data-jenis');
-            var tipe = button.getAttribute('data-tipe');
-            var kelengkapan = button.getAttribute('data-kelengkapan');
-            var keterangan = button.getAttribute('data-keterangan');
+            document.querySelectorAll('.gantian-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const itemId = this.dataset.id;
+                    const itemLokSpk = this.dataset.lokSpk;
+                    const form = document.getElementById('gantianForm');
+                    let url = "{{ route('data-inventaris.gantian', ':id') }}";
+                    url = url.replace(':id', itemId);
+                    form.action = url;
+                    document.getElementById('gantianLokSpk').textContent = itemLokSpk;
+                    gantianModal.show();
+                });
+            });
 
-            // Atur action form
-            var form = document.getElementById('editForm');
-            var url = "{{ route('data-inventaris.update', ':id') }}";
-            url = url.replace(':id', id);
-            form.action = url;
-
-            // Isi nilai ke dalam form di modal
-            form.querySelector('#edit_tgl').value = tgl;
-            form.querySelector('#edit_nama').value = nama;
-            form.querySelector('#edit_kode_toko').value = kode_toko;
-            form.querySelector('#edit_nama_toko').value = nama_toko;
-            form.querySelector('#edit_lok_spk').value = lok_spk;
-            form.querySelector('#edit_jenis').value = jenis;
-            form.querySelector('#edit_tipe').value = tipe;
-            form.querySelector('#edit_kelengkapan').value = kelengkapan;
-            form.querySelector('#edit_keterangan').value = keterangan;
+            // Submit form gantian dengan AJAX
+            document.getElementById('gantianForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const form = this;
+                const url = form.action;
+                const formData = new FormData(form);
+                fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.status === 'success') {
+                        gantianModal.hide();
+                        Swal.fire({
+                            icon: 'success', title: data.message, timer: 1500, showConfirmButton: false
+                        }).then(() => location.reload());
+                    } else {
+                        throw new Error(data.message || 'Terjadi kesalahan.');
+                    }
+                })
+                .catch(error => {
+                    gantianModal.hide();
+                    Swal.fire({
+                        icon: 'error', title: 'Error!', text: error.message, showConfirmButton: true
+                    });
+                });
+            });
         });
-    });
-</script>
+    </script>
+@endsection
