@@ -13,6 +13,11 @@ use App\Models\Kirim;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use App\Models\TransaksiJual;
+use App\Models\TransaksiJualBawah;
+use App\Models\TransaksiJualOnline;
+use App\Models\TransaksiJualOutlet;
 
 class TransaksiReturnController extends Controller
 {
@@ -384,43 +389,99 @@ class TransaksiReturnController extends Controller
             ->with('errors', $errors);
     }
 
-    public function destroyBarang($id){
+    public function destroyBarang($id)
+    {
         try {
-            $transaksi = ReturnBarang::where('id', $id)->firstOrFail();
-
-            // Mendapatkan lok_spk dari transaksi
+            $transaksi = ReturnBarang::findOrFail($id);
             $lok_spk = $transaksi->lok_spk;
 
-            // Melakukan update pada tabel Barang
-            Barang::where('lok_spk', $lok_spk)->update([
-                'status_barang' => 2,
-                'gudang_id' => 0, 
-            ]);
+            // Cek apakah LOK SPK pernah digunakan di transaksi penjualan
+            if ($this->isLokSpkInUse($lok_spk)) {
+                Barang::where('lok_spk', $lok_spk)->update([
+                    'status_barang' => 2, 
+                    'gudang_id' => 0,     
+                ]);
+            } else {
+                // JIKA BELUM PERNAH TERJUAL: Hapus permanen dari master barang
+                Barang::where('lok_spk', $lok_spk)->delete();
+            }
 
-            // Hapus Transaksi
             $transaksi->delete();
 
-            return redirect()->back()->with('success', 'Barang berhasil dihapus');
+            return redirect()->back()->with('success', 'Barang berhasil dihapus dari daftar return.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
-    public function updateBarang(Request $request){
+    public function updateBarang(Request $request)
+    {
+        // Validasi diperluas untuk data barang baru
+        $validated = $request->validate([
+            'id' => 'required|exists:t_return_barang,id',
+            'lok_spk' => 'required|string',
+            'harga' => 'required|numeric|min:0',
+            'alasan' => 'nullable|string',
+            'pedagang' => 'nullable|string',
+            // Validasi untuk field baru, tapi boleh null karena tidak selalu diisi
+            'jenis' => 'nullable|string',
+            'tipe' => 'nullable|string',
+            'kelengkapan' => 'nullable|string',
+            'grade' => 'nullable|string',
+        ]);
+
         try {
-            $validated = $request->validate([
-                'id' => 'required|exists:t_return_barang,id',
-                'lok_spk' => 'required|exists:t_return_barang,lok_spk',
-                'harga' => 'required|numeric|min:0',
-                'alasan' => 'string',
-                'pedagang' => 'string',
-            ]);
-    
-            // Gunakan firstOrFail() untuk pencarian berdasarkan 'id'
-            $transaksi = ReturnBarang::where('id', $validated['id'])->firstOrFail();
-            $transaksi->update(['harga' => $validated['harga'], 'alasan' => $validated['alasan'], 'pedagang' => $validated['pedagang']]);
-    
-            return redirect()->back()->with('success', 'Barang Return berhasil diupdate');
+            DB::transaction(function () use ($validated, $request) {
+                $transaksi = ReturnBarang::findOrFail($validated['id']);
+                $originalLokSpk = $transaksi->lok_spk;
+                $newLokSpk = $validated['lok_spk'];
+
+                if ($originalLokSpk === $newLokSpk) {
+                    $transaksi->update($validated);
+                    return;
+                }
+
+                // Langkah 1: Proses LOK SPK LAMA
+                if ($this->isLokSpkInUse($originalLokSpk)) {
+                    Barang::where('lok_spk', $originalLokSpk)->update(['status_barang' => 2, 'gudang_id' => 0]);
+                } else {
+                    Barang::where('lok_spk', $originalLokSpk)->delete();
+                }
+
+                // Langkah 2: Proses LOK SPK BARU
+                $barangBaru = Barang::where('lok_spk', $newLokSpk)->first();
+
+                if ($barangBaru) {
+                    // Jika LOK SPK BARU sudah ada
+                    if ($barangBaru->status_barang != 2) {
+                        throw new \Exception("Barang '$newLokSpk' tidak berstatus 'terjual' (status 2).");
+                    }
+                    $barangBaru->update(['status_barang' => 1, 'gudang_id' => 6]);
+                } else {
+                    // Jika LOK SPK BARU belum ada, BUAT BARU dengan data dari form
+                    if (empty($validated['jenis']) || empty($validated['tipe'])) {
+                        throw new \Exception("Jenis dan Tipe wajib diisi untuk barang baru.");
+                    }
+                    Barang::create([
+                        'lok_spk' => $newLokSpk,
+                        'jenis' => $validated['jenis'],
+                        'tipe' => $validated['tipe'],
+                        'kelengkapan' => $validated['kelengkapan'],
+                        'grade' => $validated['grade'],
+                        'nama_petugas' => Auth::user()->name,
+                        'dt_input' => now(),
+                        'user_id' => Auth::id(),
+                        'gudang_id' => 6,
+                        'status_barang' => 1,
+                    ]);
+                }
+
+                // Langkah 3: Update transaksi di t_return_barang
+                $transaksi->update($validated);
+            });
+
+            return redirect()->back()->with('success', 'Barang return berhasil diupdate.');
+
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -440,5 +501,34 @@ class TransaksiReturnController extends Controller
 
         // 5. Kirim data ke view
         return view('pages.transaksi-return.riwayat', compact('riwayat_barang'));
+    }
+
+    private function isLokSpkInUse($lok_spk)
+    {
+        // Cek di masing-masing tabel transaksi
+        $inJual = TransaksiJual::where('lok_spk', $lok_spk)->exists();
+        $inJualBawah = TransaksiJualBawah::where('lok_spk', $lok_spk)->exists();
+        $inJualOnline = TransaksiJualOnline::where('lok_spk', $lok_spk)->exists();
+        $inJualOutlet = TransaksiJualOutlet::where('lok_spk', $lok_spk)->exists();
+
+        // Kembalikan true jika ditemukan di salah satu tabel
+        return $inJual || $inJualBawah || $inJualOnline || $inJualOutlet;
+    }
+
+    public function checkBarang($lok_spk)
+    {
+        // Cari barang berdasarkan lok_spk yang diketik
+        $barang = Barang::find($lok_spk);
+
+        if ($barang) {
+            // Jika barang ditemukan, kirim datanya
+            return response()->json([
+                'exists' => true,
+                'data' => $barang
+            ]);
+        } else {
+            // Jika tidak ditemukan
+            return response()->json(['exists' => false]);
+        }
     }
 }

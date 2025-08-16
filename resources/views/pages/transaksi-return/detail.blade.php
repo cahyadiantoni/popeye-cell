@@ -113,7 +113,18 @@
                                 <td>{{ $return->pedagang ?? '-' }}</td>
                                 <td>{{ $return->alasan ?? '-' }}</td>
                                 <td>
-                                    <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $return->id }}" data-lok_spk="{{ $return->lok_spk }}" data-harga="{{ $return->harga }}" data-alasan="{{ $return->alasan }}">Edit</button>
+                                    <button class="btn btn-warning btn-sm edit-btn" 
+                                        data-id="{{ $return->id }}" 
+                                        data-lok_spk="{{ $return->lok_spk }}" 
+                                        data-harga="{{ $return->harga }}" 
+                                        data-pedagang="{{ $return->pedagang }}" 
+                                        data-alasan="{{ $return->alasan }}"
+                                        data-jenis="{{ $return->barang->jenis ?? '' }}"
+                                        data-tipe="{{ $return->barang->tipe ?? '' }}"
+                                        data-kelengkapan="{{ $return->barang->kelengkapan ?? '' }}"
+                                        data-grade="{{ $return->barang->grade ?? '' }}">
+                                        Edit
+                                    </button>
                                     <form action="{{ route('transaksi-return-barang.delete', $return->id) }}" method="POST" class="d-inline delete-form">
                                         @csrf
                                         @method('DELETE')
@@ -164,30 +175,55 @@
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form id="editForm" method="POST">
+            <form id="editForm" action="{{ route('transaksi-return-barang.update') }}" method="POST">
                 @csrf
                 @method('PUT')
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit Harga</h5>
+                    <h5 class="modal-title" id="editModalLabel">Edit Barang Return</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <input type="hidden" id="editTransaksiId" name="id" required>
+                    
                     <div class="mb-3">
-                        <label for="editTransaksiId" class="form-label">LOK SPK</label>
-                        <input type="hidden" class="form-control" id="editTransaksiId" name="id" required readonly>
-                        <input type="text" class="form-control" id="editTransaksiLokSpk" name="lok_spk" required readonly>
+                        <label for="editTransaksiLokSpk" class="form-label">LOK SPK</label>
+                        <input type="text" class="form-control" id="editTransaksiLokSpk" name="lok_spk" required>
                     </div>
+
+                    {{-- KUMPULAN FIELD UNTUK BARANG BARU, AWALNYA DISEMBUNYIKAN --}}
+                    <div id="newBarangFields" style="display: none; border-left: 3px solid #007bff; padding-left: 15px; background-color: #f8f9fa;">
+                        <p class="text-primary fw-bold mt-2">Data Barang Baru</p>
+                        <div class="mb-3">
+                            <label for="editJenis" class="form-label">Jenis</label>
+                            <input type="text" class="form-control" id="editJenis" name="jenis">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editTipe" class="form-label">Tipe</label>
+                            <input type="text" class="form-control" id="editTipe" name="tipe">
+                        </div>
+                         <div class="mb-3">
+                            <label for="editKelengkapan" class="form-label">Kelengkapan</label>
+                            <input type="text" class="form-control" id="editKelengkapan" name="kelengkapan">
+                        </div>
+                         <div class="mb-3">
+                            <label for="editGrade" class="form-label">Grade</label>
+                            <input type="text" class="form-control" id="editGrade" name="grade">
+                        </div>
+                    </div>
+                    {{-- AKHIR FIELD BARANG BARU --}}
+
+                    <p class="text-primary fw-bold mt-3">Data Return</p>
                     <div class="mb-3">
                         <label for="editHarga" class="form-label">Harga</label>
                         <input type="number" class="form-control" id="editHarga" name="harga" required>
                     </div>
                     <div class="mb-3">
                         <label for="editPedagang" class="form-label">Pedagang</label>
-                        <input type="text" class="form-control" id="editPedagang" name="pedagang" required>
+                        <input type="text" class="form-control" id="editPedagang" name="pedagang">
                     </div>
                     <div class="mb-3">
                         <label for="editAlasan" class="form-label">Alasan</label>
-                        <input type="text" class="form-control" id="editAlasan" name="alasan" required>
+                        <input type="text" class="form-control" id="editAlasan" name="alasan">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -200,51 +236,118 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const editButtons = document.querySelectorAll('.edit-btn');
-        const editModal = new bootstrap.Modal(document.getElementById('editModal'));
-        const editForm = document.getElementById('editForm');
-        const editTransaksiId = document.getElementById('editTransaksiId');
-        const editTransaksiLokSpk = document.getElementById('editTransaksiLokSpk');
-        const editHarga = document.getElementById('editHarga');
-        const editPedagang = document.getElementById('editPedagang');
-        const editAlasan = document.getElementById('editAlasan');
+document.addEventListener('DOMContentLoaded', function () {
+    // === Blok untuk Modal Edit ===
+    const editModalEl = document.getElementById('editModal');
+    const editModal = new bootstrap.Modal(editModalEl);
+    const editForm = document.getElementById('editForm');
 
-        editButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const returnId = button.dataset.id;
-                const returnLokSpk = button.dataset.lok_spk;
-                const harga = button.dataset.harga;
-                const pedagang = button.dataset.pedagang;
-                const alasan = button.dataset.alasan;
+    // Ambil semua elemen form
+    const editFields = {
+        id: document.getElementById('editTransaksiId'),
+        lok_spk: document.getElementById('editTransaksiLokSpk'),
+        harga: document.getElementById('editHarga'),
+        pedagang: document.getElementById('editPedagang'),
+        alasan: document.getElementById('editAlasan'),
+        jenis: document.getElementById('editJenis'),
+        tipe: document.getElementById('editTipe'),
+        kelengkapan: document.getElementById('editKelengkapan'),
+        grade: document.getElementById('editGrade'),
+        newBarangFields: document.getElementById('newBarangFields')
+    };
 
-                editTransaksiId.value = returnId;
-                editTransaksiLokSpk.value = returnLokSpk;
-                editHarga.value = harga;
-                editPedagang.value = pedagang;
-                editAlasan.value = alasan;
+    // Event listener untuk semua tombol edit
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            // Isi form dengan data dari tombol
+            editFields.id.value = button.dataset.id;
+            editFields.lok_spk.value = button.dataset.lok_spk;
+            editFields.harga.value = button.dataset.harga;
+            editFields.pedagang.value = button.dataset.pedagang;
+            editFields.alasan.value = button.dataset.alasan;
 
-                editForm.action = '{{ route("transaksi-return-barang.update") }}';
-                editModal.show();
-            });
+            // Isi field barang baru tapi buat readonly
+            editFields.jenis.value = button.dataset.jenis;
+            editFields.tipe.value = button.dataset.tipe;
+            editFields.kelengkapan.value = button.dataset.kelengkapan;
+            editFields.grade.value = button.dataset.grade;
+
+            // Sembunyikan dan disable field baru saat modal pertama kali dibuka
+            editFields.newBarangFields.style.display = 'none';
+            toggleNewBarangFields(false);
+
+            editModal.show();
         });
+    });
 
-        const deleteForms = document.querySelectorAll('.delete-form');
-        deleteForms.forEach(form => {
-            form.addEventListener('submit', function (event) {
-                event.preventDefault(); // Mencegah submit form langsung
-                if (confirm('Yakin ingin menghapus data ini?')) {
-                    form.submit(); // Submit form jika konfirmasi "OK"
-                }
-            });
+    // Fungsi untuk enable/disable & set required pada field barang baru
+    function toggleNewBarangFields(enable) {
+        const fields = [editFields.jenis, editFields.tipe, editFields.kelengkapan, editFields.grade];
+        fields.forEach(field => {
+            field.readOnly = !enable;
+            if(field.name === 'jenis' || field.name === 'tipe'){
+                 field.required = enable;
+            }
         });
+    }
 
-        const addBarangBtn = document.getElementById('addBarangBtn');
+    // Event listener saat pengguna mengetik di LOK SPK
+    let checkTimeout;
+    editFields.lok_spk.addEventListener('input', function() {
+        clearTimeout(checkTimeout);
+        const lokSpkValue = this.value.trim();
+
+        if (lokSpkValue.length < 3) { // Jangan cek jika terlalu pendek
+            editFields.newBarangFields.style.display = 'none';
+            toggleNewBarangFields(false);
+            return;
+        }
+
+        // Tunda pengecekan agar tidak terjadi di setiap ketikan
+        checkTimeout = setTimeout(() => {
+            fetch(`{{ url('/transaksi-return/check-barang') }}/${lokSpkValue}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        // Jika LOK SPK ada, sembunyikan field baru
+                        editFields.newBarangFields.style.display = 'none';
+                        toggleNewBarangFields(false);
+                        // Optional: update field jenis/tipe readonly dengan data yg ada
+                        editFields.jenis.value = data.data.jenis;
+                        editFields.tipe.value = data.data.tipe;
+                    } else {
+                        // Jika LOK SPK TIDAK ADA, tampilkan field baru & aktifkan
+                        editFields.newBarangFields.style.display = 'block';
+                        toggleNewBarangFields(true);
+                        // Kosongkan field agar user bisa isi
+                        editFields.jenis.value = '';
+                        editFields.tipe.value = '';
+                        editFields.kelengkapan.value = '';
+                        editFields.grade.value = '';
+                    }
+                });
+        }, 500); // Jeda 500ms
+    });
+
+
+    // === Blok untuk Modal Add & Delete (tetap sama) ===
+    document.querySelectorAll('.delete-form').forEach(form => {
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            if (confirm('Yakin ingin menghapus data ini?')) {
+                form.submit();
+            }
+        });
+    });
+
+    const addBarangBtn = document.getElementById('addBarangBtn');
+    if (addBarangBtn) {
         const addBarangModal = new bootstrap.Modal(document.getElementById('addBarangModal'));
         addBarangBtn.addEventListener('click', () => {
             addBarangModal.show();
         });
-    });
+    }
+});
 </script>
 
 @endsection
