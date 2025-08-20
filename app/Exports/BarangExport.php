@@ -22,7 +22,7 @@ class BarangExport implements FromCollection, WithHeadings, WithStyles, ShouldAu
     public function collection()
     {
         $query = Barang::with('gudang')
-            ->where('status_barang', 1);
+            ->whereIn('status_barang', [1, 5]);
 
         if ($this->id !== 'all') {
             $query->where('gudang_id', $this->id);
@@ -53,7 +53,7 @@ class BarangExport implements FromCollection, WithHeadings, WithStyles, ShouldAu
 
     public function styles(Worksheet $sheet)
     {
-        $rowCount = Barang::where('gudang_id', $this->id)->where('status_barang', 1)->count() + 1;
+        $rowCount = Barang::where('gudang_id', $this->id)->whereIn('status_barang', [1, 5])->count() + 1;
         $dataRange = "A1:H{$rowCount}";
 
         return [
