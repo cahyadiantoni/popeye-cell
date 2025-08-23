@@ -209,7 +209,7 @@
 
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
-                    <h5>List Pembayaran Midtrans</h5>
+                    <h5>List Pembayaran Gateway</h5>
                     @if($faktur->is_finish == 0)
                         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">Tambah Pembayaran</button>
                     @endif
@@ -219,6 +219,7 @@
                         <thead>
                             <tr>
                                 <th>Order ID</th>
+                                <th>Gateway</th> 
                                 <th>Channel</th>
                                 <th>Status</th>
                                 <th>Nominal</th>
@@ -251,14 +252,17 @@
                             @endphp
                             <tr>
                                 <td>{{ $payment->order_id }}</td>
+                                <td> <span class="badge {{ $payment->payment_gateway == 'xendit' ? 'bg-info' : 'bg-primary' }}">
+                                        {{ ucfirst($payment->payment_gateway) }}
+                                    </span>
+                                </td>
                                 <td>{{ $payment->channel ?? '-' }}</td>
                                 <td><span class="{{ $badgeClass }}">{{ ucfirst($payment->status) }}</span></td>
                                 <td>Rp. {{ number_format($payment->amount, 0, ',', '.') }}</td>
                                 <td>{{ $payment->created_at->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    {{-- Tombol Bayar hanya untuk pending/in_process --}}
-                                    @if(in_array($payment->status, ['pending', 'in_process']))
-                                        <button class="btn btn-primary btn-sm btn-pay" data-order-id="{{ $payment->order_id }}" data-amount="{{ $payment->amount }}">
+                                    @if(in_array($payment->status, ['pending', 'in_process', 'PENDING']))
+                                        <button class="btn btn-primary btn-sm btn-pay" data-order-id="{{ $payment->order_id }}">
                                             Bayar
                                         </button>
                                     @endif
@@ -456,16 +460,34 @@
 <div class="modal fade" id="addPaymentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form id="midtrans-payment-form">
-                @csrf
+            <form id="payment-form"> @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Tambah Pembayaran</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="t_faktur_id" value="{{ $faktur->id }}">
-                    <input type="number" class="form-control mb-2" id="amount" name="amount" placeholder="Nominal Pembayaran" required>
-                    <small class="form-text text-muted" id="amount_display">{{ 'Rp. 0' }}</small>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Nominal Pembayaran</label>
+                        <input type="number" class="form-control" id="amount" name="amount" placeholder="Nominal Pembayaran" required>
+                        <small class="form-text text-muted" id="amount_display">Rp. 0</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Metode Pembayaran</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_gateway" id="gateway_midtrans" value="midtrans" checked>
+                            <label class="form-check-label" for="gateway_midtrans">
+                                Midtrans
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_gateway" id="gateway_xendit" value="xendit">
+                            <label class="form-check-label" for="gateway_xendit">
+                                Xendit
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-success">Bayar</button>
@@ -483,13 +505,13 @@
         }
     });
 
-    $('#midtrans-payment-form').submit(function(e) {
+    $('#payment-form').submit(function(e) {
         e.preventDefault();
         let form = $(this)[0];
         let formData = new FormData(form);
         let submitBtn = $(this).find('button[type="submit"]');
 
-        submitBtn.prop('disabled', true);
+        submitBtn.prop('disabled', true).text('Memproses...');
 
         $.ajax({
             url: "{{ route('payment.store') }}",
@@ -497,30 +519,58 @@
             data: formData,
             processData: false,
             contentType: false,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
             success: function(data) {
                 var modal = bootstrap.Modal.getInstance(document.getElementById('addPaymentModal'));
                 if(modal) modal.hide();
 
-                snap.pay(data.token, {
-                    onSuccess: function(result) {
-                        location.reload();
-                    },
-                    onPending: function(result) {
-                        alert("Menunggu pembayaran selesai.");
-                        location.reload();
-                    },
-                    onError: function(result) {
-                        alert("Gagal memproses pembayaran.");
-                        submitBtn.prop('disabled', false);
-                    }
-                });
+                // Cek gateway mana yang digunakan
+                if (data.gateway === 'midtrans') {
+                    // Logika Midtrans Snap
+                    snap.pay(data.token, {
+                        onSuccess: function(result) { location.reload(); },
+                        onPending: function(result) { alert("Menunggu pembayaran selesai."); location.reload(); },
+                        onError: function(result) { alert("Gagal memproses pembayaran."); }
+                    });
+                } else if (data.gateway === 'xendit') {
+                    // Logika Xendit: redirect ke URL invoice
+                    window.open(data.invoice_url, '_blank');
+                }
             },
             error: function(xhr) {
-                alert("Gagal menghubungi server.");
-                submitBtn.prop('disabled', false);
+                alert("Gagal menghubungi server. Pastikan semua data terisi benar.");
+                submitBtn.prop('disabled', false).text('Bayar');
+            }
+        });
+    });
+
+    // Ganti script untuk tombol bayar ulang (retry)
+    $(document).on('click', '.btn-pay', function() {
+        let orderId = $(this).data('order-id');
+        let btn = $(this);
+        
+        btn.prop('disabled', true).text('...');
+
+        $.ajax({
+            url: '{{ route("payment.retry") }}',
+            method: 'POST',
+            data: {
+                order_id: orderId,
+                _token: $('meta[name="csrf-token"]').attr('content'),
+            },
+            success: function(res) {
+                if (res.gateway === 'midtrans') {
+                    snap.pay(res.token, {
+                        onSuccess: function(result){ location.reload(); },
+                        onPending: function(result){ location.reload(); },
+                        onError: function(result){ btn.prop('disabled', false).text('Bayar'); }
+                    });
+                } else if (res.gateway === 'xendit') {
+                    window.open(data.invoice_url, '_blank');
+                }
+            },
+            error: function() {
+                alert('Gagal mendapatkan detail pembayaran.');
+                btn.prop('disabled', false).text('Bayar');
             }
         });
     });

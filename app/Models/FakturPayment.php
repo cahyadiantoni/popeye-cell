@@ -17,6 +17,9 @@ class FakturPayment extends Model
         'nomor_faktur',
         'amount',
         'snap_token',
+        'payment_gateway',
+        'xendit_invoice_id',
+        'invoice_url',
     ];
 
     public function faktur()

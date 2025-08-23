@@ -43,4 +43,9 @@ return [
         'is_3ds' => true,
     ],
 
+    'xendit' => [
+        'secret_key' => env('XENDIT_SECRET_KEY'),
+        'callback_verify_token' => env('XENDIT_CALLBACK_VERIFY_TOKEN'),
+    ],
+
 ];
