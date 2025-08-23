@@ -18,20 +18,12 @@ class InventarisController extends Controller
      */
     public function index(Request $request)
     {
-        // ==========================================================
-        // BAGIAN 1: Mengambil Opsi untuk Dropdown Filter
-        // ==========================================================
-
         // Ambil hanya Gudang yang ada di data inventaris untuk opsi filter
         $usedGudangIds = Inventaris::whereNotNull('gudang_id')->distinct()->pluck('gudang_id');
         $filterGudangs = Gudang::whereIn('id', $usedGudangIds)->get();
 
         // Ambil hanya Kode Toko yang unik dari data inventaris untuk opsi filter
         $filterKodeTokos = Inventaris::whereNotNull('kode_toko')->distinct()->orderBy('kode_toko')->pluck('kode_toko');
-
-        // ==========================================================
-        // BAGIAN 2: Membangun Query Utama dengan Kondisi Filter
-        // ==========================================================
         
         // Mulai query dasar
         $query = Inventaris::with('gudang')->latest();
@@ -68,22 +60,32 @@ class InventarisController extends Controller
 
     public function store(Request $request)
     {
-        // Validasi tanpa 'tgl'
+        // Validasi
         $validatedData = $request->validate([
             'gudang_id' => 'nullable|exists:t_gudang,id',
+            'asal_barang' => 'nullable|string|max:255', // BARU
             'nama' => 'nullable|string|max:255',
             'kode_toko' => 'nullable|string|max:255',
             'nama_toko' => 'nullable|string|max:255',
             'lok_spk' => 'nullable|string|max:255|unique:inventaris,lok_spk',
-            'jenis' => 'nullable|string|in:TAB,HP,LP,LAIN LAIN',
+            'jenis' => 'nullable|string', // DIUBAH
             'tipe' => 'nullable|string|max:255',
-            'kelengkapan' => 'nullable|string|in:BOX,BTG',
+            'kelengkapan' => 'nullable|string',
             'keterangan' => 'nullable|string',
         ]);
 
+        // DIUBAH: Otomatis ubah 'jenis' ke huruf besar jika ada
+        if (isset($validatedData['jenis'])) {
+            $validatedData['jenis'] = strtoupper($validatedData['jenis']);
+        }
+
+        if (isset($validatedData['kelengkapan'])) {
+            $validatedData['kelengkapan'] = strtoupper($validatedData['kelengkapan']);
+        }
+
         // Tambahkan status '1' dan tgl saat ini secara otomatis
         $validatedData['status'] = 1;
-        $validatedData['tgl'] = now(); // DIUBAH
+        $validatedData['tgl'] = now();
 
         Inventaris::create($validatedData);
 
@@ -94,19 +96,29 @@ class InventarisController extends Controller
     {
         $inventaris = Inventaris::findOrFail($id);
         
-        // Validasi tanpa 'tgl'
+        // Validasi
         $validatedData = $request->validate([
             'gudang_id' => 'nullable|exists:t_gudang,id',
+            'asal_barang' => 'nullable|string|max:255', // BARU
             'nama' => 'nullable|string|max:255',
             'kode_toko' => 'nullable|string|max:255',
             'nama_toko' => 'nullable|string|max:255',
             'lok_spk' => ['nullable', 'string', 'max:255', Rule::unique('inventaris', 'lok_spk')->ignore($inventaris->id)],
-            'jenis' => 'nullable|string|in:TAB,HP,LP,LAIN LAIN',
+            'jenis' => 'nullable|string', // DIUBAH
             'tipe' => 'nullable|string|max:255',
-            'kelengkapan' => 'nullable|string|in:BOX,BTG',
+            'kelengkapan' => 'nullable|string',
             'keterangan' => 'nullable|string',
         ]);
         
+        // DIUBAH: Otomatis ubah 'jenis' ke huruf besar jika ada
+        if (isset($validatedData['jenis'])) {
+            $validatedData['jenis'] = strtoupper($validatedData['jenis']);
+        }
+
+        if (isset($validatedData['kelengkapan'])) {
+            $validatedData['kelengkapan'] = strtoupper($validatedData['kelengkapan']);
+        }
+
         // Update data, 'tgl' tidak akan pernah diubah saat edit
         $inventaris->update($validatedData);
         return redirect()->route('data-inventaris.index')->with('success', 'Data inventaris berhasil diperbarui!');
@@ -144,48 +156,43 @@ class InventarisController extends Controller
                 foreach ($rows as $index => $row) {
                     if ($index === 0) continue;
 
-                    // DIUBAH: Pengecekan utama sekarang ada di sini.
-                    // Ambil LOK SPK dari kolom yang sesuai (indeks 3)
                     $lokSpk = $row[3] ?? null;
 
-                    // Jika LOK SPK kosong, anggap baris ini tidak valid dan abaikan tanpa error.
-                    // Ini juga akan menangani baris kosong di akhir file Excel.
                     if (empty($lokSpk)) {
                         continue;
                     }
                     
-                    // Cek duplikasi LOK SPK di dalam file Excel itu sendiri
                     if (in_array($lokSpk, $lokSpksInFile)) {
                         $errors[] = "Error di baris Excel #" . ($index + 1) . ": LOK SPK '$lokSpk' duplikat di dalam file ini.";
                         continue;
                     }
                     $lokSpksInFile[] = $lokSpk;
 
-                    // Jika gudang_id kosong di Excel, gunakan default '7'
-                    $gudangId = !empty($row[7]) ? $row[7] : 7;
+                    // DIUBAH: 'gudang_id' digantikan 'asal_barang' dari excel
+                    // Kolom 7 sekarang untuk 'asal_barang'
+                    $asalBarang = $row[7] ?? null;
                     
                     $rowData = [
                         'nama' => $row[0],
                         'kode_toko' => $row[1],
                         'nama_toko' => $row[2],
                         'lok_spk' => $lokSpk,
-                        'jenis' => $row[4],
+                        'jenis' => $row[4] ? strtoupper($row[4]) : null, // DIUBAH: langsung uppercase
                         'tipe' => $row[5],
-                        'kelengkapan' => $row[6],
-                        'gudang_id' => $gudangId,
+                        'kelengkapan' => $row[6] ? strtoupper($row[6]) : null,
+                        'asal_barang' => $asalBarang, // DIUBAH
                         'keterangan' => $row[8],
                     ];
                     
-                    // Validator tetap 'required' untuk memastikan baris yang relevan terisi lengkap
                     $validator = Validator::make($rowData, [
                         'nama' => 'required|max:255',
                         'kode_toko' => 'required|max:255',
                         'nama_toko' => 'required|max:255',
                         'lok_spk' => 'required|max:255|unique:inventaris,lok_spk',
-                        'jenis' => 'required|in:TAB,HP,LP,LAIN LAIN',
+                        'jenis' => 'required', // DIUBAH
                         'tipe' => 'required|max:255',
-                        'kelengkapan' => 'required|in:BOX,BTG',
-                        'gudang_id' => 'required|integer|exists:t_gudang,id',
+                        'kelengkapan' => 'required',
+                        'asal_barang' => 'nullable|string|max:255', // DIUBAH
                         'keterangan' => 'nullable',
                     ]);
 
@@ -201,7 +208,8 @@ class InventarisController extends Controller
                             'jenis' => $rowData['jenis'],
                             'tipe' => $rowData['tipe'],
                             'kelengkapan' => $rowData['kelengkapan'],
-                            'gudang_id' => $rowData['gudang_id'],
+                            'asal_barang' => $rowData['asal_barang'], // DIUBAH
+                            'gudang_id' => null, // DIUBAH: gudang_id dibuat null saat upload excel
                             'keterangan' => $rowData['keterangan'],
                             'status' => 1,
                             'created_at' => now(),

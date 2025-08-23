@@ -110,7 +110,6 @@
                                 </button>
                                 <hr>
                                 <div class="dt-responsive table-responsive">
-                                    {{-- KONTEN TABEL (SAMA SEPERTI SEBELUMNYA) --}}
                                     <table id="simpletable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                                         <thead>
                                             <tr>
@@ -121,6 +120,7 @@
                                                 <th>Jenis</th>
                                                 <th>Tipe</th>
                                                 <th>Gudang</th>
+                                                <th>Asal Barang</th> {{-- BARU --}}
                                                 <th>Status</th>
                                                 <th>Tgl Gantian</th>
                                                 <th>Alasan Gantian</th>
@@ -137,6 +137,7 @@
                                                 <td>{{ $item->jenis }}</td>
                                                 <td>{{ $item->tipe }}</td>
                                                 <td>{{ $item->gudang->nama_gudang ?? '-' }}</td>
+                                                <td>{{ $item->asal_barang ?? '-' }}</td> {{-- BARU --}}
                                                 <td>
                                                     @switch($item->status)
                                                         @case(1) <span class="badge bg-success">Pengambilan</span> @break
@@ -156,11 +157,12 @@
                                                     @if($item->status != 2)
                                                         <button type="button" class="btn btn-info btn-round btn-sm gantian-btn" data-id="{{ $item->id }}" data-lok-spk="{{ $item->lok_spk }}">Gantian</button>
                                                         <button type="button" class="btn btn-warning btn-round btn-sm btn-edit"
-                                                            data-bs-toggle="modal" data-bs-target="#editModal" data-id="{{ $item->id }}"
-                                                            data-gudang-id="{{ $item->gudang_id }}" data-nama="{{ $item->nama }}"
-                                                            data-kode_toko="{{ $item->kode_toko }}" data-nama_toko="{{ $item->nama_toko }}"
-                                                            data-lok_spk="{{ $item->lok_spk }}" data-jenis="{{ $item->jenis }}" data-tipe="{{ $item->tipe }}"
-                                                            data-kelengkapan="{{ $item->kelengkapan }}" data-keterangan="{{ $item->keterangan }}">
+                                                                data-bs-toggle="modal" data-bs-target="#editModal" data-id="{{ $item->id }}"
+                                                                data-gudang-id="{{ $item->gudang_id }}" data-asal_barang="{{ $item->asal_barang }}" {{-- BARU --}}
+                                                                data-nama="{{ $item->nama }}"
+                                                                data-kode_toko="{{ $item->kode_toko }}" data-nama_toko="{{ $item->nama_toko }}"
+                                                                data-lok_spk="{{ $item->lok_spk }}" data-jenis="{{ $item->jenis }}" data-tipe="{{ $item->tipe }}"
+                                                                data-kelengkapan="{{ $item->kelengkapan }}" data-keterangan="{{ $item->keterangan }}">
                                                             Edit
                                                         </button>
                                                     @else
@@ -171,7 +173,7 @@
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="11" class="text-center">Tidak ada data yang cocok dengan filter.</td>
+                                                <td colspan="12" class="text-center">Tidak ada data yang cocok dengan filter.</td> {{-- DIUBAH colspan jadi 12 --}}
                                             </tr>
                                             @endforelse
                                         </tbody>
@@ -198,7 +200,7 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="gudang_id" class="form-label">Gudang</label>
+                            <label for="gudang_id" class="form-label">Asal Gudang (Opsional)</label>
                             <select class="form-control" name="gudang_id">
                                 <option value="">Pilih Gudang</option>
                                 @foreach($gudangs as $gudang)
@@ -206,12 +208,25 @@
                                 @endforeach
                             </select>
                         </div>
-                        {{-- Field Status Dihapus --}}
+                        <div class="mb-3">
+                            <label for="asal_barang" class="form-label">Atau Asal Barang</label>
+                            <input type="text" class="form-control" name="asal_barang">
+                        </div>
                         <div class="mb-3"><label for="nama" class="form-label">Nama</label><input type="text" class="form-control" name="nama"></div>
                         <div class="mb-3"><label for="kode_toko" class="form-label">Kode Toko</label><input type="text" class="form-control" name="kode_toko"></div>
                         <div class="mb-3"><label for="nama_toko" class="form-label">Nama Toko</label><input type="text" class="form-control" name="nama_toko"></div>
                         <div class="mb-3"><label for="lok_spk" class="form-label">Lok SPK</label><input type="text" class="form-control" name="lok_spk"></div>
-                        <div class="mb-3"><label for="jenis" class="form-label">Jenis</label><select class="form-control" name="jenis"><option value="">Pilih Jenis</option><option value="TAB">TAB</option><option value="HP">HP</option><option value="LP">LP</option><option value="LAIN LAIN">LAIN LAIN</option></select></div>
+                        <div class="mb-3">
+                            <label for="jenis" class="form-label">Jenis</label>
+                            <select class="form-control" name="jenis">
+                                <option value="">Pilih Jenis</option>
+                                <option value="HP">HP</option>
+                                <option value="LP">LP</option>
+                                <option value="TAB">TAB</option>
+                                <option value="TV">TV</option>
+                                <option value="LAIN LAIN">LAIN LAIN</option>
+                            </select>
+                        </div>
                         <div class="mb-3"><label for="tipe" class="form-label">Tipe</label><input type="text" class="form-control" name="tipe"></div>
                         <div class="mb-3"><label for="kelengkapan" class="form-label">Kelengkapan</label><select class="form-control" name="kelengkapan"><option value="">Pilih</option><option value="BOX">BOX</option><option value="BTG">BTG</option></select></div>
                         <div class="mb-3"><label for="keterangan" class="form-label">Keterangan</label><textarea class="form-control" name="keterangan" rows="3"></textarea></div>
@@ -237,7 +252,7 @@
                     </div>
                     <div class="modal-body">
                          <div class="mb-3">
-                            <label for="edit_gudang_id" class="form-label">Gudang</label>
+                            <label for="edit_gudang_id" class="form-label">Asal Gudang (Opsional)</label>
                             <select class="form-control" id="edit_gudang_id" name="gudang_id">
                                 <option value="">Pilih Gudang</option>
                                 @foreach($gudangs as $gudang)
@@ -245,12 +260,25 @@
                                 @endforeach
                             </select>
                         </div>
-                        {{-- Field Status Dihapus --}}
+                        <div class="mb-3">
+                            <label for="edit_asal_barang" class="form-label">Atau Asal Barang</label>
+                            <input type="text" class="form-control" id="edit_asal_barang" name="asal_barang">
+                        </div>
                         <div class="mb-3"><label for="edit_nama" class="form-label">Nama</label><input type="text" class="form-control" id="edit_nama" name="nama"></div>
                         <div class="mb-3"><label for="edit_kode_toko" class="form-label">Kode Toko</label><input type="text" class="form-control" id="edit_kode_toko" name="kode_toko"></div>
                         <div class="mb-3"><label for="edit_nama_toko" class="form-label">Nama Toko</label><input type="text" class="form-control" id="edit_nama_toko" name="nama_toko"></div>
                         <div class="mb-3"><label for="edit_lok_spk" class="form-label">Lok SPK</label><input type="text" class="form-control" id="edit_lok_spk" name="lok_spk"></div>
-                        <div class="mb-3"><label for="edit_jenis" class="form-label">Jenis</label><select class="form-control" id="edit_jenis" name="jenis"><option value="">Pilih Jenis</option><option value="TAB">TAB</option><option value="HP">HP</option><option value="LP">LP</option><option value="LAIN LAIN">LAIN LAIN</option></select></div>
+                        <div class="mb-3">
+                            <label for="edit_jenis" class="form-label">Jenis</label>
+                            <select class="form-control" id="edit_jenis" name="jenis">
+                                <option value="">Pilih Jenis</option>
+                                <option value="HP">HP</option>
+                                <option value="LP">LP</option>
+                                <option value="TAB">TAB</option>
+                                <option value="TV">TV</option>
+                                <option value="LAIN LAIN">LAIN LAIN</option>
+                            </select>
+                        </div>
                         <div class="mb-3"><label for="edit_tipe" class="form-label">Tipe</label><input type="text" class="form-control" id="edit_tipe" name="tipe"></div>
                         <div class="mb-3"><label for="edit_kelengkapan" class="form-label">Kelengkapan</label><select class="form-control" id="edit_kelengkapan" name="kelengkapan"><option value="">Pilih</option><option value="BOX">BOX</option><option value="BTG">BTG</option></select></div>
                         <div class="mb-3"><label for="edit_keterangan" class="form-label">Keterangan</label><textarea class="form-control" id="edit_keterangan" name="keterangan" rows="3"></textarea></div>
@@ -300,7 +328,7 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <p>Silakan unduh template di bawah ini untuk memastikan format data sesuai.</p>
+                            <p>Silakan unduh template di bawah ini untuk memastikan format data sesuai. Kolom 'gudang_id' telah digantikan oleh 'asal_barang'.</p>
                             <a href="{{ asset('files/template data inventaris.xlsx') }}" class="btn btn-info btn-round" download>
                                 <i class="feather icon-download"></i> Download Template
                             </a>
@@ -329,9 +357,9 @@
                 const button = event.relatedTarget;
                 const form = document.getElementById('editForm');
                 
-                // 'tgl' sudah dihapus
                 const id = button.getAttribute('data-id');
                 const gudangId = button.getAttribute('data-gudang-id');
+                const asalBarang = button.getAttribute('data-asal_barang'); // BARU
                 const nama = button.getAttribute('data-nama');
                 const kode_toko = button.getAttribute('data-kode_toko');
                 const nama_toko = button.getAttribute('data-nama_toko');
@@ -345,8 +373,8 @@
                 url = url.replace(':id', id);
                 form.action = url;
 
-                // 'tgl' sudah dihapus
                 form.querySelector('#edit_gudang_id').value = gudangId || '';
+                form.querySelector('#edit_asal_barang').value = asalBarang || ''; // BARU
                 form.querySelector('#edit_nama').value = nama || '';
                 form.querySelector('#edit_kode_toko').value = kode_toko || '';
                 form.querySelector('#edit_nama_toko').value = nama_toko || '';

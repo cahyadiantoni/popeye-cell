@@ -16,7 +16,8 @@ class Inventaris extends Model
      */
     protected $fillable = [
         'id',
-        'gudang_id', // BARU
+        'gudang_id',
+        'asal_barang',
         'tgl',
         'nama',
         'kode_toko',
@@ -26,9 +27,9 @@ class Inventaris extends Model
         'tipe',
         'kelengkapan',
         'keterangan',
-        'status', // BARU
-        'tgl_gantian', // BARU
-        'alasan_gantian', // BARU
+        'status',
+        'tgl_gantian',
+        'alasan_gantian',
     ];
 
     /**
