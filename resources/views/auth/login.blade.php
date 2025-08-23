@@ -65,6 +65,13 @@
                             </div>
                         </div>
                     </form>
+                    <div class="text-center mt-4">
+                        <p class="text-muted" style="font-size: 14px;">
+                            🌟 Aplikasi pengelolaan stok barang dan transaksi penjualan (internal) 
+                            untuk toko cabang dan pusat,<br>
+                            dikelola oleh <strong>CV PRISMA CIPTA SOLUSI</strong>.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
