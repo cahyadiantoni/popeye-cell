@@ -162,6 +162,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/suggest-no-fak-bawah', [TransaksiBawahController::class, 'getSuggestNoFak'])->name('suggest.no.fak.bawah');
     Route::get('/history-edit-faktur-bawah', [HistoryEditFakturBawahController::class, 'index'])->name('history-edit-faktur-bawah.index')->middleware('auth');
 
+    Route::get('/transaksi-kesimpulan/print-kesimpulan', [TransaksiKesimpulanController::class, 'printKesimpulan'])->name('transaksi-kesimpulan.print-kesimpulan');
     Route::resource('/transaksi-kesimpulan', TransaksiKesimpulanController::class)->middleware('auth');
     Route::delete('/transaksi-kesimpulan/{kesimpulan_id}', [TransaksiKesimpulanController::class, 'destroy'])->name('transaksi-kesimpulan.delete');
     Route::get('/transaksi-kesimpulan/{kesimpulan_id}', [TransaksiKesimpulanController::class, 'show'])->name('transaksi-kesimpulan.show');

@@ -407,4 +407,107 @@ class TransaksiKesimpulanController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+
+    public function printKesimpulan(Request $request)
+    {
+        $query = KesimpulanBawah::with([
+            'bukti',
+            'fakturKesimpulans.faktur.barangs'
+        ])->orderBy('tgl_jual', 'asc');
+
+        // Filter: tanggal
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
+        // Filter: status (is_lunas)
+        if ($request->filled('status')) {
+            $query->where('is_lunas', $request->status === 'Lunas' ? 1 : 0);
+        }
+
+        // Filter: cek (is_finish)
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek === 'Sudah_Dicek' ? 1 : 0);
+        }
+
+        $kesimpulans = $query->get();
+
+        // (Opsional) normalisasi is_lunas seperti index()
+        foreach ($kesimpulans as $k) {
+            $dibayar = (float) ($k->total_nominal ?? 0);
+            $k->is_lunas = $dibayar >= (float) $k->grand_total ? 1 : 0;
+        }
+
+        // Siapkan rows per Kesimpulan, sambil SKIP jumlah_barang == 0
+        $rows = [];
+        foreach ($kesimpulans as $k) {
+            $fakturs = $k->fakturKesimpulans
+                ->filter(fn($fk) => $fk->faktur)
+                ->pluck('faktur');
+
+            // Hitung jumlah barang via accessor di model (sudah kamu sediakan)
+            $jumlahBarang = (int) ($k->total_barang ?? 0);
+
+            // Skip kalau jumlah barang 0
+            if ($jumlahBarang <= 0) {
+                continue;
+            }
+
+            // Invoice = keterangan faktur (comma-separated)
+            $invoiceList = $fakturs->pluck('keterangan')
+                ->filter(fn($v) => filled($v))
+                ->implode(', ');
+
+            // Petugas = unique petugas dari faktur (comma-separated)
+            $petugasList = $fakturs->pluck('petugas')
+                ->filter(fn($v) => filled($v))
+                ->unique()
+                ->values()
+                ->implode(', ');
+
+            // Total (sebelum potongan & diskon) ambil dari field KesimpulanBawah.total
+            $totalAwal = (float) ($k->total ?? 0);
+
+            $rows[] = [
+                'tgl'            => $k->tgl_jual,
+                'invoice'        => $invoiceList,
+                'petugas'        => $petugasList,
+                'jumlah_barang'  => $jumlahBarang,
+                'total'          => $totalAwal,                    // NEW: kolom Total
+                'potongan'       => (float) ($k->potongan_kondisi ?? 0),
+                'diskon'         => (float) ($k->diskon ?? 0),     // %
+                'transfer'       => (float) ($k->grand_total ?? 0),
+                'note'           => '',
+            ];
+        }
+
+        // Info header & totals pakai rows yang sudah ter-filter (tanpa yang jumlah_barang=0)
+        if (!empty($rows)) {
+            // tgl awal/akhir dari rows
+            $tgls = collect($rows)->pluck('tgl')->sort()->values();
+            $tanggalMulai   = Carbon::parse($tgls->first())->translatedFormat('d M Y');
+            $tanggalSelesai = Carbon::parse($tgls->last())->translatedFormat('d M Y');
+        } else {
+            $tanggalMulai = $tanggalSelesai = 'N/A';
+        }
+        $rentangTanggal = ($tanggalMulai === $tanggalSelesai) ? $tanggalMulai : ($tanggalMulai.' - '.$tanggalSelesai);
+
+        $totalBarang    = collect($rows)->sum('jumlah_barang');
+        $totalPotongan  = collect($rows)->sum('potongan');
+        $totalTransfer  = collect($rows)->sum('transfer');
+
+        $pdf = \PDF::loadView('pages.transaksi-kesimpulan.print-kesimpulan', [
+            'rows'           => $rows,
+            'rentangTanggal' => $rentangTanggal,
+            'totalBarang'    => $totalBarang,
+            'totalPotongan'  => $totalPotongan,
+            'totalTransfer'  => $totalTransfer,
+        ]);
+
+        // Landscape
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->stream('kesimpulan-index-'.time().'.pdf');
+    }
+
 }

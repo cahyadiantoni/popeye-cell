@@ -86,6 +86,19 @@
                                     <div class="d-flex justify-content-end mt-3">
                                         <button type="submit" class="btn btn-primary">Filter</button>
                                         <a href="{{ route('transaksi-kesimpulan.index') }}" class="btn btn-secondary mx-2">Reset</a>
+
+                                        <a
+                                        href="{{ route('transaksi-kesimpulan.print-kesimpulan', [
+                                            'tanggal_mulai'  => request('tanggal_mulai'),
+                                            'tanggal_selesai'=> request('tanggal_selesai'),
+                                            'status'         => request('status'),
+                                            'cek'            => request('cek')
+                                        ]) }}"
+                                        target="_blank"
+                                        class="btn btn-success btn-round ms-2"
+                                        >
+                                        Print Kesimpulan
+                                        </a>
                                     </div>
                                 </form>
                             </div>
