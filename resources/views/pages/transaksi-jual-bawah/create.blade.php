@@ -76,7 +76,20 @@
                                     <div id="conclusion-fields" style="display: none;">
                                         <hr>
                                         <div class="mb-3 row">
-                                            <div class="sub-title">Masukan Bukti Transfer (Opsional)</div>
+                                            <div class="sub-title mb-2">Masukan Bukti Transfer & Potongan Jika Ada (Opsional)</div>
+
+                                            <!-- Potongan & Diskon -->
+                                            <div class="mb-3 row mt-4">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Potongan Kondisi (Dalam Rp.)</label>
+                                                    <input type="number" id="potongan_kondisi" name="potongan_kondisi" class="form-control" placeholder="Ketik Potongan Kondisi">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Diskon (Dalam %)</label>
+                                                    <input type="number" id="diskon" name="diskon" class="form-control" placeholder="Ketik Persentase Diskon">
+                                                </div>
+                                            </div>
+                                            <!-- Bukti Transfer -->
                                             <div id="bukti-transfer-container">
                                                 <div class="row align-items-center bukti-entry mb-2">
                                                     <div class="col-md-6">
@@ -98,6 +111,7 @@
                                         </div>
                                         <hr>
                                     </div>
+
 
                                     <div class="d-flex justify-content-between mt-3">
                                         <a href="{{ route('transaksi-jual-bawah.index') }}" class="btn btn-secondary btn-round">List All Transaksi</a>

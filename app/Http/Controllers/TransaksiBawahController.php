@@ -279,11 +279,23 @@ class TransaksiBawahController extends Controller
                 $count = KesimpulanBawah::where('nomor_kesimpulan', 'like', "$prefix-%")->count();
                 $nomor_kesimpulan = "$prefix-" . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
 
+                // Ambil nilai dari request
+                $total = (float) $totalHargaJual;
+                $potongan_kondisi = (float) $request->input('potongan_kondisi', 0);
+                $diskon = (float) $request->input('diskon', 0); // persen
+
+                // Hitung grand total
+                $setelah_potongan = $total - $potongan_kondisi;
+                $setelah_diskon = $setelah_potongan - ($setelah_potongan * ($diskon / 100));
+                $grand_total = max($setelah_diskon, 0); // antisipasi kalau minus
+
                 $kesimpulan = KesimpulanBawah::create([
                     'nomor_kesimpulan' => $nomor_kesimpulan,
                     'tgl_jual' => $tglJual,
                     'total' => $totalHargaJual,
-                    'grand_total' => $totalHargaJual,
+                    'grand_total' => $grand_total,
+                    'potongan_kondisi' => $request->input('potongan_kondisi') ?? 0,
+                    'diskon' => $request->input('diskon') ?? 0,
                     'keterangan' => $keterangan,
                     'is_lunas' => 0,
                 ]);
