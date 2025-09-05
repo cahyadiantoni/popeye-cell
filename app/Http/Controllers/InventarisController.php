@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Gudang;
 use App\Models\Inventaris;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -18,17 +17,16 @@ class InventarisController extends Controller
      */
     public function index(Request $request)
     {
-        // Ambil hanya Gudang yang ada di data inventaris untuk opsi filter
-        $usedGudangIds = Inventaris::whereNotNull('gudang_id')->distinct()->pluck('gudang_id');
-        $filterGudangs = Gudang::whereIn('id', $usedGudangIds)->get();
+        // Opsi filter Kode Toko
+        $filterKodeTokos = Inventaris::whereNotNull('kode_toko')
+            ->distinct()
+            ->orderBy('kode_toko')
+            ->pluck('kode_toko');
 
-        // Ambil hanya Kode Toko yang unik dari data inventaris untuk opsi filter
-        $filterKodeTokos = Inventaris::whereNotNull('kode_toko')->distinct()->orderBy('kode_toko')->pluck('kode_toko');
-        
-        // Mulai query dasar
-        $query = Inventaris::with('gudang')->latest();
+        // Query dasar
+        $query = Inventaris::latest();
 
-        // Terapkan filter Tanggal (tgl)
+        // Filter tanggal
         if ($request->filled('start_date')) {
             $query->where('tgl', '>=', $request->start_date);
         }
@@ -36,91 +34,106 @@ class InventarisController extends Controller
             $query->where('tgl', '<=', $request->end_date);
         }
 
-        // Terapkan filter Gudang
-        if ($request->filled('gudang_id')) {
-            $query->where('gudang_id', $request->gudang_id);
-        }
-
-        // Terapkan filter Kode Toko
+        // Filter kode_toko
         if ($request->filled('kode_toko')) {
             $query->where('kode_toko', $request->kode_toko);
         }
 
-        // Eksekusi query setelah semua filter diterapkan
+        // Filter asal_barang (opsional)
+        if ($request->filled('asal_barang')) {
+            $query->where('asal_barang', 'like', '%'.$request->asal_barang.'%');
+        }
+
         $inventaris = $query->get();
 
-        // Kirim semua data yang diperlukan ke view
         return view('pages.data-inventaris.index', [
-            'inventaris' => $inventaris,
-            'filterGudangs' => $filterGudangs,
+            'inventaris'      => $inventaris,
             'filterKodeTokos' => $filterKodeTokos,
-            'gudangs' => Gudang::all() // 'gudangs' tetap dikirim untuk modal Add/Edit
         ]);
     }
 
+    /**
+     * Simpan data baru.
+     * Syarat: minimal ada 1 field terisi (jangan semua kosong).
+     */
     public function store(Request $request)
     {
-        // Validasi
+        // Server-side guard: jika semua field kosong, tolak.
+        $fields = [
+            'asal_barang', 'nama', 'kode_toko', 'nama_toko',
+            'lok_spk', 'jenis', 'tipe', 'kelengkapan', 'keterangan'
+        ];
+        $allEmpty = true;
+        foreach ($fields as $f) {
+            $val = $request->input($f);
+            if (is_string($val)) $val = trim($val);
+            if (!empty($val)) { $allEmpty = false; break; }
+        }
+        if ($allEmpty) {
+            return back()
+                ->withInput()
+                ->withErrors(['form' => 'Form tidak boleh kosong semua. Isi minimal satu kolom.']);
+        }
+
+        // Validasi (semua nullable; lok_spk boleh kosong)
         $validatedData = $request->validate([
-            'gudang_id' => 'nullable|exists:t_gudang,id',
-            'asal_barang' => 'nullable|string|max:255', // BARU
-            'nama' => 'nullable|string|max:255',
-            'kode_toko' => 'nullable|string|max:255',
-            'nama_toko' => 'nullable|string|max:255',
-            'lok_spk' => 'nullable|string|max:255|unique:inventaris,lok_spk',
-            'jenis' => 'nullable|string', // DIUBAH
-            'tipe' => 'nullable|string|max:255',
+            'asal_barang' => 'nullable|string|max:255',
+            'nama'        => 'nullable|string|max:255',
+            'kode_toko'   => 'nullable|string|max:255',
+            'nama_toko'   => 'nullable|string|max:255',
+            'lok_spk'     => 'nullable|string|max:255|unique:inventaris,lok_spk',
+            'jenis'       => 'nullable|string',
+            'tipe'        => 'nullable|string|max:255',
             'kelengkapan' => 'nullable|string',
-            'keterangan' => 'nullable|string',
+            'keterangan'  => 'nullable|string',
         ]);
 
-        // DIUBAH: Otomatis ubah 'jenis' ke huruf besar jika ada
+        // Normalisasi kapital
         if (isset($validatedData['jenis'])) {
             $validatedData['jenis'] = strtoupper($validatedData['jenis']);
         }
-
         if (isset($validatedData['kelengkapan'])) {
             $validatedData['kelengkapan'] = strtoupper($validatedData['kelengkapan']);
         }
 
-        // Tambahkan status '1' dan tgl saat ini secara otomatis
+        // Set default
         $validatedData['status'] = 1;
-        $validatedData['tgl'] = now();
+        $validatedData['tgl']    = now();
 
         Inventaris::create($validatedData);
 
         return redirect()->route('data-inventaris.index')->with('success', 'Data inventaris berhasil ditambahkan!');
     }
 
+    /**
+     * Update data.
+     * (Tidak memaksa minimal 1 field, tapi bisa ditambah jika ingin.)
+     */
     public function update(Request $request, $id)
     {
         $inventaris = Inventaris::findOrFail($id);
-        
-        // Validasi
+
         $validatedData = $request->validate([
-            'gudang_id' => 'nullable|exists:t_gudang,id',
-            'asal_barang' => 'nullable|string|max:255', // BARU
-            'nama' => 'nullable|string|max:255',
-            'kode_toko' => 'nullable|string|max:255',
-            'nama_toko' => 'nullable|string|max:255',
-            'lok_spk' => ['nullable', 'string', 'max:255', Rule::unique('inventaris', 'lok_spk')->ignore($inventaris->id)],
-            'jenis' => 'nullable|string', // DIUBAH
-            'tipe' => 'nullable|string|max:255',
+            'asal_barang' => 'nullable|string|max:255',
+            'nama'        => 'nullable|string|max:255',
+            'kode_toko'   => 'nullable|string|max:255',
+            'nama_toko'   => 'nullable|string|max:255',
+            'lok_spk'     => ['nullable', 'string', 'max:255', Rule::unique('inventaris', 'lok_spk')->ignore($inventaris->id)],
+            'jenis'       => 'nullable|string',
+            'tipe'        => 'nullable|string|max:255',
             'kelengkapan' => 'nullable|string',
-            'keterangan' => 'nullable|string',
+            'keterangan'  => 'nullable|string',
         ]);
-        
-        // DIUBAH: Otomatis ubah 'jenis' ke huruf besar jika ada
+
         if (isset($validatedData['jenis'])) {
             $validatedData['jenis'] = strtoupper($validatedData['jenis']);
         }
-
         if (isset($validatedData['kelengkapan'])) {
             $validatedData['kelengkapan'] = strtoupper($validatedData['kelengkapan']);
         }
 
-        // Update data, 'tgl' tidak akan pernah diubah saat edit
         $inventaris->update($validatedData);
+
         return redirect()->route('data-inventaris.index')->with('success', 'Data inventaris berhasil diperbarui!');
     }
 
@@ -129,8 +142,8 @@ class InventarisController extends Controller
         $request->validate(['alasan_gantian' => 'required|string|max:1000']);
         try {
             $inventari->update([
-                'status' => 2,
-                'tgl_gantian' => now(),
+                'status'         => 2,
+                'tgl_gantian'    => now(),
                 'alasan_gantian' => $request->alasan_gantian,
             ]);
             return response()->json(['status' => 'success', 'message' => 'Status barang berhasil diubah.']);
@@ -140,7 +153,10 @@ class InventarisController extends Controller
     }
 
     /**
-     * Menangani upload batch data inventaris dari file Excel.
+     * Batch upload dari Excel:
+     * - lok_spk boleh kosong (tetap insert)
+     * - skip baris yang benar2 kosong
+     * - cek duplikat lok_spk di file hanya jika lok_spk terisi
      */
     public function batchUpload(Request $request)
     {
@@ -148,72 +164,91 @@ class InventarisController extends Controller
 
         try {
             DB::transaction(function () use ($request) {
-                $rows = Excel::toArray([], $request->file('file'))[0];
+                $rows = Excel::toArray([], $request->file('file'))[0] ?? [];
                 $errors = [];
                 $dataToInsert = [];
                 $lokSpksInFile = [];
 
                 foreach ($rows as $index => $row) {
-                    if ($index === 0) continue;
+                    if ($index === 0) continue; // skip header
 
-                    $lokSpk = $row[3] ?? null;
+                    // Map kolom (samakan dengan template)
+                    // 0: nama, 1: kode_toko, 2: nama_toko, 3: lok_spk, 4: jenis, 5: tipe,
+                    // 6: kelengkapan, 7: asal_barang, 8: keterangan
+                    $nama        = $row[0] ?? null;
+                    $kodeToko    = $row[1] ?? null;
+                    $namaToko    = $row[2] ?? null;
+                    $lokSpk      = $row[3] ?? null;
+                    $jenis       = $row[4] ?? null;
+                    $tipe        = $row[5] ?? null;
+                    $kelengkapan = $row[6] ?? null;
+                    $asalBarang  = $row[7] ?? null;
+                    $keterangan  = $row[8] ?? null;
 
-                    if (empty($lokSpk)) {
-                        continue;
+                    // Trim semua agar deteksi kosong akurat
+                    $vals = [$nama, $kodeToko, $namaToko, $lokSpk, $jenis, $tipe, $kelengkapan, $asalBarang, $keterangan];
+                    $vals = array_map(function($v){ return is_string($v) ? trim($v) : $v; }, $vals);
+
+                    // Guard baris kosong total
+                    $allEmpty = true;
+                    foreach ($vals as $v) {
+                        if (!empty($v)) { $allEmpty = false; break; }
                     }
-                    
-                    if (in_array($lokSpk, $lokSpksInFile)) {
-                        $errors[] = "Error di baris Excel #" . ($index + 1) . ": LOK SPK '$lokSpk' duplikat di dalam file ini.";
-                        continue;
+                    if ($allEmpty) {
+                        continue; // skip tanpa error
                     }
-                    $lokSpksInFile[] = $lokSpk;
 
-                    // DIUBAH: 'gudang_id' digantikan 'asal_barang' dari excel
-                    // Kolom 7 sekarang untuk 'asal_barang'
-                    $asalBarang = $row[7] ?? null;
-                    
+                    // Cek duplikat dalam file hanya jika lok_spk terisi
+                    if (!empty($lokSpk)) {
+                        if (in_array($lokSpk, $lokSpksInFile)) {
+                            $errors[] = "Error di baris Excel #" . ($index + 1) . ": LOK SPK '$lokSpk' duplikat di dalam file ini.";
+                            continue;
+                        }
+                        $lokSpksInFile[] = $lokSpk;
+                    }
+
                     $rowData = [
-                        'nama' => $row[0],
-                        'kode_toko' => $row[1],
-                        'nama_toko' => $row[2],
-                        'lok_spk' => $lokSpk,
-                        'jenis' => $row[4] ? strtoupper($row[4]) : null, // DIUBAH: langsung uppercase
-                        'tipe' => $row[5],
-                        'kelengkapan' => $row[6] ? strtoupper($row[6]) : null,
-                        'asal_barang' => $asalBarang, // DIUBAH
-                        'keterangan' => $row[8],
+                        'nama'        => $nama,
+                        'kode_toko'   => $kodeToko,
+                        'nama_toko'   => $namaToko,
+                        'lok_spk'     => $lokSpk,
+                        'jenis'       => $jenis ? strtoupper($jenis) : null,
+                        'tipe'        => $tipe,
+                        'kelengkapan' => $kelengkapan ? strtoupper($kelengkapan) : null,
+                        'asal_barang' => $asalBarang,
+                        'keterangan'  => $keterangan,
                     ];
-                    
+
+                    // Validasi baris (lok_spk nullable)
                     $validator = Validator::make($rowData, [
-                        'nama' => 'required|max:255',
-                        'kode_toko' => 'required|max:255',
-                        'nama_toko' => 'required|max:255',
-                        'lok_spk' => 'required|max:255|unique:inventaris,lok_spk',
-                        'jenis' => 'required', // DIUBAH
-                        'tipe' => 'required|max:255',
-                        'kelengkapan' => 'required',
-                        'asal_barang' => 'nullable|string|max:255', // DIUBAH
-                        'keterangan' => 'nullable',
+                        'nama'        => 'nullable|max:255',
+                        'kode_toko'   => 'nullable|max:255',
+                        'nama_toko'   => 'nullable|max:255',
+                        'lok_spk'     => 'nullable|max:255|unique:inventaris,lok_spk',
+                        'jenis'       => 'nullable',
+                        'tipe'        => 'nullable|max:255',
+                        'kelengkapan' => 'nullable',
+                        'asal_barang' => 'nullable|string|max:255',
+                        'keterangan'  => 'nullable',
                     ]);
 
                     if ($validator->fails()) {
                         $errors[] = "Error di baris Excel #" . ($index + 1) . ": " . implode(', ', $validator->errors()->all());
                     } else {
                         $dataToInsert[] = [
-                            'tgl' => now(),
-                            'nama' => $rowData['nama'],
-                            'kode_toko' => $rowData['kode_toko'],
-                            'nama_toko' => $rowData['nama_toko'],
-                            'lok_spk' => $rowData['lok_spk'],
-                            'jenis' => $rowData['jenis'],
-                            'tipe' => $rowData['tipe'],
+                            'tgl'         => now(),
+                            'nama'        => $rowData['nama'],
+                            'kode_toko'   => $rowData['kode_toko'],
+                            'nama_toko'   => $rowData['nama_toko'],
+                            'lok_spk'     => $rowData['lok_spk'],
+                            'jenis'       => $rowData['jenis'],
+                            'tipe'        => $rowData['tipe'],
                             'kelengkapan' => $rowData['kelengkapan'],
-                            'asal_barang' => $rowData['asal_barang'], // DIUBAH
-                            'gudang_id' => null, // DIUBAH: gudang_id dibuat null saat upload excel
-                            'keterangan' => $rowData['keterangan'],
-                            'status' => 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
+                            'asal_barang' => $rowData['asal_barang'],
+                            'keterangan'  => $rowData['keterangan'],
+                            'status'      => 1,
+                            'created_at'  => now(),
+                            'updated_at'  => now(),
                         ];
                     }
                 }
@@ -233,20 +268,17 @@ class InventarisController extends Controller
     }
 
     /**
-     * Menangani permintaan export data ke Excel.
+     * Export Excel (tanpa gudang_id).
      */
     public function exportExcel(Request $request)
     {
-        // Ambil semua parameter filter dari request
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
-        $gudangId = $request->query('gudang_id');
-        $kodeToko = $request->query('kode_toko');
+        $startDate  = $request->query('start_date');
+        $endDate    = $request->query('end_date');
+        $kodeToko   = $request->query('kode_toko');
+        $asalBarang = $request->query('asal_barang');
 
-        // Buat nama file dinamis dengan tanggal
         $fileName = 'data-inventaris-' . now()->format('d-m-Y') . '.xlsx';
-        
-        // Panggil Export Class dengan parameter filter dan download file
-        return Excel::download(new InventarisExport($startDate, $endDate, $gudangId, $kodeToko), $fileName);
+
+        return Excel::download(new InventarisExport($startDate, $endDate, $kodeToko, $asalBarang), $fileName);
     }
 }
