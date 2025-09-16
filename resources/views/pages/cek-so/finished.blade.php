@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Detail Stok Opname')
+@section('title', 'Hasil Stok Opname')
 @section('content')
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -12,7 +12,7 @@
                 <div class="col-lg-8">
                     <div class="page-header-title">
                         <div class="d-inline">
-                            <h4>Detail Stok Opname</h4>
+                            <h4>Hasil Stok Opname</h4>
                         </div>
                     </div>
                 </div>
@@ -20,30 +20,32 @@
         </div>
 
         <div class="page-body">
-            <!-- Informasi Cek SO Barang -->
             <div class="card">
-                <div class="card-block">
+                <div class="card-block table-responsive">
+                    {{-- DIUBAH: Tabel summary ini disesuaikan dengan kolom data yang baru --}}
                     <table class="table table-bordered text-center">
                         <thead class="table-dark">
                             <tr>
                                 <th>Kode SO</th>
                                 <th>Gudang / Petugas</th>
-                                <th>Scan</th>
-                                <th>Manual</th>
-                                <th>Jumlah Barang / Stok</th>
-                                <th>Waktu Mulai / Waktu Berakhir</th>
+                                <th>Scan Sistem</th>
+                                <th>Input Manual</th>
+                                <th>Upload Excel</th>
+                                <th>Total / Stok</th>
+                                <th>Waktu Mulai / Selesai</th>
                                 <th>Durasi</th>
-                                <th>Hasil SO</th>
-                                <th>Status SO</th>
+                                <th>Hasil</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>{{ $cekso->kode }}</td>
                                 <td>{{ $cekso->nama_gudang }} / {{ $cekso->petugas }}</td>
-                                <td>{{ $cekso->jumlah_scan ?? 0 }}</td>
-                                <td>{{ $cekso->jumlah_manual ?? 0 }}</td>
-                                <td>{{ $cekso->jumlah_scan + $cekso->jumlah_manual }} / {{ $cekso->jumlah_stok }}</td>
+                                <td>{{ $cekso->jumlah_scan_sistem ?? 0 }}</td>
+                                <td>{{ $cekso->jumlah_input_manual ?? 0 }}</td>
+                                <td>{{ $cekso->jumlah_upload_excel ?? 0 }}</td>
+                                <td>{{ $cekso->jumlah_scan_sistem + $cekso->jumlah_input_manual + $cekso->jumlah_upload_excel }} / {{ $cekso->jumlah_stok }}</td>
                                 <td>{{ $cekso->waktu_mulai }} / {{ $cekso->waktu_selesai }}</td>
                                 <td>{{ $cekso->durasi }}</td>
                                 <td>
@@ -55,11 +57,7 @@
                                     @endswitch
                                 </td>
                                 <td>
-                                    @switch($cekso->is_finished)
-                                        @case(0) <span class="badge bg-warning text-dark">Belum Selesai</span> @break
-                                        @case(1) <span class="badge bg-success">Selesai</span> @break
-                                        @default <span class="badge bg-secondary">Tidak Diketahui</span>
-                                    @endswitch
+                                    <span class="badge bg-success">Selesai</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -67,20 +65,40 @@
                 </div>
             </div>
 
-            <!-- Tabel Barang -->
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>Daftar Barang</h5>
-                    <select id="filterScan" class="form-select w-auto">
-                        <option value="">Semua</option>
-                        <option value="1">Sudah Discan</option>
-                        <option value="3">Manual Upload</option>
-                        <option value="0">Belum Discan</option>
-                        <option value="2">Tidak Ada di Database</option>
-                    </select>
+                <div class="card-header">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-3"><h5>Detail Hasil Barang</h5></div>
+                        <div class="col-md-3">
+                            <select id="filterScan" class="form-select">
+                                <option value="">-- Filter Status --</option>
+                                <option value="1">Scan Sistem</option>
+                                <option value="3">Input Manual</option>
+                                <option value="4">Upload Excel</option>
+                                <option value="0">Belum Discan</option>
+                                <option value="2">Tidak Ada di DB</option>
+                            </select>
+                        </div>
+                         <div class="col-md-3">
+                             <select id="filterPetugas" class="form-select">
+                                <option value="">-- Filter Petugas Scan --</option>
+                                @foreach($petugasScans as $petugas)
+                                <option value="{{ $petugas }}">{{ $petugas }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="filterLokasi" class="form-select">
+                                <option value="">-- Filter Lokasi --</option>
+                                 @foreach($lokasis as $lokasi)
+                                <option value="{{ $lokasi }}">{{ $lokasi }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-block table-responsive">
-                    <table id="barangTable" class="table table-striped table-bordered">
+                    <table id="barangTable" class="table table-striped table-bordered" style="width:100%">
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -89,59 +107,46 @@
                                 <th>Tipe</th>
                                 <th>Kelengkapan</th>
                                 <th>Status</th>
+                                <th>Petugas Scan</th>
+                                <th>Lokasi</th>
                             </tr>
                         </thead>
                     </table>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
 <script>
-    $(document).ready(function () {
-        let table = $('#barangTable').DataTable({
-            processing: true,
-            serverSide: true,
-            ajax: {
-                url: "{{ route('get-cekso.finish', $cekso->id) }}",
-                data: function (d) {
-                    let filterValue = $('#filterScan').val();
-                    d.scan_status = filterValue !== "" ? filterValue : null; // Kirim `null` jika semua
-                }
-            },
-            columns: [
-                { 
-                    data: null, 
-                    name: 'nomor', 
-                    render: function (data, type, row, meta) {
-                        return meta.row + 1; // Menampilkan nomor urut
-                    },
-                    orderable: false, 
-                    searchable: false 
-                },
-                { data: 'lok_spk', name: 'lok_spk' },
-                { data: 'jenis', name: 'jenis', defaultContent: '-' },
-                { data: 'tipe', name: 'tipe', defaultContent: '-' },
-                { data: 'kelengkapan', name: 'kelengkapan', defaultContent: '-' },
-                {
-                    data: 'status', 
-                    name: 'status', 
-                    orderable: false, 
-                    searchable: false,
-                    render: function(data, type, row) {
-                        return data;
-                    }
-                }
-            ]
-        });
-
-        // Event ketika dropdown filter diubah
-        $('#filterScan').change(function () {
-            table.ajax.reload(); // Refresh tabel dengan filter baru
-        });
+$(document).ready(function () {
+    let table = $('#barangTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{{ route('get-cekso.finish', $cekso->id) }}",
+            data: function (d) {
+                d.scan_status = $('#filterScan').val();
+                d.petugas_scan = $('#filterPetugas').val();
+                d.lokasi = $('#filterLokasi').val();
+            }
+        },
+        columns: [
+            { data: null, name: 'nomor', orderable: false, searchable: false, render: (data, type, row, meta) => meta.row + 1 },
+            { data: 'lok_spk', name: 'lok_spk' },
+            { data: 'jenis', name: 'jenis', defaultContent: '-' },
+            { data: 'tipe', name: 'tipe', defaultContent: '-' },
+            { data: 'kelengkapan', name: 'kelengkapan', defaultContent: '-' },
+            { data: 'status_badge', name: 'status', orderable: false, searchable: false },
+            { data: 'petugas_scan', name: 'petugas_scan', defaultContent: '-' },
+            { data: 'lokasi', name: 'lokasi', defaultContent: '-' }
+        ]
     });
+
+    $('#filterScan, #filterPetugas, #filterLokasi').change(function () {
+        table.ajax.reload();
+    });
+});
 </script>
 
 @endsection

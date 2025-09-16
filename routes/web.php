@@ -57,6 +57,24 @@ Route::post('/payment/callback', [FakturPaymentController::class, 'callback'])->
 // Callback Xendit
 Route::post('/payment/xendit/callback', [FakturPaymentController::class, 'xenditCallback'])->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])->name('payment.xendit.callback');
 
+Route::group([], function() {
+    Route::get('/cek-so/export/{id}', [CekSOController::class, 'exportExcel'])->name('cek-so.export');
+    Route::get('/cek-so/guest/{id}', [CekSOController::class, 'showGuest'])->name('cek-so.show-guest');
+    // Resource Controller untuk CekSO
+    Route::resource('/cek-so', CekSOController::class);
+
+    // Rute-rute pendukung lainnya untuk CekSO
+    Route::get('/get-last-kode/{gudang_id}', [CekSOController::class, 'getLastKode']);
+    Route::get('/get-cekso-not-in-master/{id}', [CekSOController::class, 'getCekSONotInMaster'])->name('get-cekso.not-in-master');
+    Route::get('/get-cek-so/{id}/barangs', [CekSOController::class, 'getCekSOBarangs'])->name('get-cekso.barangs');
+    Route::post('/scan-cek-so', [CekSOController::class, 'scan'])->name('cekso.scan');
+    Route::post('/upload-cek-so', [CekSOController::class, 'upload'])->name('cekso.upload');
+    Route::post('/finish-cek-so', [CekSOController::class, 'finish'])->name('cekso.finish');
+    Route::get('/finish-cek-so/{id}', [CekSOController::class, 'showFinish'])->name('cekso.showFinish');
+    Route::get('/get-cek-so-finish/{id}', [CekSOController::class, 'getCekSOFinish'])->name('get-cekso.finish');
+    Route::post('/manual-cek-so', [CekSOController::class, 'manualInput'])->name('cekso.manual');
+})->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
 Route::get('/mac-launcher', function (\Illuminate\Http\Request $request) {
     $mac = $request->query('mac');
     return view('mac-launcher', ['mac' => $mac]);
@@ -208,16 +226,6 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::post('/transaksi-jual-outlet/addbarang', [TransaksiOutletController::class, 'addbarang'])->name('transaksi-jual-outlet.addbarang');
     Route::get('/suggest-no-fak-outlet', [TransaksiOutletController::class, 'getSuggestNoFak'])->name('suggest.no.fak.outlet');
     Route::get('/history-edit-faktur-outlet', [HistoryEditFakturOutletController::class, 'index'])->name('history-edit-faktur-outlet.index')->middleware('auth');
-    
-    Route::resource('/cek-so', CekSOController::class)->middleware('auth');
-    Route::get('/get-last-kode/{gudang_id}', [CekSOController::class, 'getLastKode']);
-    Route::get('/get-cek-so/{id}/barangs', [CekSOController::class, 'getCekSOBarangs'])->name('get-cekso.barangs');
-    Route::post('/scan-cek-so', [CekSOController::class, 'scan'])->name('cekso.scan');
-    Route::post('/upload-cek-so', [CekSOController::class, 'upload'])->name('cekso.upload');
-    Route::post('/finish-cek-so', [CekSOController::class, 'finish'])->name('cekso.finish');
-    Route::get('/finish-cek-so/{id}', [CekSOController::class, 'showFinish'])->name('cekso.showFinish');
-    Route::get('/get-cek-so-finish/{id}', [CekSOController::class, 'getCekSOFinish'])->name('get-cekso.finish');
-    Route::post('/manual-cek-so', [CekSOController::class, 'manualInput'])->name('cekso.manual');
 
     Route::get('/negoan/harga-awal', [NegoanController::class, 'getHargaAwal'])->name('negoan.harga-awal');
     Route::post('/negoan/chat', [NegoanController::class, 'storeChat'])->name('negoan.chat.store');

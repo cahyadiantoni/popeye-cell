@@ -1,4 +1,4 @@
-@extends('layouts.main')
+@extends('layouts.plain')
 
 @section('title', 'Detail Stok Opname')
 @section('content')
@@ -95,6 +95,7 @@
             <div class="text-center my-3">
                 <input type="text" id="scanInput" class="form-control text-center p-3 fs-4 fw-bold" placeholder="Tekan untuk Scan barcode di sini" autofocus>
             </div>
+            <div id="locationCountDisplay" class="text-center my-3 fs-2 fw-bold text-primary"></div>
             <div id="loading" class="text-center d-none"><div class="spinner-border text-primary" role="status"></div><p class="fw-bold mt-2">Memproses scan...</p></div>
 
             <div class="card">
@@ -184,8 +185,8 @@
                 </div>
             </div>
 
-            <div class="my-3"><textarea id="catatan" class="form-control" placeholder="Tambahkan catatan di sini..."></textarea></div>
-            <div class="text-center my-3"><button id="postButton" class="btn btn-primary btn-lg w-100 p-3 fs-4 fw-bold">Akhiri Scan SO</button></div>
+            <!--<div class="my-3"><textarea id="catatan" class="form-control" placeholder="Tambahkan catatan di sini..."></textarea></div>-->
+            <!--<div class="text-center my-3"><button id="postButton" class="btn btn-primary btn-lg w-100 p-3 fs-4 fw-bold">Akhiri Scan SO</button></div>-->
         </div>
     </div>
 </div>
@@ -312,6 +313,7 @@ $(document).ready(function () {
         return true;
     }
 
+    // -- FUNGSI DIUBAH --
     function submitScan(lok_spk) {
         $.ajax({
             url: "{{ route('cekso.scan') }}", method: "POST",
@@ -322,7 +324,13 @@ $(document).ready(function () {
                 if (response.status === 'success') {
                     let icon = response.found_in_master ? 'success' : 'warning';
                     let title = response.found_in_master ? 'Ditemukan!' : 'Tidak Ada di Master!';
-                    Swal.fire({ icon: icon, title: title, text: response.message, timer: 2000, showConfirmButton: false });
+                    
+                    // PERUBAHAN: Tampilkan jumlah di SweetAlert dan di bawah input
+                    let alertMessage = `${response.message}<br><br><b>Total di lokasi ini: ${response.location_count}</b>`;
+                    Swal.fire({ icon: icon, title: title, html: alertMessage, timer: 2000, showConfirmButton: false });
+                    $('#locationCountDisplay').text(`Total di Lokasi Ini: ${response.location_count}`);
+                    // ---------------------------------------------------------------
+
                     table.ajax.reload(null, false);
                     tableNa.ajax.reload(null, false);
                 } else if (response.status === 'duplicate') {
@@ -356,6 +364,7 @@ $(document).ready(function () {
         }
     });
     
+    // -- FUNGSI DIUBAH --
     $('#formManualLokSpk').submit(function (e) {
         e.preventDefault();
         $.ajax({
@@ -366,7 +375,12 @@ $(document).ready(function () {
                     
                     let icon = res.found_in_master ? 'success' : 'info';
                     let title = res.found_in_master ? 'Ditemukan!' : 'Tidak Ada di Master!';
-                    Swal.fire({ icon: icon, title: title, text: res.message, timer: 2000, showConfirmButton: false });
+                    
+                    // PERUBAHAN: Tampilkan jumlah di SweetAlert dan di bawah input
+                    let alertMessage = `${res.message}<br><br><b>Total di lokasi ini: ${res.location_count}</b>`;
+                    Swal.fire({ icon: icon, title: title, html: alertMessage, timer: 2000, showConfirmButton: false });
+                    $('#locationCountDisplay').text(`Total di Lokasi Ini: ${res.location_count}`);
+                    // ---------------------------------------------------------------
 
                     table.ajax.reload(null, false);
                     tableNa.ajax.reload(null, false);
@@ -376,23 +390,6 @@ $(document).ready(function () {
                 }
             },
             error: () => $('#manualAlert').html('<div class="alert alert-danger">Gagal simpan data.</div>')
-        });
-    });
-
-    $("#postButton").click(function () {
-        Swal.fire({
-            title: "Konfirmasi", text: "Apakah Anda yakin ingin mengakhiri cek SO?", icon: "warning",
-            showCancelButton: true, confirmButtonText: "Ya, Akhiri", cancelButtonText: "Batal"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ route('cekso.finish') }}", method: "POST",
-                    data: { _token: "{{ csrf_token() }}", t_cek_so_id: "{{ $cekso->id }}", catatan: $("#catatan").val().trim() },
-                    beforeSend: () => Swal.fire({ title: "Memproses...", allowOutsideClick: false, didOpen: () => Swal.showLoading() }),
-                    success: (res) => Swal.fire({ icon: 'success', title: res.message, timer: 2000, showConfirmButton: false }).then(() => window.location.href = res.redirect_url),
-                    error: () => Swal.fire({ icon: 'error', title: 'Terjadi kesalahan!', timer: 3000, showConfirmButton: false })
-                });
-            }
         });
     });
 });

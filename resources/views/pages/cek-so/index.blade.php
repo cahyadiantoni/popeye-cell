@@ -6,7 +6,6 @@
     <!-- Main-body start -->
     <div class="main-body">
         <div class="page-wrapper">
-            <!-- Page-header start -->
             <div class="page-header">
                 <div class="row align-items-end">
                     <div class="col-lg-8">
@@ -30,28 +29,11 @@
                     </div>
                 </div>
             </div>
-            <!-- Page-header end -->
-
-            <!-- Page-body start -->
             <div class="page-body">
-                {{-- Pesan Berhasil --}}
-                @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
-
-                {{-- Pesan Gagal --}}
-                @if(session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
+                @if(session('success'))<div class="alert alert-success alert-dismissible fade show" role="alert">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>@endif
+                @if(session('error'))<div class="alert alert-danger alert-dismissible fade show" role="alert">{{ session('error') }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>@endif
                 <div class="row">
                     <div class="col-sm-12">
-                        <!-- Zero config.table start -->
                         <div class="card">
                             <div class="card-block">
                                 <button class="btn btn-success" id="addCekSOBtn">Cek SO Barang</button>
@@ -64,9 +46,10 @@
                                                 <th>Kode</th>
                                                 <th>Gudang</th>
                                                 <th>Petugas</th>
-                                                <th>Scan</th>
-                                                <th>Manual</th>
-                                                <th>Jumlah Barang/Stok</th>
+                                                <th>Scan Sistem</th>
+                                                <th>Input Manual</th>
+                                                <th>Upload Excel</th>
+                                                <th>Total/Stok</th>
                                                 <th>Tgl Mulai</th>
                                                 <th>Hasil</th>
                                                 <th>Status</th>
@@ -74,78 +57,63 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                        @php $no = 1; @endphp
-                                        @foreach($cekSOs as $cekso)
+                                        @foreach($cekSOs as $index => $cekso)
                                             <tr>
-                                                <td>{{ $no++ }}</td>
-                                                <td>{{ $cekso->kode }}</td>
+                                                <td>{{ $index + 1 }}</td>
+                                                <td>
+                                                    <button type="button" class="btn btn-secondary btn-sm copy-link-btn" 
+                                                            data-url="{{ route('cek-so.show-guest', $cekso->id) }}"
+                                                            title="Salin Link Guest">
+                                                        <i class="fas fa-link"></i>
+                                                    </button>
+                                                    {{ $cekso->kode }}
+                                                </td>
                                                 <td>{{ $cekso->nama_gudang ?? 'N/A' }}</td>
                                                 <td>{{ $cekso->petugas }}</td>
-                                                <td>{{ $cekso->jumlah_scan ?? 0 }}</td>
-                                                <td>{{ $cekso->jumlah_manual ?? 0 }}</td>
-                                                <td>{{ $cekso->jumlah_scan + $cekso->jumlah_manual }}/{{ $cekso->jumlah_stok }}</td>
-                                                <td>{{ $cekso->waktu_mulai }}</td>
+                                                <td>{{ $cekso->jumlah_scan_sistem ?? 0 }}</td>
+                                                <td>{{ $cekso->jumlah_input_manual ?? 0 }}</td>
+                                                <td>{{ $cekso->jumlah_upload_excel ?? 0 }}</td>
+                                                <td>{{ $cekso->jumlah_scan_sistem + $cekso->jumlah_input_manual + $cekso->jumlah_upload_excel }}/{{ $cekso->jumlah_stok }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($cekso->waktu_mulai)->format('d M y H:i') }}</td>
                                                 <td>
                                                     @switch($cekso->hasil)
-                                                        @case(0)
-                                                            <span class="badge bg-danger">Belum Sesuai</span>
-                                                            @break
-                                                        @case(1)
-                                                            <span class="badge bg-success">Sesuai</span>
-                                                            @break
-                                                        @case(2)
-                                                            <span class="badge bg-warning text-dark">Lok_SPK Belum sesuai</span>
-                                                            @break
-                                                        @default
-                                                            <span class="badge bg-secondary">Tidak Diketahui</span>
+                                                        @case(0) <span class="badge bg-danger">Belum Sesuai</span> @break
+                                                        @case(1) <span class="badge bg-success">Sesuai</span> @break
+                                                        @case(2) <span class="badge bg-warning text-dark">Lok_SPK Belum sesuai</span> @break
                                                     @endswitch
                                                 </td>
                                                 <td>
-                                                    @switch($cekso->is_finished)
-                                                        @case(0)
-                                                            <span class="badge bg-warning text-dark">Belum Selesai</span>
-                                                            @break
-                                                        @case(1)
-                                                            <span class="badge bg-success">Selesai</span>
-                                                            @break
-                                                        @default
-                                                            <span class="badge bg-secondary">Tidak Diketahui</span>
-                                                    @endswitch
+                                                    @if($cekso->is_finished) <span class="badge bg-success">Selesai</span>
+                                                    @else <span class="badge bg-warning text-dark">Belum Selesai</span> @endif
                                                 </td>
                                                 <td>
-                                                    <!-- Tombol View -->
-                                                    @if ($cekso->is_finished == 1)
+                                                    @if ($cekso->is_finished)
                                                         <a href="{{ route('cekso.showFinish', $cekso->id) }}" class="btn btn-info btn-sm">View</a>
                                                     @else
-                                                        <a href="{{ route('cek-so.show', $cekso->id) }}" class="btn btn-info btn-sm">View</a>
+                                                        <a href="{{ route('cek-so.show', $cekso->id) }}" class="btn btn-primary btn-sm">Proses</a>
                                                     @endif
+
+                                                    <button type="button" class="btn btn-secondary btn-sm copy-link-btn" 
+                                                            data-url="{{ route('cek-so.show-guest', $cekso->id) }}"
+                                                            title="Salin Link Guest">
+                                                        <i class="fas fa-link"></i>
+                                                    </button>
+
+                                                    <a href="{{ route('cek-so.export', $cekso->id) }}" class="btn btn-success btn-sm" title="Export ke Excel">
+                                                        <i class="fas fa-file-excel"></i>
+                                                    </a>
                                                 </td>
                                             </tr>
-                                            @endforeach
+                                        @endforeach
                                         </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <th>No</th>
-                                                <th>Kode</th>
-                                                <th>Gudang</th>
-                                                <th>Petugas</th>
-                                                <th>Jumlah Scan/Stok</th>
-                                                <th>Tgl Mulai</th>
-                                                <th>Hasil</th>
-                                                <th>Status</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </tfoot>
                                     </table>
                                 </div>
                             </div>
                         </div>
-                        <!-- Zero config.table end -->
                     </div>
                 </div>
             </div>
-            <!-- Page-body end -->
-        </div>
+            </div>
     </div>
     <!-- Main-body end -->
 
@@ -233,5 +201,37 @@
                 }
             });
         });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const copyButtons = document.querySelectorAll('.copy-link-btn');
+        
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const urlToCopy = this.dataset.url;
+
+                // Menggunakan Clipboard API modern
+                navigator.clipboard.writeText(urlToCopy).then(() => {
+                    // Berhasil disalin
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Link Guest berhasil disalin ke clipboard.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }, () => {
+                    // Gagal menyalin
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Tidak dapat menyalin link secara otomatis.'
+                    });
+                });
+            });
+        });
+    });
     </script>
 @endsection()
