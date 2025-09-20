@@ -43,6 +43,7 @@ use App\Exports\BarangExport;
 use App\Exports\FakturOnlineExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\InventarisController;
+use App\Http\Controllers\SettingController;
 
 
 Auth::routes();
@@ -258,6 +259,9 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::post('/data-inventaris/batch-upload', [InventarisController::class, 'batchUpload'])->name('data-inventaris.batchUpload')->middleware('auth');
     Route::get('/data-inventaris/export', [InventarisController::class, 'exportExcel'])->name('data-inventaris.export')->middleware('auth');
     Route::resource('/data-inventaris', InventarisController::class)->middleware('auth');
+
+    Route::post('/data-setting/{setting}/toggle-active', [SettingController::class, 'toggleActive'])->name('data-setting.toggleActive');
+    Route::resource('/data-setting', SettingController::class)->except(['show', 'destroy']);
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {

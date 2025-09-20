@@ -30,6 +30,12 @@
                             <span class="pcoded-mtext">Data Mac Address</span>
                         </a>
                     </li>
+                    <li class="{{ Request::is('data-setting*') ? 'active' : '' }}">
+                        <a href="{{ url('/data-setting') }}">
+                            <span class="pcoded-micon"><i class="fas fa-cog"></i></span>
+                            <span class="pcoded-mtext">Data Setting</span>
+                        </a>
+                    </li>
                     <li class="{{ Request::is('data-gudang*') ? 'active' : '' }}">
                         <a href="{{ url('/data-gudang') }}">
                             <span class="pcoded-micon"><i class="fas fa-warehouse"></i></span>
