@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
+use App\Services\SettingsService; // Untuk mengambil setting
 
 class TransaksiOutletController extends Controller
 {
@@ -67,8 +68,27 @@ class TransaksiOutletController extends Controller
         }
     }   
 
-    public function create()
+    public function create(SettingsService $settingsService)
     {   
+        // 1. Ambil setting waktu tutup. 
+        //    Kita set default '23:59' (selalu buka) jika setting tidak ada.
+        $waktuTutupString = $settingsService->get('WAKTU_TUTUP_OUTLET', '23:59');
+
+        // 2. Parse string waktu (misal "17:00") ke objek Carbon.
+        //    Carbon::parse() akan otomatis menggunakan tanggal hari ini.
+        $waktuTutup = Carbon::parse($waktuTutupString);
+        $waktuSekarang = Carbon::now();
+
+        // 3. Cek apakah waktu sekarang SUDAH LEWAT atau SAMA DENGAN waktu tutup
+        //    gte() = Greater Than or Equal (Lebih besar atau sama dengan)
+        if ($waktuSekarang->gte($waktuTutup)) {
+            
+            // Jika sudah tutup, arahkan ke view 'transaksi-tutup'
+            return view('pages.transaksi.transaksi-tutup', [
+                'waktuTutup' => $waktuTutup->format('H:i') // Kirim data jam (misal "17:00")
+            ]);
+        }
+
         $gudangId = optional(Auth::user())->gudang_id;
 
         return view('pages.transaksi-jual-outlet.create',compact('gudangId'));

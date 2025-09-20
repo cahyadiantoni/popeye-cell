@@ -68,15 +68,11 @@ class TransaksiController extends Controller
         }
     }   
 
-    /**
-     * Tampilkan form create transaksi.
-     * Akan dicek berdasarkan setting 'WAKTU_TUTUP_PUSAT'.
-     */
     public function create(SettingsService $settingsService)
     {
         // 1. Ambil setting waktu tutup. 
         //    Kita set default '23:59' (selalu buka) jika setting tidak ada.
-        $waktuTutupString = $settingsService->get('WAKTU_TUTUP_PUSAT', '23:59');
+        $waktuTutupString = $settingsService->get('WAKTU_TUTUP_ATAS', '23:59');
 
         // 2. Parse string waktu (misal "17:00") ke objek Carbon.
         //    Carbon::parse() akan otomatis menggunakan tanggal hari ini.
