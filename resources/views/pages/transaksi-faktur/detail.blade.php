@@ -210,7 +210,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
                     <h5>List Pembayaran Gateway</h5>
-                    @if($faktur->is_finish == 0)
+                    @if($faktur->is_finish == 0 || $faktur->is_lunas == 0)
                         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">Tambah Pembayaran</button>
                     @endif
                 </div>
@@ -471,23 +471,9 @@
                         <label for="amount" class="form-label">Nominal Pembayaran</label>
                         <input type="number" class="form-control" id="amount" name="amount" placeholder="Nominal Pembayaran" required>
                         <small class="form-text text-muted" id="amount_display">Rp. 0</small>
+                        <input class="form-check-input" type="radio" name="payment_gateway" id="gateway_xendit" value="xendit" checked hidden>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Metode Pembayaran</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="payment_gateway" id="gateway_midtrans" value="midtrans" checked>
-                            <label class="form-check-label" for="gateway_midtrans">
-                                Midtrans
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="payment_gateway" id="gateway_xendit" value="xendit">
-                            <label class="form-check-label" for="gateway_xendit">
-                                Xendit
-                            </label>
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-success">Bayar</button>
@@ -497,7 +483,6 @@
     </div>
 </div>
 
-<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
 <script>
     $.ajaxSetup({
         headers: {
@@ -523,18 +508,7 @@
                 var modal = bootstrap.Modal.getInstance(document.getElementById('addPaymentModal'));
                 if(modal) modal.hide();
 
-                // Cek gateway mana yang digunakan
-                if (data.gateway === 'midtrans') {
-                    // Logika Midtrans Snap
-                    snap.pay(data.token, {
-                        onSuccess: function(result) { location.reload(); },
-                        onPending: function(result) { alert("Menunggu pembayaran selesai."); location.reload(); },
-                        onError: function(result) { alert("Gagal memproses pembayaran."); }
-                    });
-                } else if (data.gateway === 'xendit') {
-                    // Logika Xendit: redirect ke URL invoice
                     window.open(data.invoice_url, '_blank');
-                }
             },
             error: function(xhr) {
                 alert("Gagal menghubungi server. Pastikan semua data terisi benar.");
@@ -558,15 +532,7 @@
                 _token: $('meta[name="csrf-token"]').attr('content'),
             },
             success: function(res) {
-                if (res.gateway === 'midtrans') {
-                    snap.pay(res.token, {
-                        onSuccess: function(result){ location.reload(); },
-                        onPending: function(result){ location.reload(); },
-                        onError: function(result){ btn.prop('disabled', false).text('Bayar'); }
-                    });
-                } else if (res.gateway === 'xendit') {
-                    window.open(data.invoice_url, '_blank');
-                }
+                window.open(data.invoice_url, '_blank');
             },
             error: function() {
                 alert('Gagal mendapatkan detail pembayaran.');
