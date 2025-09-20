@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
 use App\Exports\FakturBawahExport;
+use App\Exports\FakturBawahGabunganExport;
 
 class TransaksiFakturBawahController extends Controller
 {
@@ -345,6 +346,30 @@ class TransaksiFakturBawahController extends Controller
             ->setPaper('A4', 'portrait');
 
         return $pdf->stream('Daftar_Faktur.pdf');
+    }
+
+    public function exportGabungan(Request $request)
+    {
+        // 1. Mulai query untuk mendapatkan faktur dan relasi barang
+        // Diurutkan berdasarkan tanggal terlama (ASC) sesuai permintaan
+        $query = FakturBawah::with(['transaksiJuals.barang'])
+                            ->orderBy('tgl_jual', 'asc');
+
+        // 2. Filter berdasarkan tanggal jika ada
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
+        // 3. Filter berdasarkan status cek
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
+
+        // 4. Ambil data faktur sesuai query
+        $fakturs = $query->get();
+
+        // 5. Ekspor ke Excel menggunakan class export gabungan yang baru
+        return Excel::download(new FakturBawahGabunganExport($fakturs), 'faktur_bawah_gabungan.xlsx');
     }
 
     public function exportMultiple(Request $request)

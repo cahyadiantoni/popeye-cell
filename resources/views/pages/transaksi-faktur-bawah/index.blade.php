@@ -98,6 +98,10 @@
                                             Export Excel
                                         </a>
 
+                                        <a href="{{ route('transaksi-faktur-bawah.exportGabungan', request()->query()) }}" class="btn btn-success mx-2">
+                                            Export Excel Gabungan
+                                        </a>
+
                                         <a href="{{ route('transaksi-faktur-bawah.printKesimpulan', request()->query()) }}" class="btn btn-warning" target="_blank">
                                             Print Kesimpulan
                                         </a>
