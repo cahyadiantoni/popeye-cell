@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class KesimpulanBawah extends Model
 {
@@ -58,6 +59,11 @@ class KesimpulanBawah extends Model
         }
         
         return '-';
+    }
+
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(FakturPayment::class, 'paymentable');
     }
 
 }

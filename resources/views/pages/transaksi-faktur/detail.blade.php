@@ -466,7 +466,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" name="t_faktur_id" value="{{ $faktur->id }}">
+                    <input type="hidden" name="paymentable_id" value="{{ $faktur->id }}">
+                    <input type="hidden" name="paymentable_type" value="faktur">
                     <div class="mb-3">
                         <label for="amount" class="form-label">Nominal Pembayaran</label>
                         <input type="number" class="form-control" id="amount" name="amount" placeholder="Nominal Pembayaran" required>

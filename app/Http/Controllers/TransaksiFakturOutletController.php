@@ -3,27 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 use App\Models\Barang;
 use App\Models\FakturBuktiOutlet;
-use App\Models\Gudang;
-use App\Models\Negoan;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use App\Models\Kirim;
 use App\Models\FakturOutlet;
 use App\Models\TransaksiJualOutlet;
 use App\Models\HistoryEditFakturOutlet;
-use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
 
 class TransaksiFakturOutletController extends Controller
 {
     public function index(Request $request)
     {
+        // PERUBAHAN 1: Menambahkan withSum untuk relasi 'payments'
         $query = FakturOutlet::withCount(['barangs as total_barang'])
-            ->withSum('bukti as total_nominal', 'nominal') // Assuming the relationship is defined
+            ->withSum('bukti as total_nominal_bukti', 'nominal') // Total dari bukti manual
+            ->withSum(['payments as total_payment_online' => function($q) { // Total dari payment online
+                $q->whereIn('status', ['settlement', 'capture']);
+            }], 'amount')
             ->orderBy('tgl_jual', 'desc');
     
         $roleUser = optional(Auth::user())->role;
@@ -58,21 +58,15 @@ class TransaksiFakturOutletController extends Controller
                     break;
                 default:
                     break;
-            }            
+            }           
         }
     
-        // Filter berdasarkan rentang tanggal
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
             $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
         }
     
-        // Filter berdasarkan status Lunas/Hutang
         if ($request->filled('status')) {
-            if ($request->status == 'Lunas') {
-                $query->where('is_lunas', 1);
-            } elseif ($request->status == 'Hutang') {
-                $query->where('is_lunas', 0);
-            }
+            $query->where('is_lunas', $request->status == 'Lunas' ? 1 : 0);
         }
 
         if ($request->filled('cek')) {
@@ -81,23 +75,18 @@ class TransaksiFakturOutletController extends Controller
     
         $fakturs = $query->get();
     
-        // Loop through each FakturOutlet record to update is_lunas
+        // PERUBAHAN 2: Logika kalkulasi disederhanakan
         foreach ($fakturs as $faktur) {
-            // Set total_nominal to 0 if it is empty
-            if (empty($faktur->total_nominal)) {
-                $total_nominal = 0; 
-            } else {
-                $total_nominal = $faktur->total_nominal;
+            $totalNominal = ($faktur->total_nominal_bukti ?? 0) + ($faktur->total_payment_online ?? 0);
+            $newIsLunas = ($totalNominal >= $faktur->total) ? 1 : 0;
+
+            if ($faktur->is_lunas !== $newIsLunas) {
+                $faktur->is_lunas = $newIsLunas;
+                $faktur->save();
             }
-    
-            // Update is_lunas based on the comparison
-            if ($total_nominal >= $faktur->total) {
-                $faktur->is_lunas = 1; // Update is_lunas to 1
-                $faktur->update(); // Update is_lunas to 1
-            } else {
-                $faktur->is_lunas = 0; // Update is_lunas to 0
-                $faktur->update(); // Update is_lunas to 0
-            }
+            
+            // Tambahkan atribut total_nominal untuk ditampilkan di view
+            $faktur->total_nominal = $totalNominal;
         }
     
         return view('pages.transaksi-faktur-outlet.index', compact('fakturs', 'roleUser'));
@@ -105,15 +94,22 @@ class TransaksiFakturOutletController extends Controller
 
     public function show($nomor_faktur)
     {
-        // Ambil data faktur berdasarkan nomor faktur
-        $faktur = FakturOutlet::with('barangs', 'bukti')
+        // PERUBAHAN 3: Menambahkan relasi 'payments' dan kalkulasi total
+        $faktur = FakturOutlet::with(['barangs', 'bukti', 'payments'])
             ->where('nomor_faktur', $nomor_faktur)
             ->firstOrFail();
 
-        // Calculate the total nominal from the bukti relationship
-        $totalNominal = $faktur->bukti->sum('nominal');
+        $totalBuktiManual = $faktur->bukti->sum('nominal');
+        $totalPaymentOnline = $faktur->payments->whereIn('status', ['settlement', 'capture'])->sum('amount');
+        $totalNominal = $totalBuktiManual + $totalPaymentOnline;
 
-        // Ambil data barang yang berhubungan dengan transaksi jual
+        // Logika untuk update is_lunas jika statusnya tidak sesuai
+        $newIsLunas = ($totalNominal >= $faktur->total) ? 1 : 0;
+        if (property_exists($faktur, 'is_lunas') && $faktur->is_lunas !== $newIsLunas) {
+            $faktur->is_lunas = $newIsLunas;
+            $faktur->save();
+        }
+
         $transaksiJuals = TransaksiJualOutlet::with('barang')
             ->where('nomor_faktur', $nomor_faktur)
             ->get();
@@ -125,32 +121,20 @@ class TransaksiFakturOutletController extends Controller
 
     public function printPdf($nomor_faktur)
     {
-        // Ambil data faktur dan transaksi jual
         $faktur = FakturOutlet::with('barangs')
             ->where('nomor_faktur', $nomor_faktur)
             ->firstOrFail();
-
         $transaksiJuals = TransaksiJualOutlet::with('barang')
             ->where('nomor_faktur', $nomor_faktur)
             ->get();
-
-        // Hitung subtotal tiap barang
-        $subtotalKumulatif = 0; // Variabel untuk menyimpan subtotal kumulatif
-
+        $subtotalKumulatif = 0;
         $transaksiJuals->map(function ($transaksi) use (&$subtotalKumulatif) {
-            $subtotalKumulatif += $transaksi->harga; // Tambahkan harga pada baris ini
-            $transaksi->subtotal = $subtotalKumulatif; // Tetapkan subtotal kumulatif sebagai subtotal
+            $subtotalKumulatif += $transaksi->harga;
+            $transaksi->subtotal = $subtotalKumulatif;
             return $transaksi;
         });
-        
-
-        // Total keseluruhan
         $totalHarga = $transaksiJuals->sum('harga');
-
-        // Kirim data ke template PDF
         $pdf = \PDF::loadView('pages.transaksi-faktur-outlet.print', compact('faktur', 'transaksiJuals', 'totalHarga'));
-
-        // Unduh atau tampilkan PDF
         return $pdf->stream('Faktur_Penjualan_' . $faktur->nomor_faktur . '.pdf');
     }
 
@@ -169,17 +153,12 @@ class TransaksiFakturOutletController extends Controller
                 $faktur = FakturOutlet::findOrFail($id);
                 $nomorFakturLama = $faktur->nomor_faktur;
                 $perubahan = [];
-
                 if ($faktur->nomor_faktur !== $validated['nomor_faktur']) $perubahan[] = "No Faktur diubah dari '{$faktur->nomor_faktur}' menjadi '{$validated['nomor_faktur']}'";
                 if ($faktur->pembeli !== $validated['pembeli']) $perubahan[] = "Pembeli diubah dari '{$faktur->pembeli}' menjadi '{$validated['pembeli']}'";
-                // ... tambahkan perbandingan lain jika perlu ...
-
                 if (!empty($perubahan)) {
                     HistoryEditFakturOutlet::create(['faktur_id' => $faktur->id, 'update' => implode('<br>', $perubahan), 'user_id' => auth()->id()]);
                 }
-
                 $faktur->update($validated);
-
                 if ($nomorFakturLama !== $validated['nomor_faktur']) {
                     TransaksiJualOutlet::where('nomor_faktur', $nomorFakturLama)->update(['nomor_faktur' => $validated['nomor_faktur']]);
                 }
@@ -201,6 +180,7 @@ class TransaksiFakturOutletController extends Controller
                 if ($lokSpkList->isNotEmpty()) {
                     Barang::whereIn('lok_spk', $lokSpkList)->update(['status_barang' => 1, 'no_faktur' => null, 'harga_jual' => 0]);
                 }
+                $faktur->payments()->delete(); // Hapus juga payment online terkait
                 $faktur->delete();
             });
             return redirect()->back()->with('success', 'Faktur dan data terkait berhasil dihapus');
@@ -209,45 +189,30 @@ class TransaksiFakturOutletController extends Controller
         }
     }
 
-    // Menambahkan bukti transfer
     public function storeBukti(Request $request)
     {
         $request->validate([
             't_faktur_id' => 'required|exists:t_faktur_outlet,id',
             'keterangan' => 'string|max:255',
-            'nominal' => 'required|numeric', // Changed 'number' to 'numeric' for better validation
+            'nominal' => 'required|numeric',
             'foto' => 'required|image'
         ]);
     
         $path = $request->file('foto')->store('faktur_bukti', 'public');
     
-        // Create the new FakturBuktiOutlet record
-        $fakturBukti = FakturBuktiOutlet::create([
+        FakturBuktiOutlet::create([
             't_faktur_id' => $request->t_faktur_id,
             'keterangan' => $request->keterangan,
             'nominal' => $request->nominal,
             'foto' => $path
         ]);
     
-        // Calculate the total nominal of all FakturBuktiOutlet records associated with the given t_faktur_id
-        $totalNominal = FakturBuktiOutlet::where('t_faktur_id', $request->t_faktur_id)->sum('nominal');
-    
-        // Retrieve the FakturOutlet record
-        $faktur = FakturOutlet::find($request->t_faktur_id);
-    
-        // Check if the total nominal is equal to or greater than the total in the FakturOutlet model
-        if ($totalNominal >= $faktur->total) {
-            $faktur->is_lunas = 1;
-            $faktur->update();
-        } else {
-            $faktur->is_lunas = 0;
-            $faktur->update();
-        }
+        // PERUBAHAN 4: Logika update status lunas setelah tambah bukti
+        $this->updateLunasStatus($request->t_faktur_id);
     
         return back()->with('success', 'Bukti transfer berhasil ditambahkan.');
-    }      
+    }    
 
-    // Menghapus bukti transfer
     public function deleteBukti($id)
     {
         $bukti = FakturBuktiOutlet::findOrFail($id);
@@ -256,66 +221,42 @@ class TransaksiFakturOutletController extends Controller
         $tFakturId = $bukti->t_faktur_id;
         $bukti->delete();
 
-        $totalNominal = FakturBuktiOutlet::where('t_faktur_id', $tFakturId)->sum('nominal');
-        $faktur = FakturOutlet::find($tFakturId);
-
-        if ($totalNominal >= $faktur->total) {
-            $faktur->is_lunas = 1;
-            $faktur->update();
-        } else {
-            $faktur->is_lunas = 0;
-            $faktur->update();
-        }
+        // PERUBAHAN 5: Logika update status lunas setelah hapus bukti
+        $this->updateLunasStatus($tFakturId);
 
         return back()->with('success', 'Bukti transfer berhasil dihapus.');
     }
 
-    public function uploadBukti(Request $request)
+    // PERUBAHAN 6: Helper method untuk update status lunas
+    private function updateLunasStatus($fakturId)
     {
-        $request->validate([
-            'id' => 'required|exists:t_faktur_outlet,id',
-            'bukti_tf' => 'required|image|mimes:jpeg,png,jpg|max:10240'
-        ]);
+        $faktur = FakturOutlet::with('payments')->find($fakturId);
+        if (!$faktur) return;
 
-        $faktur = FakturOutlet::findOrFail($request->id);
+        $totalBuktiManual = $faktur->bukti()->sum('nominal');
+        $totalPaymentOnline = $faktur->payments->whereIn('status', ['settlement', 'capture'])->sum('amount');
+        $totalPaid = $totalBuktiManual + $totalPaymentOnline;
+        
+        $newIsLunas = ($totalPaid >= $faktur->total) ? 1 : 0;
 
-        // Simpan gambar di folder 'bukti_transfer'
-        if ($request->hasFile('bukti_tf')) {
-            $file = $request->file('bukti_tf');
-            $filePath = $file->store('bukti_transfer', 'public');
-
-            // Hapus bukti lama jika ada
-            if ($faktur->bukti_tf) {
-                $oldFilePath = str_replace('/storage/', '', $faktur->bukti_tf);
-                Storage::disk('public')->delete($oldFilePath);
-            }
-
-            // Simpan path bukti transfer di database
-            $faktur->bukti_tf = "/storage/" . $filePath;
+        if ($faktur->is_lunas !== $newIsLunas) {
+            $faktur->is_lunas = $newIsLunas;
             $faktur->save();
         }
-
-        return redirect()->back()->with('success', 'Bukti transfer berhasil diupload.');
     }
 
     public function tandaiSudahDicek($id)
     {
         try {
-            // Ambil faktur beserta transaksi jual dan barang-nya
             $faktur = FakturOutlet::with('transaksiJuals.barang')->where('id', $id)->firstOrFail();
-
-            // Update is_finish
             $faktur->is_finish = 1;
             $faktur->save();
-
-            // Loop semua transaksi jual
             foreach ($faktur->transaksiJuals as $transaksi) {
                 if ($transaksi->barang) {
                     $transaksi->barang->status_barang = 2;
                     $transaksi->barang->save();
                 }
             }
-
             return redirect()->back()->with('success', 'Faktur ditandai sudah selesai dan barang diperbarui.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());

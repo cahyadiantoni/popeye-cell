@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class FakturPayment extends Model
 {
@@ -13,17 +14,18 @@ class FakturPayment extends Model
         'order_id',
         'channel',
         'status',
-        't_faktur_id',
         'nomor_faktur',
         'amount',
         'snap_token',
         'payment_gateway',
         'xendit_invoice_id',
         'invoice_url',
+        'paymentable_id',
+        'paymentable_type',
     ];
 
-    public function faktur()
+    public function paymentable(): MorphTo
     {
-        return $this->belongsTo(Faktur::class, 't_faktur_id');
+        return $this->morphTo();
     }
 }

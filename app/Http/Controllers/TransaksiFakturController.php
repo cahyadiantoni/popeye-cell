@@ -23,11 +23,13 @@ class TransaksiFakturController extends Controller
 {
     public function index(Request $request)
     {
+        // --- PERUBAHAN DI SINI ---
+        // Menggunakan withSum untuk payments agar lebih efisien daripada with()
         $query = Faktur::withCount(['barangs as total_barang'])
             ->withSum('bukti as total_nominal_bukti', 'nominal') // total dari bukti manual
-            ->with(['payments' => function($q) {
+            ->withSum(['payments as total_payment_online' => function($q) { // Menghitung total payment online
                 $q->whereIn('status', ['settlement', 'capture']);
-            }])
+            }], 'amount')
             ->orderBy('tgl_jual', 'desc');
 
         $roleUser = optional(Auth::user())->role;
@@ -100,19 +102,21 @@ class TransaksiFakturController extends Controller
     
         $fakturs = $query->get();
 
-        // Setelah data faktur didapat, hitung total nominal (bukti + payments)
+        // --- PERUBAHAN DI SINI ---
+        // Logika kalkulasi disederhanakan karena sudah menggunakan withSum
         foreach ($fakturs as $faktur) {
-            $totalBuktiManual = $faktur->total_nominal_bukti ?? 0;
-            $totalPaymentMidtrans = $faktur->payments->sum('amount');
-            $totalNominal = $totalBuktiManual + $totalPaymentMidtrans;
+            // Atribut total_nominal_bukti dan total_payment_online otomatis ditambahkan oleh withSum
+            $totalNominal = ($faktur->total_nominal_bukti ?? 0) + ($faktur->total_payment_online ?? 0);
 
             $newIsLunas = ($totalNominal >= $faktur->total) ? 1 : 0;
             
+            // Lakukan update hanya jika status lunasnya berubah
             if ($faktur->is_lunas !== $newIsLunas) {
                 $faktur->is_lunas = $newIsLunas;
                 $faktur->save();
             }
 
+            // Tambahkan atribut total_nominal untuk ditampilkan di view
             $faktur->total_nominal = $totalNominal;
         }
 
@@ -121,6 +125,8 @@ class TransaksiFakturController extends Controller
 
     public function show($nomor_faktur)
     {
+        // Method ini tidak perlu diubah, karena eager loading relasi 'payments'
+        // sudah secara otomatis menangani relasi polymorphic untuk satu record.
         $faktur = Faktur::with(['barangs', 'bukti', 'payments'])
             ->where('nomor_faktur', $nomor_faktur)
             ->firstOrFail();
@@ -147,6 +153,9 @@ class TransaksiFakturController extends Controller
 
         return view('pages.transaksi-faktur.detail', compact('faktur', 'transaksiJuals', 'roleUser', 'totalNominal'));
     }
+    
+    // ... method lainnya tidak perlu diubah karena tidak berinteraksi langsung dengan relasi 'payments'
+    
     public function printPdf($nomor_faktur)
     {
         $roleUser = optional(Auth::user())->role;
@@ -243,7 +252,7 @@ class TransaksiFakturController extends Controller
             session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
             return redirect()->back();
         }
-    }    
+    }   
 
     public function destroy($nomor_faktur)
     {
@@ -306,7 +315,7 @@ class TransaksiFakturController extends Controller
         ]);
     
         return back()->with('success', 'Bukti transfer berhasil ditambahkan.');
-    }  
+    }   
 
     // Menghapus bukti transfer
     public function deleteBukti($id)
@@ -433,7 +442,7 @@ class TransaksiFakturController extends Controller
         }
         if (!empty($filterBulan)) {
             $query->having('bulan_display', '=', $filterBulan);
-        }        
+        }       
     
         $data = $query->orderBy('bulan_sort', 'desc')->get();
     
@@ -448,7 +457,7 @@ class TransaksiFakturController extends Controller
         });
     
         return view('pages.transaksi-faktur.rekap', compact('rekaps', 'daftarGudang', 'filterGudang', 'filterBulan'));
-    }    
+    }   
     
     public function printMultiple(Request $request)
     {
@@ -623,7 +632,7 @@ class TransaksiFakturController extends Controller
                     if ($kodeFaktur === 'AT') {
                         $query->where(function ($q) {
                             $q->where('nomor_faktur', 'like', 'AT-%')
-                              ->orWhere('nomor_faktur', 'like', 'LN-%');
+                                ->orWhere('nomor_faktur', 'like', 'LN-%');
                         });
                     } else {
                         $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
@@ -643,7 +652,7 @@ class TransaksiFakturController extends Controller
                 case 2:
                     $query->where(function ($q) {
                         $q->where('nomor_faktur', 'like', 'AT-%')
-                          ->orWhere('nomor_faktur', 'like', 'LN-%');
+                            ->orWhere('nomor_faktur', 'like', 'LN-%');
                     });
                     break;
                 case 3: $query->where('nomor_faktur', 'like', "TKP-%"); break;

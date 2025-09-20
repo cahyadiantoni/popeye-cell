@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class FakturOutlet extends Model
 {
@@ -37,5 +38,10 @@ class FakturOutlet extends Model
     public function transaksiJuals()
     {
         return $this->hasMany(TransaksiJualOutlet::class, 'nomor_faktur', 'nomor_faktur');
+    }
+
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(FakturPayment::class, 'paymentable');
     }
 }

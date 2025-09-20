@@ -174,6 +174,73 @@
                 </div>
             </div>
 
+            {{-- Letakkan kode ini SETELAH card "List Bukti Transfer" --}}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <h5>List Pembayaran Gateway</h5>
+                    @if($faktur->is_finish == 0 || $faktur->is_lunas == 0)
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">Tambah Pembayaran</button>
+                    @endif
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Gateway</th> 
+                                <th>Channel</th>
+                                <th>Status</th>
+                                <th>Nominal</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($faktur->payments->sortByDesc('created_at') as $payment)
+                            @php
+                                // Mapping status ke badge class bootstrap
+                                switch (strtolower($payment->status)) {
+                                    case 'settlement':
+                                    case 'capture':
+                                    case 'paid':
+                                        $badgeClass = 'badge bg-success';
+                                        break;
+                                    case 'pending':
+                                    case 'in_process':
+                                        $badgeClass = 'badge bg-warning text-dark';
+                                        break;
+                                    default:
+                                        $badgeClass = 'badge bg-danger';
+                                }
+                            @endphp
+                            <tr>
+                                <td>{{ $payment->order_id }}</td>
+                                <td> <span class="badge {{ $payment->payment_gateway == 'xendit' ? 'bg-info' : 'bg-primary' }}">
+                                        {{ ucfirst($payment->payment_gateway) }}
+                                    </span>
+                                </td>
+                                <td>{{ $payment->channel ?? '-' }}</td>
+                                <td><span class="{{ $badgeClass }}">{{ ucfirst($payment->status) }}</span></td>
+                                <td>Rp. {{ number_format($payment->amount, 0, ',', '.') }}</td>
+                                <td>{{ $payment->created_at->format('d/m/Y H:i') }}</td>
+                                <td>
+                                    @if(in_array(strtolower($payment->status), ['pending', 'in_process']))
+                                        <button class="btn btn-primary btn-sm btn-pay" data-order-id="{{ $payment->order_id }}">
+                                            Bayar
+                                        </button>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center">Belum ada riwayat pembayaran online.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
                     <h5>Daftar Barang</h5>
@@ -309,6 +376,107 @@
         </div>
     </div>
 </div>
+
+{{-- Letakkan kode ini SETELAH modal #addBuktiModal --}}
+<div class="modal fade" id="addPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="payment-form"> @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Tambah Pembayaran</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    
+                    {{-- =================== BAGIAN WAJIB DIUBAH =================== --}}
+                    <input type="hidden" name="paymentable_id" value="{{ $faktur->id }}">
+                    <input type="hidden" name="paymentable_type" value="faktur_outlet">
+                    {{-- ========================================================== --}}
+
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Nominal Pembayaran</label>
+                        <input type="number" class="form-control" id="amount" name="amount" placeholder="Nominal Pembayaran" required>
+                        <small class="form-text text-muted" id="amount_display">Rp. 0</small>
+                        <input class="form-check-input" type="radio" name="payment_gateway" value="xendit" checked hidden>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Bayar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Letakkan kode ini di PALING BAWAH, sebelum @endsection --}}
+<script>
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+
+    $('#payment-form').submit(function(e) {
+        e.preventDefault();
+        let form = $(this)[0];
+        let formData = new FormData(form);
+        let submitBtn = $(this).find('button[type="submit"]');
+
+        submitBtn.prop('disabled', true).text('Memproses...');
+
+        $.ajax({
+            url: "{{ route('payment.store') }}",
+            method: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('addPaymentModal'));
+                if(modal) modal.hide();
+                window.open(data.invoice_url, '_blank');
+                submitBtn.prop('disabled', false).text('Bayar'); // Aktifkan lagi setelah selesai
+            },
+            error: function(xhr) {
+                alert("Gagal menghubungi server. Pastikan semua data terisi benar.");
+                submitBtn.prop('disabled', false).text('Bayar');
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-pay', function() {
+        let orderId = $(this).data('order-id');
+        let btn = $(this);
+        
+        btn.prop('disabled', true).text('...');
+
+        $.ajax({
+            url: '{{ route("payment.retry") }}',
+            method: 'POST',
+            data: {
+                order_id: orderId,
+                _token: $('meta[name="csrf-token"]').attr('content'),
+            },
+            success: function(res) {
+                window.open(res.invoice_url, '_blank');
+                btn.prop('disabled', false).text('Bayar');
+            },
+            error: function() {
+                alert('Gagal mendapatkan detail pembayaran.');
+                btn.prop('disabled', false).text('Bayar');
+            }
+        });
+    });
+
+    // Script untuk format nominal di modal pembayaran
+    $(document).ready(function() {
+        $('#amount').on('input', function() {
+            const value = $(this).val();
+            const formattedValue = 'Rp. ' + new Intl.NumberFormat('id-ID').format(value || 0);
+            $('#amount_display').text(formattedValue);
+        });
+    });
+</script>
 
 <script>
     // Script untuk format nominal di modal bukti

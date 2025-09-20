@@ -4,16 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Model; // Import Model class
 
 use App\Models\Faktur;
+use App\Models\FakturOutlet;
+use App\Models\KesimpulanBawah;
 use App\Models\FakturPayment;
-
-use App\Helpers\MidtransConfig;
 use App\Helpers\XenditConfig;
-
-// Midtrans
-use Midtrans\Snap;
-use Midtrans\Notification;
 
 // Xendit v7 (OpenAPI)
 use Xendit\Invoice\InvoiceApi;
@@ -23,84 +20,81 @@ class FakturPaymentController extends Controller
 {
     public function store(Request $request)
     {
+        // Perubahan 1: Validasi diubah menjadi polymorphic
         $request->validate([
-            't_faktur_id'     => 'required|exists:t_faktur,id',
-            'amount'          => 'required|integer|min:1000',
-            'payment_gateway' => 'required|in:midtrans,xendit',
+            'paymentable_id'   => 'required|integer',
+            'paymentable_type' => 'required|string|in:faktur,faktur_outlet,kesimpulan_bawah',
+            'amount'           => 'required|integer|min:1000',
+            'payment_gateway'  => 'required|in:midtrans,xendit',
         ]);
 
-        // Midtrans init tetap dipanggil, aman walau gateway xendit
-        MidtransConfig::init();
+        // Perubahan 2: Cari model induk secara dinamis
+        $paymentable = $this->findPaymentable($request->paymentable_type, $request->paymentable_id);
 
-        $faktur   = Faktur::findOrFail($request->t_faktur_id);
-        $order_id = 'INV-' . time() . '-' . rand(100, 999);
-
-        if ($request->payment_gateway === 'midtrans') {
-            return $this->createMidtransPayment($request, $faktur, $order_id);
+        if (!$paymentable) {
+            return response()->json(['message' => 'Data tidak ditemukan.'], 404);
         }
 
+        $order_id = 'INV-' . time() . '-' . rand(100, 999);
+
         // Xendit
-        return $this->createXenditPayment($request, $faktur, $order_id);
+        return $this->createXenditPayment($request, $paymentable, $order_id);
     }
 
-    private function createMidtransPayment(Request $request, Faktur $faktur, string $order_id)
+    /**
+     * Helper untuk mencari model induk berdasarkan tipe dan ID.
+     */
+    private function findPaymentable(string $type, int $id): ?Model
     {
-        MidtransConfig::init();
-
-        $params = [
-            'transaction_details' => [
-                'order_id'      => $order_id,
-                'gross_amount'  => (int) $request->amount,
-            ],
-            'item_details' => [[
-                'id'       => $faktur->nomor_faktur,
-                'price'    => (int) $request->amount,
-                'quantity' => 1,
-                'name'     => 'Pembayaran Faktur #' . $faktur->nomor_faktur,
-            ]],
-            'customer_details' => [
-                'first_name' => $faktur->pembeli ?? 'Pelanggan',
-            ],
+        $modelMap = [
+            'faktur'           => Faktur::class,
+            'faktur_outlet'    => FakturOutlet::class,
+            'kesimpulan_bawah' => KesimpulanBawah::class,
         ];
 
-        $snapToken = Snap::getSnapToken($params);
+        if (!isset($modelMap[$type])) {
+            return null;
+        }
 
-        FakturPayment::create([
-            'order_id'        => $order_id,
-            'payment_gateway' => 'midtrans',
-            't_faktur_id'     => $faktur->id,
-            'nomor_faktur'    => $faktur->nomor_faktur,
-            'amount'          => (int) $request->amount,
-            'snap_token'      => $snapToken,
-            'status'          => 'pending',
-        ]);
-
-        return response()->json(['token' => $snapToken, 'gateway' => 'midtrans']);
+        $modelClass = $modelMap[$type];
+        return $modelClass::find($id);
     }
 
-    private function createXenditPayment(Request $request, Faktur $faktur, string $order_id)
+    // Perubahan 3: Method ini sekarang menerima Model generic, bukan Faktur spesifik
+    private function createXenditPayment(Request $request, Model $paymentable, string $order_id)
     {
-        // Pastikan helper ini memanggil:
-        // \Xendit\Configuration::setXenditKey(config('services.xendit.secret_key'));
         XenditConfig::init();
 
+        // Ambil nomor faktur/kesimpulan dan nama pembeli secara dinamis
+        $nomor      = $paymentable->nomor_faktur ?? $paymentable->nomor_kesimpulan;
+        $pembeli    = $paymentable->pembeli ?? 'Pelanggan';
+        $itemType   = class_basename($paymentable); // e.g., "Faktur", "KesimpulanBawah"
+
+        // Tentukan redirect URL secara dinamis
+        $redirectRoute = '#'; // Default fallback
+        if ($paymentable instanceof Faktur) {
+            $redirectRoute = route('transaksi-faktur.show', $paymentable->nomor_faktur);
+        }
+        // Tambahkan kondisi lain jika FakturOutlet dan KesimpulanBawah punya route 'show'
+        // else if ($paymentable instanceof FakturOutlet) {
+        //     $redirectRoute = route('nama.route.outlet.show', $paymentable->nomor_faktur);
+        // }
+
         $params = [
-            'external_id'      => $order_id,
-            'amount'           => (int) $request->amount,
-            'description'      => 'Pembayaran Faktur #' . $faktur->nomor_faktur,
-            'invoice_duration' => 86400, // 24 jam
-            'currency'         => 'IDR',
-            'customer'         => [
-                'given_names' => $faktur->pembeli ?? 'Pelanggan',
-            ],
+            'external_id'       => $order_id,
+            'amount'            => (int) $request->amount,
+            'description'       => "Pembayaran {$itemType} #{$nomor}",
+            'invoice_duration'  => 86400,
+            'currency'          => 'IDR',
+            'customer'          => ['given_names' => $pembeli],
             'customer_notification_preference' => [
-                'invoice_created' => ['whatsapp', 'email', 'sms'],
-                'invoice_reminder' => ['whatsapp', 'email', 'sms'],
-                'invoice_paid' => ['whatsapp', 'email', 'sms'],
-                'invoice_expired' => ['whatsapp', 'email', 'sms'],
+                'invoice_created'   => ['whatsapp', 'email', 'sms'],
+                'invoice_reminder'  => ['whatsapp', 'email', 'sms'],
+                'invoice_paid'      => ['whatsapp', 'email', 'sms'],
+                'invoice_expired'   => ['whatsapp', 'email', 'sms'],
             ],
-            'success_redirect_url' => route('transaksi-faktur.show', $faktur->nomor_faktur),
-            'failure_redirect_url' => route('transaksi-faktur.show', $faktur->nomor_faktur),
+            'success_redirect_url' => $redirectRoute,
+            'failure_redirect_url' => $redirectRoute,
         ];
 
         try {
@@ -108,20 +102,19 @@ class FakturPaymentController extends Controller
             $payload = new CreateInvoiceRequest($params);
             $invoice = $api->createInvoice($payload);
 
-            // Respons SDK v7 biasanya object model dengan getter.
-            $invoiceId   = method_exists($invoice, 'getId') ? $invoice->getId() : ($invoice['id'] ?? null);
-            $invoiceUrl  = method_exists($invoice, 'getInvoiceUrl') ? $invoice->getInvoiceUrl() : ($invoice['invoice_url'] ?? null);
-            $invoiceStat = method_exists($invoice, 'getStatus') ? $invoice->getStatus() : ($invoice['status'] ?? 'PENDING');
+            $invoiceId   = $invoice->getId();
+            $invoiceUrl  = $invoice->getInvoiceUrl();
+            $invoiceStat = $invoice->getStatus();
 
-            FakturPayment::create([
-                'order_id'         => $order_id,
-                'payment_gateway'  => 'xendit',
-                't_faktur_id'      => $faktur->id,
-                'nomor_faktur'     => $faktur->nomor_faktur,
-                'amount'           => (int) $request->amount,
-                'status'           => strtolower($invoiceStat), // biasanya "PENDING"
-                'xendit_invoice_id'=> $invoiceId,
-                'invoice_url'      => $invoiceUrl,
+            // Perubahan 4: Buat payment menggunakan relasi polymorphic
+            $paymentable->payments()->create([
+                'order_id'          => $order_id,
+                'payment_gateway'   => 'xendit',
+                'nomor_faktur'      => $nomor, // Kolom ini bisa dipertimbangkan untuk diganti nama atau dihapus jika tidak relevan lagi
+                'amount'            => (int) $request->amount,
+                'status'            => strtolower($invoiceStat),
+                'xendit_invoice_id' => $invoiceId,
+                'invoice_url'       => $invoiceUrl,
             ]);
 
             return response()->json(['invoice_url' => $invoiceUrl, 'gateway' => 'xendit']);
@@ -131,53 +124,8 @@ class FakturPaymentController extends Controller
         }
     }
 
-    public function callback(Request $request)
-    {
-        try {
-            MidtransConfig::init();
-            $notif = new Notification();
-
-            Log::info('Midtrans callback received', (array) $notif);
-
-            $payment = FakturPayment::where('order_id', $notif->order_id)->first();
-            if (!$payment) {
-                Log::warning('Order ID not found: ' . $notif->order_id);
-                return response()->json(['message' => 'Not found'], 404);
-            }
-
-            $finalStatuses = ['settlement', 'capture', 'cancel', 'deny', 'expire'];
-            if (!in_array($notif->transaction_status, $finalStatuses, true)) {
-                return response()->json(['message' => 'Ignored non-final status']);
-            }
-
-            if (in_array($payment->status, ['settlement', 'capture'], true)) {
-                return response()->json(['message' => 'Already paid']);
-            }
-
-            $payment->update([
-                'status'  => $notif->transaction_status,
-                'channel' => $notif->payment_type,
-            ]);
-
-            $totalCicilan = FakturPayment::where('t_faktur_id', $payment->t_faktur_id)
-                ->whereIn('status', ['settlement', 'capture'])
-                ->sum('amount');
-
-            $faktur = $payment->faktur;
-            if ($totalCicilan >= $faktur->total && !$faktur->is_lunas) {
-                $faktur->update(['is_lunas' => 1]);
-            }
-
-            return response()->json(['message' => 'Callback processed']);
-        } catch (\Throwable $e) {
-            Log::error('Midtrans Callback Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return response()->json(['message' => 'Callback failed'], 500);
-        }
-    }
-
     public function xenditCallback(Request $request)
     {
-        // Verifikasi token dari header
         $xenditCallbackToken = config('services.xendit.callback_verify_token');
         $receivedToken       = $request->header('x-callback-token');
 
@@ -196,9 +144,8 @@ class FakturPaymentController extends Controller
                 return response()->json(['message' => 'Not found'], 404);
             }
 
-            // Map status Xendit -> internal
             $incoming = strtoupper($payload['status'] ?? '');
-            if ($incoming === 'PAID') {
+            if ($incoming === 'PAID' || $incoming === 'SETTLED') {
                 $status = 'settlement';
             } elseif ($incoming === 'EXPIRED') {
                 $status = 'expire';
@@ -215,13 +162,20 @@ class FakturPaymentController extends Controller
                 'channel' => $payload['payment_channel'] ?? 'Unknown Xendit Channel',
             ]);
 
-            $totalCicilan = FakturPayment::where('t_faktur_id', $payment->t_faktur_id)
-                ->whereIn('status', ['settlement', 'capture'])
-                ->sum('amount');
+            // Perubahan 5: Dapatkan model induk dan hitung total cicilan melalui relasi
+            $parent = $payment->paymentable;
+            if ($parent) {
+                $totalCicilan = $parent->payments()
+                    ->whereIn('status', ['settlement', 'capture'])
+                    ->sum('amount');
+                
+                // Cek total yang harus dibayar (bisa 'total' atau 'grand_total')
+                $totalToBePaid = $parent->grand_total ?? $parent->total;
 
-            $faktur = $payment->faktur;
-            if ($totalCicilan >= $faktur->total && !$faktur->is_lunas) {
-                $faktur->update(['is_lunas' => 1]);
+                // Cek apakah model punya properti 'is_lunas' sebelum update
+                if (property_exists($parent, 'is_lunas') && !$parent->is_lunas && $totalCicilan >= $totalToBePaid) {
+                     $parent->update(['is_lunas' => 1]);
+                }
             }
 
             return response()->json(['message' => 'Callback processed']);
@@ -233,27 +187,16 @@ class FakturPaymentController extends Controller
 
     public function retry(Request $request)
     {
+        // Method ini tidak perlu diubah karena hanya mencari berdasarkan order_id
         $request->validate([
-            // Ganti dengan nama tabelmu yang benar bila berbeda
             'order_id' => 'required|exists:t_payments,order_id',
         ]);
 
         $payment = FakturPayment::where('order_id', $request->order_id)->firstOrFail();
 
-        if ($payment->payment_gateway === 'midtrans') {
-            if (!$payment->snap_token) {
-                return response()->json(['message' => 'Token pembayaran tidak ditemukan'], 404);
-            }
-            return response()->json(['token' => $payment->snap_token, 'gateway' => 'midtrans']);
+        if (!$payment->invoice_url) {
+            return response()->json(['message' => 'URL Invoice tidak ditemukan'], 404);
         }
-
-        if ($payment->payment_gateway === 'xendit') {
-            if (!$payment->invoice_url) {
-                return response()->json(['message' => 'URL Invoice tidak ditemukan'], 404);
-            }
-            return response()->json(['invoice_url' => $payment->invoice_url, 'gateway' => 'xendit']);
-        }
-
-        return response()->json(['message' => 'Gateway pembayaran tidak valid'], 400);
+        return response()->json(['invoice_url' => $payment->invoice_url, 'gateway' => 'xendit']);
     }
 }
