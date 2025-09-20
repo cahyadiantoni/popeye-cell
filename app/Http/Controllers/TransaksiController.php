@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Services\SettingsService; // Untuk mengambil setting
 
 class TransaksiController extends Controller
 {
@@ -67,11 +68,34 @@ class TransaksiController extends Controller
         }
     }   
 
-    public function create()
-    {   
-        $gudangId = optional(Auth::user())->gudang_id;
+    /**
+     * Tampilkan form create transaksi.
+     * Akan dicek berdasarkan setting 'WAKTU_TUTUP_PUSAT'.
+     */
+    public function create(SettingsService $settingsService)
+    {
+        // 1. Ambil setting waktu tutup. 
+        //    Kita set default '23:59' (selalu buka) jika setting tidak ada.
+        $waktuTutupString = $settingsService->get('WAKTU_TUTUP_PUSAT', '23:59');
 
-        return view('pages.transaksi-jual.create',compact('gudangId'));
+        // 2. Parse string waktu (misal "17:00") ke objek Carbon.
+        //    Carbon::parse() akan otomatis menggunakan tanggal hari ini.
+        $waktuTutup = Carbon::parse($waktuTutupString);
+        $waktuSekarang = Carbon::now();
+
+        // 3. Cek apakah waktu sekarang SUDAH LEWAT atau SAMA DENGAN waktu tutup
+        //    gte() = Greater Than or Equal (Lebih besar atau sama dengan)
+        if ($waktuSekarang->gte($waktuTutup)) {
+            
+            // Jika sudah tutup, arahkan ke view 'transaksi-tutup'
+            return view('pages.transaksi.transaksi-tutup', [
+                'waktuTutup' => $waktuTutup->format('H:i') // Kirim data jam (misal "17:00")
+            ]);
+        }
+
+        // 4. Jika masih buka, lanjutkan ke logika asli Anda
+        $gudangId = optional(Auth::user())->gudang_id;
+        return view('pages.transaksi-jual.create', compact('gudangId'));
     }
 
     public function store(Request $request)
