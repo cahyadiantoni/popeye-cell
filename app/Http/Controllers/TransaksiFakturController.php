@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
 use App\Exports\FakturExport;
 use Illuminate\Support\Facades\DB;
+use App\Exports\FakturGabunganExport;
 
 class TransaksiFakturController extends Controller
 {
@@ -534,6 +535,74 @@ class TransaksiFakturController extends Controller
             ->setPaper('A4', 'portrait');
 
         return $pdf->stream('Daftar_Faktur.pdf');
+    }
+
+    public function exportGabungan(Request $request)
+    {
+        // 1. Mulai query, load relasi barang, dan urutkan tanggal terlama (ASC)
+        $query = Faktur::with(['transaksiJuals.barang']) // Hanya butuh relasi barang
+                       ->orderBy('tgl_jual', 'asc');   // Diubah ke 'asc' untuk tanggal terlama
+
+        $roleUser = optional(Auth::user())->role;
+        $gudangId = optional(Auth::user())->gudang_id;
+
+        // 2. Salin SEMUA logika filter dari exportMultiple
+        if ($roleUser == 'admin') {
+            $daftarGudang = ['AT', 'TKP', 'VR', 'BW'];
+                    
+            if ($request->filled('kode_faktur')) {
+                $kodeFaktur = $request->kode_faktur;
+                if (in_array($kodeFaktur, $daftarGudang)) {
+                    if ($kodeFaktur === 'AT') {
+                        $query->where(function ($q) {
+                            $q->where('nomor_faktur', 'like', 'AT-%')
+                            ->orWhere('nomor_faktur', 'like', 'LN-%');
+                        });
+                    } 
+                    else {
+                        $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
+                    }
+                } 
+                else {
+                    $query->where(function ($q) use ($daftarGudang) {
+                        foreach ($daftarGudang as $kode) {
+                            $q->where('nomor_faktur', 'not like', "$kode-%");
+                        }
+                        $q->where('nomor_faktur', 'not like', 'LN-%');
+                    });
+                }
+            }
+        } else {
+            switch ($gudangId) {
+                // Logika filter disalin persis dari exportMultiple
+                case 1: $query->where('nomor_faktur', 'like', "BW-%"); break;
+                case 2: $query->where('nomor_faktur', 'like', "AT-%"); break;
+                case 3: $query->where('nomor_faktur', 'like', "TKP-%"); break;
+                case 5: $query->where('nomor_faktur', 'like', "VR-%"); break;
+            }
+        }
+
+        // Filter berdasarkan tanggal jika ada
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+
+        // Filter berdasarkan status (Lunas/Hutang)
+        if ($request->filled('status')) {
+            $query->where('is_lunas', $request->status == 'Lunas' ? 1 : 0);
+        }
+
+        // Filter berdasarkan status cek
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
+
+        // 3. Ambil data faktur sesuai query
+        $fakturs = $query->get();
+
+        // 4. Panggil class export gabungan yang baru
+        // (Tidak perlu loop foreach untuk proses subtotal di sini)
+        return Excel::download(new FakturGabunganExport($fakturs), 'faktur_atas_gabungan.xlsx');
     }
 
     public function exportMultiple(Request $request)

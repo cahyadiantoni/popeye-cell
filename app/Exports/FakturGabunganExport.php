@@ -2,8 +2,7 @@
 
 namespace App\Exports;
 
-// Gunakan model FakturBawah-mu
-use App\Models\FakturBawah; 
+use App\Models\Faktur; // Model untuk Faktur 'Atas'
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithTitle;
@@ -14,13 +13,10 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use Carbon\Carbon;
 
-class FakturBawahGabunganExport implements FromCollection, WithTitle, WithHeadings, WithStyles, ShouldAutoSize
+class FakturGabunganExport implements FromCollection, WithTitle, WithHeadings, WithStyles, ShouldAutoSize
 {
     protected $fakturs;
 
-    /**
-     * Menerima koleksi faktur dari controller
-     */
     public function __construct(Collection $fakturs)
     {
         $this->fakturs = $fakturs;
@@ -31,11 +27,11 @@ class FakturBawahGabunganExport implements FromCollection, WithTitle, WithHeadin
      */
     public function title(): string
     {
-        return 'Gabungan Faktur Bawah';
+        return 'Gabungan Faktur Atas';
     }
 
     /**
-     * Mendefinisikan header tabel sesuai permintaanmu
+     * Mendefinisikan header tabel
      */
     public function headings(): array
     {
@@ -44,7 +40,6 @@ class FakturBawahGabunganExport implements FromCollection, WithTitle, WithHeadin
             'Tanggal',
             'Nomor Faktur',
             'Pembeli', // <-- TAMBAHKAN INI
-            'Keterangan',
             'Lok Spk',
             'Merek Tipe',
             'Harga'
@@ -60,11 +55,10 @@ class FakturBawahGabunganExport implements FromCollection, WithTitle, WithHeadin
         $rows = new Collection();
         $no = 1;
 
-        // Loop setiap faktur (yang sudah diurutkan berdasarkan tgl_jual ASC)
+        // Loop setiap faktur (sudah diurutkan berdasarkan tgl_jual ASC)
         foreach ($this->fakturs as $faktur) {
             
             // Loop setiap barang di dalam faktur tersebut
-            // Ini memastikan barang dari faktur yang sama tidak akan terpencar
             foreach ($faktur->transaksiJuals as $transaksi) {
                 
                 $rows->push([
@@ -72,7 +66,6 @@ class FakturBawahGabunganExport implements FromCollection, WithTitle, WithHeadin
                     'Tanggal'      => Carbon::parse($faktur->tgl_jual)->format('d-m-Y'),
                     'Nomor Faktur' => $faktur->nomor_faktur,
                     'Pembeli'      => $faktur->pembeli, // <-- TAMBAHKAN INI
-                    'Keterangan'   => $faktur->keterangan,
                     'Lok Spk'      => $transaksi->lok_spk,
                     'Merek Tipe'   => $transaksi->barang->tipe ?? '-',
                     'Harga'        => $transaksi->harga,
@@ -88,10 +81,10 @@ class FakturBawahGabunganExport implements FromCollection, WithTitle, WithHeadin
      */
     public function styles(Worksheet $sheet)
     {
-        // Style untuk Header (Baris 1) - Warna Hijau (dari referensimu)
+        // Style untuk Header (Baris 1) - Warna Hijau
         $itemHeaderStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 12],
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '70AD47']], // Kode warna hijau
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '70AD47']],
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -101,9 +94,9 @@ class FakturBawahGabunganExport implements FromCollection, WithTitle, WithHeadin
             'alignment' => ['vertical' => 'center'],
         ];
         
-        // Terapkan style HANYA ke baris 1 (header)
-        $sheet->getStyle('A1:H1')->applyFromArray($itemHeaderStyle);
-        $sheet->getRowDimension(1)->setRowHeight(25); // Atur tinggi baris header
+        // Terapkan ke baris 1 (header) - Kolom A sampai F
+        $sheet->getStyle('A1:G1')->applyFromArray($itemHeaderStyle);
+        $sheet->getRowDimension(1)->setRowHeight(25);
 
         // Style untuk Body (semua baris setelah header)
         $lastRow = $sheet->getHighestRow();
@@ -119,10 +112,10 @@ class FakturBawahGabunganExport implements FromCollection, WithTitle, WithHeadin
             ];
             
             // Terapkan style border ke semua data (mulai baris 2)
-            $sheet->getStyle('A2:H' . $lastRow)->applyFromArray($itemBodyStyle);
+            $sheet->getStyle('A2:G' . $lastRow)->applyFromArray($itemBodyStyle);
             
-            // Format kolom Harga (Kolom G) sebagai Rupiah
-            $sheet->getStyle('G2:H' . $lastRow)
+            // Format kolom Harga (Kolom F) sebagai Rupiah
+            $sheet->getStyle('F2:G' . $lastRow)
                   ->getNumberFormat()
                   ->setFormatCode('"Rp"#,##0;-"Rp"#,##0');
         }

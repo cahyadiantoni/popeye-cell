@@ -145,6 +145,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
 
     Route::get('/transaksi-faktur/print-kesimpulan', [TransaksiFakturController::class, 'printKesimpulan'])->name('transaksi-faktur.printKesimpulan');
     Route::get('/transaksi-faktur/print-multiple', [TransaksiFakturController::class, 'printMultiple'])->name('transaksi-faktur.printMultiple');
+    Route::get('/transaksi-faktur/export-gabungan', [TransaksiFakturController::class, 'exportGabungan'])->name('transaksi-faktur.exportGabungan');
     Route::get('/transaksi-faktur/export', [TransaksiFakturController::class, 'exportMultiple'])->name('transaksi-faktur.exportMultiple');
     Route::resource('/transaksi-faktur', TransaksiFakturController::class)->middleware('auth');
     Route::delete('/transaksi-faktur/{nomor_faktur}', [TransaksiFakturController::class, 'destroy'])->name('transaksi-faktur.delete');
