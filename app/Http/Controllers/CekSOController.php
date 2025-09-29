@@ -379,42 +379,46 @@ class CekSOController extends Controller
             $cekso = CekSO::findOrFail($request->t_cek_so_id);
             $lok_spk_raw = trim($request->lok_spk);
 
-            if (CekSOBarang::where('t_cek_so_id', $request->t_cek_so_id)->whereRaw('LOWER(lok_spk) = ?', [mb_strtolower($lok_spk_raw)])->exists()) {
+            // Cek duplikat
+            if (CekSOBarang::where('t_cek_so_id', $request->t_cek_so_id)
+                ->whereRaw('LOWER(lok_spk) = ?', [mb_strtolower($lok_spk_raw)])
+                ->exists()) {
                 return response()->json(['status' => 'duplicate', 'message' => 'LOK_SPK sudah pernah diinput.']);
             }
 
+            // Cek keberadaan di master barang
             $foundInMaster = Barang::where('gudang_id', $cekso->gudang_id)
                                 ->where('lok_spk', $lok_spk_raw)
                                 ->where('status_barang', 1)
                                 ->exists();
 
-            CekSOBarang::create([
-                't_cek_so_id' => $request->t_cek_so_id, 
-                'lok_spk' => $lok_spk_raw, 
-                'status' => 3,
-                'petugas_scan' => $request->petugas_scan, 
-                'lokasi' => $request->lokasi, 
-            ]);
-            
+            if ($foundInMaster) {
+                // Hanya simpan kalau ditemukan
+                CekSOBarang::create([
+                    't_cek_so_id'   => $request->t_cek_so_id, 
+                    'lok_spk'       => $lok_spk_raw, 
+                    'status'        => 3,
+                    'petugas_scan'  => $request->petugas_scan, 
+                    'lokasi'        => $request->lokasi, 
+                ]);
+            }
+
             $message = $foundInMaster 
                 ? "LOK_SPK '{$lok_spk_raw}' berhasil ditambahkan dan DITEMUKAN di database."
-                : "LOK_SPK '{$lok_spk_raw}' ditambahkan, tapi TIDAK ADA di master database.";
+                : "LOK_SPK '{$lok_spk_raw}' TIDAK ADA di master database, tidak disimpan.";
 
             $summary = $this->recalculateCekSO($request->t_cek_so_id);
 
-            // -- TAMBAHAN BARU --
-            // Hitung jumlah barang di lokasi yang sama untuk SO ini
             $locationCount = CekSOBarang::where('t_cek_so_id', $request->t_cek_so_id)
                                         ->where('lokasi', $request->lokasi)
                                         ->count();
-            // ------
             
             return response()->json([
-                'status' => 'success', 
-                'message' => $message,
+                'status'          => 'success', 
+                'message'         => $message,
                 'found_in_master' => $foundInMaster,
-                'summary' => $summary,
-                'location_count' => $locationCount // Kirim jumlah ke frontend
+                'summary'         => $summary,
+                'location_count'  => $locationCount
             ]);
 
         } catch (\Exception $e) {
@@ -501,5 +505,37 @@ class CekSOController extends Controller
         
         // Panggil class CekSoExport dan unduh filenya
         return Excel::download(new CekSoExport($cekso), $fileName);
+    }
+
+    public function destroyNotInMaster(Request $request, $ceksoId, $id)
+    {
+        // pastikan user login diproteksi via middleware('auth') di route
+        $cekso = CekSO::findOrFail($ceksoId);
+
+        // Ambil baris yang akan dihapus, pastikan milik SO ini
+        $row = CekSOBarang::where('t_cek_so_id', $ceksoId)
+                ->where('id', $id)
+                ->firstOrFail();
+
+        // (Opsional tapi disarankan) Validasi bahwa item ini benar2 "Tidak Ada di Master"
+        // supaya tidak bisa menghapus baris master yang valid.
+        $existsInMaster = Barang::where('gudang_id', $cekso->gudang_id)
+            ->where('lok_spk', $row->lok_spk)
+            ->where('status_barang', 1)
+            ->exists();
+
+        if ($existsInMaster) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data ini ada di master. Tidak dapat dihapus dari daftar NA.'
+            ], 422);
+        }
+
+        $row->delete();
+
+        return response()->json([
+            'status'  => 'ok',
+            'message' => 'Data berhasil dihapus.'
+        ]);
     }
 }

@@ -59,6 +59,9 @@ Route::post('/payment/callback', [FakturPaymentController::class, 'callback'])->
 Route::post('/payment/xendit/callback', [FakturPaymentController::class, 'xenditCallback'])->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])->name('payment.xendit.callback');
 
 Route::group([], function() {
+    Route::delete('/cekso/{cekso}/not-in-master/{id}', [CekSOController::class, 'destroyNotInMaster'])
+    ->name('cekso.not-in-master.destroy')
+    ->middleware('auth');
     Route::get('/cek-so/export/{id}', [CekSOController::class, 'exportExcel'])->name('cek-so.export');
     Route::get('/cek-so/guest/{id}', [CekSOController::class, 'showGuest'])->name('cek-so.show-guest');
     // Resource Controller untuk CekSO

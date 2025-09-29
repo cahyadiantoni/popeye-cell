@@ -179,6 +179,7 @@
                                 <th>Status Input</th>
                                 <th>Petugas Scan</th>
                                 <th>Lokasi</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                     </table>
@@ -234,6 +235,9 @@
         </div>
     </div>
 </div>
+<script>
+    const IS_AUTH = {{ auth()->check() ? 'true' : 'false' }};
+</script>
 
 <script>
 $(document).ready(function () {
@@ -260,19 +264,70 @@ $(document).ready(function () {
     // Inisialisasi DataTable Kedua ("Tidak Ada di DB")
     let tableNa = $('#barangNaTable').DataTable({
         processing: true, serverSide: true,
-        ajax: { url: "{{ route('get-cekso.not-in-master', $cekso->id) }}", data: function (d) { d.petugas_scan = $('#filterPetugasNa').val(); d.lokasi = $('#filterLokasiNa').val(); } },
+        ajax: { 
+            url: "{{ route('get-cekso.not-in-master', $cekso->id) }}",
+            data: function (d) {
+                d.petugas_scan = $('#filterPetugasNa').val();
+                d.lokasi = $('#filterLokasiNa').val();
+            } 
+        },
         columns: [
-            { data: null, name: 'nomor', orderable: false, searchable: false, render: (data, type, row, meta) => meta.row + 1 },
+            { data: null, name: 'nomor', orderable: false, searchable: false,
+            render: (data, type, row, meta) => meta.row + 1 },
             { data: 'lok_spk', name: 'lok_spk' },
             { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false },
             { data: 'petugas_scan', name: 'petugas_scan', defaultContent: '-' },
-            { data: 'lokasi', name: 'lokasi', defaultContent: '-' }
+            { data: 'lokasi', name: 'lokasi', defaultContent: '-' },
+
+            // === Kolom Aksi (baru) ===
+            { data: null, name: 'aksi', orderable: false, searchable: false,
+            render: function (data, type, row) {
+                if (!IS_AUTH) return ''; 
+                return `
+                    <button class="btn btn-sm btn-danger btn-del-na" data-id="${row.id}">
+                        Hapus
+                    </button>`;
+            }
+            }
         ]
     });
 
     // Event handler untuk semua filter
     $('#filterScan, #filterPetugas, #filterLokasi').change(() => table.ajax.reload());
     $('#filterPetugasNa, #filterLokasiNa').change(() => tableNa.ajax.reload());
+
+    // Sinkronkan "Lokasi Pengecekan" -> filter lokasi tabel
+    function applyLokasiToFilters(val) {
+        const v = (val || '').trim();
+
+        // helper: set value ke <select>, tambahkan option jika belum ada
+        const syncSelect = ($sel, value) => {
+            if (value && $sel.find(`option[value="${value}"]`).length === 0) {
+                $sel.append(new Option(value, value)); // tambahkan option baru
+            }
+            $sel.val(value).trigger('change'); // memicu reload tabel
+        };
+
+        if (v === '') {
+            // kosongkan filter jika input lokasi dikosongkan
+            $('#filterLokasi').val('').trigger('change');
+            $('#filterLokasiNa').val('').trigger('change');
+        } else {
+            syncSelect($('#filterLokasi'), v);
+            syncSelect($('#filterLokasiNa'), v);
+        }
+    }
+
+    // Debounce supaya tabel tidak reload terlalu sering saat user mengetik
+    let lokasiDebounce;
+    $('#lokasi_input').on('input change', function () {
+        clearTimeout(lokasiDebounce);
+        const val = this.value;
+        lokasiDebounce = setTimeout(() => applyLokasiToFilters(val), 300);
+    });
+
+    // Inisialisasi awal bila sudah ada nilai lokasi saat halaman dibuka
+    applyLokasiToFilters($('#lokasi_input').val());
 
     // --- LOGIKA SCAN INPUT DENGAN ANTI-MANUAL ---
     let lastInputTime = 0;
@@ -327,20 +382,20 @@ $(document).ready(function () {
                     
                     // PERUBAHAN: Tampilkan jumlah di SweetAlert dan di bawah input
                     let alertMessage = `${response.message}<br><br><b>Total di lokasi ini: ${response.location_count}</b>`;
-                    Swal.fire({ icon: icon, title: title, html: alertMessage, timer: 2000, showConfirmButton: false });
+                    Swal.fire({ icon: icon, title: title, html: alertMessage, timer: 1000, showConfirmButton: false });
                     $('#locationCountDisplay').text(`Total di Lokasi Ini: ${response.location_count}`);
                     // ---------------------------------------------------------------
 
                     table.ajax.reload(null, false);
                     tableNa.ajax.reload(null, false);
                 } else if (response.status === 'duplicate') {
-                    Swal.fire({ icon: 'warning', title: 'Barang sudah pernah discan!', timer: 2000, showConfirmButton: false });
+                    Swal.fire({ icon: 'warning', title: 'Barang sudah pernah discan!', timer: 1000, showConfirmButton: false });
                 }
             },
             error: function () {
                 $('#loading').addClass('d-none');
                 $('#scanInput').focus();
-                Swal.fire({ icon: 'error', title: 'Gagal scan, harap ulangi!', timer: 2000, showConfirmButton: false });
+                Swal.fire({ icon: 'error', title: 'Gagal scan, harap ulangi!', timer: 1000, showConfirmButton: false });
             }
         });
     }
@@ -367,29 +422,89 @@ $(document).ready(function () {
     // -- FUNGSI DIUBAH --
     $('#formManualLokSpk').submit(function (e) {
         e.preventDefault();
+
+        const $form = $(this);
+        const $btn  = $form.find('button[type="submit"]');
+
+        // lock UI (anti double click)
+        if ($btn.prop('disabled')) return; // sudah submit, abaikan
+        $btn.data('orig-html', $btn.html());
+        $btn.prop('disabled', true).html(
+            '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...'
+        );
+
         $.ajax({
-            url: "{{ route('cekso.manual') }}", method: "POST", data: $(this).serialize(), dataType: 'json',
+            url: "{{ route('cekso.manual') }}",
+            method: "POST",
+            data: $form.serialize(),
+            dataType: 'json',
             success: function (res) {
                 if (res.status == 'success') {
-                    $('#addManualModal').modal('hide'); 
-                    
+                    $('#addManualModal').modal('hide');
+
                     let icon = res.found_in_master ? 'success' : 'info';
                     let title = res.found_in_master ? 'Ditemukan!' : 'Tidak Ada di Master!';
-                    
-                    // PERUBAHAN: Tampilkan jumlah di SweetAlert dan di bawah input
                     let alertMessage = `${res.message}<br><br><b>Total di lokasi ini: ${res.location_count}</b>`;
-                    Swal.fire({ icon: icon, title: title, html: alertMessage, timer: 2000, showConfirmButton: false });
+
+                    Swal.fire({ icon, title, html: alertMessage, timer: 1000, showConfirmButton: false });
                     $('#locationCountDisplay').text(`Total di Lokasi Ini: ${res.location_count}`);
-                    // ---------------------------------------------------------------
 
                     table.ajax.reload(null, false);
                     tableNa.ajax.reload(null, false);
-
                 } else {
                     $('#manualAlert').html('<div class="alert alert-warning">' + (res.message || 'Error.') + '</div>');
                 }
             },
-            error: () => $('#manualAlert').html('<div class="alert alert-danger">Gagal simpan data.</div>')
+            error: function () {
+                $('#manualAlert').html('<div class="alert alert-danger">Gagal simpan data.</div>');
+            },
+            complete: function () {
+                // restore tombol (kalau modal masih terbuka karena error)
+                $btn.prop('disabled', false).html($btn.data('orig-html'));
+            }
+        });
+    });
+
+    // Handler delete baris NA
+    $('#barangNaTable').on('click', '.btn-del-na', function () {
+        const $btn = $(this);
+        const row  = tableNa.row($btn.closest('tr')).data();
+        const id   = $btn.data('id');
+
+        if (!id) {
+            Swal.fire('Error', 'ID data tidak ditemukan.', 'error');
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Hapus item ini?',
+            html: `LOK_SPK: <b>${row?.lok_spk || '-'}</b><br>Lokasi: <b>${row?.lokasi || '-'}</b>`,
+            showCancelButton: true,
+            confirmButtonText: 'Ya, hapus',
+            cancelButtonText: 'Batal'
+        }).then((res) => {
+            if (!res.isConfirmed) return;
+
+            // lock tombol agar tidak dobel klik
+            $btn.prop('disabled', true).text('Menghapus...');
+
+            $.ajax({
+                url: "{{ route('cekso.not-in-master.destroy', ['cekso' => $cekso->id, 'id' => '___ID___']) }}".replace('___ID___', id),
+                type: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+                success: function (resp) {
+                    Swal.fire({ icon: 'success', title: 'Terhapus', timer: 1000, showConfirmButton: false });
+                    tableNa.ajax.reload(null, false);
+                    table.ajax.reload(null, false); // opsional, kalau mau segarkan tabel master juga
+                },
+                error: function (xhr) {
+                    Swal.fire('Gagal', (xhr.responseJSON?.message || 'Gagal menghapus data.'), 'error');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).text('Hapus');
+                }
+            });
         });
     });
 });
