@@ -241,6 +241,12 @@
                         <span class="pcoded-mtext">Rekap Transaksi Outlet</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('transaksi-return*') ? 'active' : '' }}">
+                    <a href="{{ url('/transaksi-return') }}">
+                        <span class="pcoded-micon"><i class="fas fa-undo"></i></span>
+                        <span class="pcoded-mtext">Transaksi Return</span>
+                    </a>
+                </li>
             </ul>
             @endif
             @if(auth()->user()->role=="admin")

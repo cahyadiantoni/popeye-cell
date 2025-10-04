@@ -21,108 +21,121 @@ use App\Models\TransaksiJualOutlet;
 
 class TransaksiReturnController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Mengambil semua transaksi return barang
-        $returns = ReturnModel::with(['returnBarang'])->orderBy('created_at', 'desc')->get()->map(function ($return) {
-            // Hitung total barang
-            $total_barang = $return->returnBarang->count();
+        $query = ReturnModel::with(['returnBarang'])->orderBy('created_at', 'desc');
     
-            // Hitung total harga
-            $total_harga = $return->returnBarang->sum('harga');
+        $roleUser = optional(Auth::user())->role;
+        $gudangId = optional(Auth::user())->gudang_id;
+
+        // Terapkan logika filter yang sama
+        if($roleUser == 'admin'){
+            $daftarGudang = ['RTO-JK', 'RTO-AD', 'RTO-PY'];
+        
+            if ($request->filled('kode_faktur')) { // Menggunakan 'kode_faktur' agar konsisten dengan view lain
+                $kodeFaktur = $request->kode_faktur;
+        
+                if (in_array($kodeFaktur, $daftarGudang)) {
+                    // Filter berdasarkan nomor_return
+                    $query->where('nomor_return', 'like', "$kodeFaktur-%");
+                }
+            }
+        }else{
+            switch ($gudangId) {
+                case 8:
+                    $query->where('nomor_return', 'like', "RTO-JK-%");
+                    break;
+                case 9:
+                    $query->where('nomor_return', 'like', "RTO-AD-%");
+                    break;
+                case 10:
+                    $query->where('nomor_return', 'like', "RTO-PY-%");
+                    break;
+                default:
+                    // Batasi agar tidak bisa melihat data jika tidak punya gudang yang sesuai
+                    $query->whereRaw('1 = 0');
+                    break;
+            }         
+        }
+
+        // Filter tambahan jika ada
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_return', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
     
-            // Tambahkan total_barang dan total_harga ke objek return
-            $return->total_barang = $total_barang;
-            $return->total_harga = $total_harga;
-    
+        $returns = $query->get()->map(function ($return) {
+            $return->total_barang = $return->returnBarang->count();
+            $return->total_harga = $return->returnBarang->sum('harga');
             return $return;
         });
     
-        return view('pages.transaksi-return.index', compact('returns'));
-    }    
+        return view('pages.transaksi-return.index', compact('returns', 'roleUser'));
+    }  
 
     public function create()
     {
-        return view('pages.transaksi-return.create');
+        $roleUser = optional(Auth::user())->role;
+        return view('pages.transaksi-return.create', compact('roleUser'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'filedata' => 'required|file|mimes:xlsx,xls',
+            'tgl_return' => 'required|date',
+            'nomor_return' => 'required|string|unique:t_return,nomor_return',
+            'petugas' => 'required|string',
         ]);
     
-        // Inisialisasi variabel
+        // --- PERUBAHAN 1: Tentukan Gudang ID Target berdasarkan Role ---
+        $user = Auth::user();
+        $targetGudangId = ($user->role == 'admin') ? 6 : $user->gudang_id;
+        // ----------------------------------------------------------------
+
         $errors = [];
         $validLokSpk = [];
-    
-        // Membaca file Excel
         $file = $request->file('filedata');
         $data = Excel::toArray([], $file);
     
         foreach ($data[0] as $index => $row) {
-            // Lewati baris pertama jika merupakan header
             if ($index === 0) continue;
     
-            // Validasi kolom di Excel
             if (isset($row[0])) {
-                $lokSpk = $row[0]; // Lok SPK
-    
-                // Cari barang berdasarkan lok_spk
+                $lokSpk = $row[0];
                 $barang = Barang::where('lok_spk', $lokSpk)->first();
     
                 if ($barang) {
-                    // Cek apakah status_barang adalah 0 atau 1
                     if (in_array($barang->status_barang, [2])) {
-    
-                        // Simpan lok_spk untuk update nanti
-                        $validLokSpk[] = [
-                            'lok_spk' => $lokSpk,
-                            'harga' => $row[5],
-                            'alasan' => $row[6],
-                            'pedagang' => $row[7],
-                        ];
+                        $validLokSpk[] = [ 'lok_spk' => $lokSpk, 'harga' => $row[5], 'alasan' => $row[6], 'pedagang' => $row[7] ];
                     } else {
-                        $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
+                        $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai (bukan status 2).";
                     }
                 } else {
-                    if (
-                        is_string($row[0]) && // lok_spk
-                        is_string($row[1]) && // jenis
-                        is_string($row[2]) // tipe
-                    ) {
-                        // Cek apakah lok_spk sudah ada di database
+                    if (is_string($row[0]) && is_string($row[1]) && is_string($row[2])) {
                         if (Barang::where('lok_spk', $row[0])->exists()) {
-                            // Tambahkan error jika lok_spk sudah ada di database
-                            $errors[] = "Row " . ($index + 1) . " has a duplicate lok_spk in database: ";
-                            continue; // Lewati penyimpanan untuk row ini
+                            $errors[] = "Row " . ($index + 1) . " memiliki lok_spk duplikat di database: " . $row[0];
+                            continue;
                         }
-            
-                        // Simpan data ke database jika valid
+                        
+                        // --- PERUBAHAN 2: Gunakan $targetGudangId saat membuat barang baru ---
                         $newBarang = Barang::create([
-                            'lok_spk' => $row[0],
-                            'jenis' => $row[1],
-                            'tipe' => $row[2],
-                            'kelengkapan' => $row[3],
-                            'grade' => $row[4],
-                            'nama_petugas' => $request->input('petugas'),
-                            'dt_input' => Carbon::now(),
-                            'user_id' => Auth::id(),
-                            'gudang_id' => 6,
+                            'lok_spk'       => $row[0],
+                            'jenis'         => $row[1],
+                            'tipe'          => $row[2],
+                            'kelengkapan'   => $row[3],
+                            'grade'         => $row[4],
+                            'nama_petugas'  => $request->input('petugas'),
+                            'dt_input'      => Carbon::now(),
+                            'user_id'       => $user->id,
+                            'gudang_id'     => $targetGudangId, // Diubah
                             'status_barang' => 1,
                         ]);
 
                         if($newBarang){
-                            $validLokSpk[] = [
-                                'lok_spk' => $lokSpk,
-                                'harga' => $row[5],
-                                'alasan' => $row[6],
-                                'pedagang' => $row[7],
-                            ];
+                            $validLokSpk[] = [ 'lok_spk' => $lokSpk, 'harga' => $row[5], 'alasan' => $row[6], 'pedagang' => $row[7] ];
                         }
                     } else {
-                        // Tambahkan error jika tidak valid
-                        $errors[] = "Row " . ($index + 1) . " Gagal tambah barang";
+                        $errors[] = "Row " . ($index + 1) . " Gagal tambah barang baru, data tidak lengkap.";
                     }
                 }
             } else {
@@ -130,43 +143,38 @@ class TransaksiReturnController extends Controller
             }
         }
     
-        // Simpan data Faktur jika ada data valid
         if (!empty($validLokSpk)) {
-            
             $return = ReturnModel::create([
                 'nomor_return' => $request->input('nomor_return'),
-                'tgl_return' => $request->input('tgl_return'),  // Menyimpan tanggal return
-                'user_id' => Auth::id(),    
+                'tgl_return' => $request->input('tgl_return'),
+                'user_id' => $user->id,    
                 'keterangan' => $request->input('keterangan'), 
             ]);
 
-            $returnId = $return->id;
-
-            // Update Barang untuk lok_spk yang valid
             foreach ($validLokSpk as $item) {
                 ReturnBarang::create([
                     'lok_spk' => $item['lok_spk'],
-                    't_return_id' => $returnId, 
+                    't_return_id' => $return->id, 
                     'harga' => $item['harga']*1000, 
                     'alasan' => $item['alasan'], 
                     'pedagang' => $item['pedagang'], 
                 ]);
 
+                // --- PERUBAHAN 3: Gunakan $targetGudangId saat update barang yang sudah ada ---
                 Barang::where('lok_spk', $item['lok_spk'])->update([
                     'status_barang' => 1,
-                    'gudang_id' => 6, 
+                    'gudang_id' => $targetGudangId, // Diubah
                 ]);
             }
     
-            // Tampilkan pesan sukses dan error
             return redirect()->route('transaksi-return.index')
                 ->with('success', 'Return barang berhasil. ' . count($validLokSpk) . ' barang diproses.')
                 ->with('errors', $errors);
         }
     
-        // Jika tidak ada data valid, hanya tampilkan error
-        return redirect()->route('transaksi-return.index')
-            ->with('errors', $errors);
+        return redirect()->route('transaksi-return.create')
+            ->with('errors', $errors)
+            ->withInput();
     }
 
     public function show($id)
@@ -229,25 +237,36 @@ class TransaksiReturnController extends Controller
 
     public function getSuggest(Request $request)
     {
-        $tglReturn = $request->tgl_return ? Carbon::parse($request->tgl_return) : Carbon::now(); 
-        $currentMonthYear = $tglReturn->format('my'); // Menggunakan tanggal yang dipilih user
+        $tglReturn = $request->tgl_return ? Carbon::parse($request->tgl_return) : Carbon::now();
+        $currentMonthYear = $tglReturn->format('my');
+        
+        $gudangId = optional(Auth::user())->gudang_id;
+        $kodeGudang = '';
 
-        // Ambil return terakhir dengan format yang sesuai
-        $lastReturn = ReturnModel::where('nomor_return', 'like', "RTN-$currentMonthYear-%")
-            ->orderByRaw("CAST(SUBSTRING(nomor_return, 10, LENGTH(nomor_return) - 9) AS UNSIGNED) DESC")
+        // Tentukan kode gudang berdasarkan gudang_id user
+        switch ($gudangId) {
+            case 8:  $kodeGudang = 'RTO-JK'; break;
+            case 9:  $kodeGudang = 'RTO-AD'; break;
+            case 10: $kodeGudang = 'RTO-PY'; break;
+            default:
+                // Jika tidak ada gudang yang cocok, kirim error
+                return response()->json(['error' => 'User tidak memiliki gudang yang valid.'], 400);
+        }
+
+        $prefix = "$kodeGudang-$currentMonthYear-";
+
+        $lastReturn = ReturnModel::where('nomor_return', 'like', "$prefix%")
+            ->orderByRaw("CAST(SUBSTRING_INDEX(nomor_return, '-', -1) AS UNSIGNED) DESC")
             ->first();
 
-        // Tentukan nomor urut
         if ($lastReturn) {
-            preg_match('/-(\d+)$/', $lastReturn->nomor_return, $matches);
-            $lastNumber = isset($matches[1]) ? (int) $matches[1] : 0;
+            $lastNumber = (int) substr($lastReturn->nomor_return, strrpos($lastReturn->nomor_return, '-') + 1);
             $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
         } else {
             $newNumber = '001';
         }
 
-        // Format nomor return baru
-        $suggestedNoFak = "RTN-$currentMonthYear-$newNumber";
+        $suggestedNoFak = $prefix . $newNumber;
 
         return response()->json(['suggested_no_fak' => $suggestedNoFak]);
     }
@@ -256,137 +275,90 @@ class TransaksiReturnController extends Controller
     {
         $request->validate([
             'filedata' => 'required|file|mimes:xlsx,xls',
-            't_return_id' => 'required',
+            't_return_id' => 'required|exists:t_return,id',
         ]);
+        
+        // --- PERUBAHAN 4: Tentukan Gudang ID Target berdasarkan Role ---
+        $user = Auth::user();
+        $targetGudangId = ($user->role == 'admin') ? 6 : $user->gudang_id;
+        // ----------------------------------------------------------------
 
-        // Inisialisasi variabel
         $errors = [];
         $validLokSpk = [];
-        $processedLokSpk = []; // Untuk memeriksa duplikat di file Excel
-
-        // Membaca file Excel
+        $processedLokSpk = [];
         $file = $request->file('filedata');
         $data = Excel::toArray([], $file);
 
         foreach ($data[0] as $index => $row) {
-            // Lewati baris pertama jika merupakan header
             if ($index === 0) continue;
-
-            // Validasi kolom di Excel
             if (isset($row[0]) && isset($row[5]) && isset($row[6]) && isset($row[7])) {
-                $lokSpk = $row[0]; // Lok SPK
-                $harga = $row[5] * 1000;
-                $alasan = $row[6];
-                $pedagang = $row[7];
-
-                // Cek duplikat lok_spk di dalam file Excel
+                $lokSpk = $row[0];
                 if (in_array($lokSpk, $processedLokSpk)) {
                     $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
                     continue;
                 }
-
-                // Tambahkan lok_spk ke daftar yang sudah diproses
                 $processedLokSpk[] = $lokSpk;
 
-                // Cek duplikat kombinasi lok_spk dan t_return_id di database
-                $existsInDatabase = ReturnBarang::where('lok_spk', $lokSpk)
-                    ->where('t_return_id', $request->input('t_return_id'))
-                    ->exists();
-
-                if ($existsInDatabase) {
-                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' dengan Nomor Faktur '{$request->input('t_return_id')}' sudah ada di database.";
+                if (ReturnBarang::where('lok_spk', $lokSpk)->where('t_return_id', $request->input('t_return_id'))->exists()) {
+                    $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' sudah ada di dalam return ini.";
                     continue;
                 }
 
-                // Cari barang berdasarkan lok_spk
                 $barang = Barang::where('lok_spk', $lokSpk)->first();
-
                 if ($barang) {
-                    // Cek apakah status_barang adalah 0 atau 1
                     if (in_array($barang->status_barang, [2])) {
-                        // Simpan lok_spk untuk update nanti
-                        $validLokSpk[] = [
-                            'lok_spk' => $lokSpk,
-                            'harga' => $harga,
-                            'alasan' => $alasan,
-                            'pedagang' => $pedagang,
-                        ];
+                        $validLokSpk[] = ['lok_spk' => $lokSpk, 'harga' => $row[5], 'alasan' => $row[6], 'pedagang' => $row[7]];
                     } else {
                         $errors[] = "Row " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
                     }
                 } else {
-                    if (
-                        is_string($row[0]) && // lok_spk
-                        is_string($row[1]) && // jenis
-                        is_string($row[2]) // tipe
-                    ) {
-                        // Cek apakah lok_spk sudah ada di database
+                    if (is_string($row[0]) && is_string($row[1]) && is_string($row[2])) {
                         if (Barang::where('lok_spk', $row[0])->exists()) {
-                            // Tambahkan error jika lok_spk sudah ada di database
-                            $errors[] = "Row " . ($index + 1) . " has a duplicate lok_spk in database: ";
-                            continue; // Lewati penyimpanan untuk row ini
+                            $errors[] = "Row " . ($index + 1) . " memiliki LOK SPK duplikat di database: " . $row[0];
+                            continue;
                         }
-            
-                        // Simpan data ke database jika valid
+                        
+                        // --- PERUBAHAN 5: Gunakan $targetGudangId saat membuat barang baru ---
                         $newBarang = Barang::create([
-                            'lok_spk' => $row[0],
-                            'jenis' => $row[1],
-                            'tipe' => $row[2],
-                            'kelengkapan' => $row[3],
-                            'grade' => $row[4],
-                            'nama_petugas' => $request->input('petugas'),
-                            'dt_input' => Carbon::now(),
-                            'user_id' => Auth::id(),
-                            'gudang_id' => 6,
-                            'status_barang' => 1,
+                            'lok_spk' => $row[0], 'jenis' => $row[1], 'tipe' => $row[2], 'kelengkapan' => $row[3],
+                            'grade' => $row[4], 'nama_petugas' => $user->name, 'dt_input' => Carbon::now(),
+                            'user_id' => $user->id, 'gudang_id' => $targetGudangId, 'status_barang' => 1, // Diubah
                         ]);
 
                         if($newBarang){
-                            $validLokSpk[] = [
-                                'lok_spk' => $lokSpk,
-                                'harga' => $row[5],
-                                'alasan' => $row[6],
-                                'pedagang' => $row[7],
-                            ];
+                            $validLokSpk[] = ['lok_spk' => $lokSpk, 'harga' => $row[5], 'alasan' => $row[6], 'pedagang' => $row[7]];
                         }
                     } else {
-                        // Tambahkan error jika tidak valid
-                        $errors[] = "Row " . ($index + 1) . " Gagal tambah barang";
+                        $errors[] = "Row " . ($index + 1) . " Gagal menambah barang baru, data tidak lengkap.";
                     }
                 }
             } else {
-                $errors[] = "Row " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
+                $errors[] = "Row " . ($index + 1) . ": Data tidak valid (kurang kolom).";
             }
         }
 
-        // Simpan data Faktur jika ada data valid
         if (!empty($validLokSpk)) {
-
-            // Update Barang untuk lok_spk yang valid
             foreach ($validLokSpk as $item) {
+                // --- PERUBAHAN 6: Gunakan $targetGudangId saat update barang yang sudah ada ---
                 Barang::where('lok_spk', $item['lok_spk'])->update([
                     'status_barang' => 1,
-                    'gudang_id' => 6,
+                    'gudang_id' => $targetGudangId, // Diubah
                 ]);
 
                 ReturnBarang::create([
                     'lok_spk' => $item['lok_spk'],
                     't_return_id' => $request->input('t_return_id'),
-                    'harga' => $item['harga'],
+                    'harga' => $item['harga'] * 1000,
                     'alasan' => $item['alasan'],
                     'pedagang' => $item['pedagang'],
                 ]);
             }
-
-            // Tampilkan pesan sukses dan error
             return redirect()->back()
-                ->with('success', 'Faktur berhasil disimpan. ' . count($validLokSpk) . ' barang diproses.')
+                ->with('success', count($validLokSpk) . ' barang berhasil ditambahkan.')
                 ->with('errors', $errors);
         }
 
-        // Jika tidak ada data valid, hanya tampilkan error
-        return redirect()->back()
-            ->with('errors', $errors);
+        return redirect()->back()->with('errors', $errors);
     }
 
     public function destroyBarang($id)
@@ -416,22 +388,20 @@ class TransaksiReturnController extends Controller
 
     public function updateBarang(Request $request)
     {
-        // Validasi diperluas untuk data barang baru
         $validated = $request->validate([
-            'id' => 'required|exists:t_return_barang,id',
-            'lok_spk' => 'required|string',
-            'harga' => 'required|numeric|min:0',
-            'alasan' => 'nullable|string',
-            'pedagang' => 'nullable|string',
-            // Validasi untuk field baru, tapi boleh null karena tidak selalu diisi
-            'jenis' => 'nullable|string',
-            'tipe' => 'nullable|string',
-            'kelengkapan' => 'nullable|string',
-            'grade' => 'nullable|string',
+            'id' => 'required|exists:t_return_barang,id', 'lok_spk' => 'required|string',
+            'harga' => 'required|numeric|min:0', 'alasan' => 'nullable|string',
+            'pedagang' => 'nullable|string', 'jenis' => 'nullable|string', 'tipe' => 'nullable|string',
+            'kelengkapan' => 'nullable|string', 'grade' => 'nullable|string',
         ]);
 
         try {
             DB::transaction(function () use ($validated, $request) {
+                // --- PERUBAHAN 7: Tentukan Gudang ID Target berdasarkan Role ---
+                $user = Auth::user();
+                $targetGudangId = ($user->role == 'admin') ? 6 : $user->gudang_id;
+                // ----------------------------------------------------------------
+
                 $transaksi = ReturnBarang::findOrFail($validated['id']);
                 $originalLokSpk = $transaksi->lok_spk;
                 $newLokSpk = $validated['lok_spk'];
@@ -441,47 +411,31 @@ class TransaksiReturnController extends Controller
                     return;
                 }
 
-                // Langkah 1: Proses LOK SPK LAMA
                 if ($this->isLokSpkInUse($originalLokSpk)) {
                     Barang::where('lok_spk', $originalLokSpk)->update(['status_barang' => 2, 'gudang_id' => 0]);
                 } else {
                     Barang::where('lok_spk', $originalLokSpk)->delete();
                 }
 
-                // Langkah 2: Proses LOK SPK BARU
                 $barangBaru = Barang::where('lok_spk', $newLokSpk)->first();
-
                 if ($barangBaru) {
-                    // Jika LOK SPK BARU sudah ada
-                    if ($barangBaru->status_barang != 2) {
-                        throw new \Exception("Barang '$newLokSpk' tidak berstatus 'terjual' (status 2).");
-                    }
-                    $barangBaru->update(['status_barang' => 1, 'gudang_id' => 6]);
+                    if ($barangBaru->status_barang != 2) throw new \Exception("Barang '$newLokSpk' tidak berstatus 'terjual' (status 2).");
+                    // --- PERUBAHAN 8: Gunakan $targetGudangId saat update barang yang ada ---
+                    $barangBaru->update(['status_barang' => 1, 'gudang_id' => $targetGudangId]); // Diubah
                 } else {
-                    // Jika LOK SPK BARU belum ada, BUAT BARU dengan data dari form
-                    if (empty($validated['jenis']) || empty($validated['tipe'])) {
-                        throw new \Exception("Jenis dan Tipe wajib diisi untuk barang baru.");
-                    }
+                    if (empty($validated['jenis']) || empty($validated['tipe'])) throw new \Exception("Jenis dan Tipe wajib diisi untuk barang baru.");
+                    // --- PERUBAHAN 9: Gunakan $targetGudangId saat membuat barang baru ---
                     Barang::create([
-                        'lok_spk' => $newLokSpk,
-                        'jenis' => $validated['jenis'],
-                        'tipe' => $validated['tipe'],
-                        'kelengkapan' => $validated['kelengkapan'],
-                        'grade' => $validated['grade'],
-                        'nama_petugas' => Auth::user()->name,
-                        'dt_input' => now(),
-                        'user_id' => Auth::id(),
-                        'gudang_id' => 6,
-                        'status_barang' => 1,
+                        'lok_spk' => $newLokSpk, 'jenis' => $validated['jenis'], 'tipe' => $validated['tipe'],
+                        'kelengkapan' => $validated['kelengkapan'], 'grade' => $validated['grade'],
+                        'nama_petugas' => $user->name, 'dt_input' => now(), 'user_id' => $user->id,
+                        'gudang_id' => $targetGudangId, 'status_barang' => 1, // Diubah
                     ]);
                 }
 
-                // Langkah 3: Update transaksi di t_return_barang
                 $transaksi->update($validated);
             });
-
             return redirect()->back()->with('success', 'Barang return berhasil diupdate.');
-
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
