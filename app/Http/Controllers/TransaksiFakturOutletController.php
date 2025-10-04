@@ -13,6 +13,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel; // Tambahkan ini
+use App\Exports\FakturOutletGabunganExport; // Tambahkan ini
 
 class TransaksiFakturOutletController extends Controller
 {
@@ -341,4 +343,56 @@ class TransaksiFakturOutletController extends Controller
     
         return view('pages.transaksi-faktur-outlet.rekap', compact('rekaps', 'daftarGudang', 'filterGudang', 'filterBulan'));
     }    
+
+    public function exportGabungan(Request $request)
+    {
+        // 1. Mulai query, load relasi barang, dan urutkan tanggal terlama (ASC)
+        $query = FakturOutlet::with(['transaksiJuals.barang']) // Load relasi yang benar
+                             ->orderBy('tgl_jual', 'asc');   // Urutkan dari tanggal terlama
+
+        $roleUser = optional(Auth::user())->role;
+        $gudangId = optional(Auth::user())->gudang_id;
+
+        // 2. Salin SEMUA logika filter dari method index()
+        if ($roleUser == 'admin') {
+            $daftarGudang = ['O-JK', 'O-AD', 'O-PY'];
+        
+            if ($request->filled('kode_faktur')) {
+                $kodeFaktur = $request->kode_faktur;
+                if (in_array($kodeFaktur, $daftarGudang)) {
+                    $query->where('nomor_faktur', 'like', "$kodeFaktur-%");
+                } else {
+                    $query->where(function ($q) use ($daftarGudang) {
+                        foreach ($daftarGudang as $kode) {
+                            $q->where('nomor_faktur', 'not like', "$kode-%");
+                        }
+                    });
+                }
+            }
+        } else {
+            switch ($gudangId) {
+                case 8:  $query->where('nomor_faktur', 'like', "O-JK-%"); break;
+                case 9:  $query->where('nomor_faktur', 'like', "O-AD-%"); break;
+                case 10: $query->where('nomor_faktur', 'like', "O-PY-%"); break;
+            }         
+        }
+    
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_selesai')) {
+            $query->whereBetween('tgl_jual', [$request->tanggal_mulai, $request->tanggal_selesai]);
+        }
+    
+        if ($request->filled('status')) {
+            $query->where('is_lunas', $request->status == 'Lunas' ? 1 : 0);
+        }
+
+        if ($request->filled('cek')) {
+            $query->where('is_finish', $request->cek == 'Sudah_Dicek' ? 1 : 0);
+        }
+    
+        // 3. Ambil data faktur sesuai query
+        $fakturs = $query->get();
+
+        // 4. Panggil class export gabungan yang baru
+        return Excel::download(new FakturOutletGabunganExport($fakturs), 'faktur_outlet_gabungan.xlsx');
+    }
 }

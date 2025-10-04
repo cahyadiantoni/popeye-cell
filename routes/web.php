@@ -215,6 +215,7 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::put('/transaksi-faktur-online/{id}/tandai-sudah-dicek', [TransaksiFakturOnlineController::class, 'tandaiSudahDicek'])->name('transaksi-faktur-online.tandai-sudah-dicek');
     Route::put('/transaksi-faktur-online/{id}/tandai-belum-dicek', [TransaksiFakturOnlineController::class, 'tandaiBelumDicek'])->name('transaksi-faktur-online.tandai-belum-dicek');
 
+    Route::get('/transaksi-faktur-outlet/export-gabungan', [TransaksiFakturOutletController::class, 'exportGabungan'])->name('transaksi-faktur-outlet.exportGabungan');
     Route::resource('/transaksi-faktur-outlet', TransaksiFakturOutletController::class)->middleware('auth');
     Route::delete('/transaksi-faktur-outlet/{nomor_faktur}', [TransaksiFakturOutletController::class, 'destroy'])->name('transaksi-faktur-outlet.delete');
     Route::get('/transaksi-rekap-outlet', [TransaksiFakturOutletController::class, 'rekap'])->name('transaksi-faktur-outlet.rekap');

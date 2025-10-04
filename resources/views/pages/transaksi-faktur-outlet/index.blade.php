@@ -97,6 +97,10 @@
                                     <div class="d-flex justify-content-end mt-3">
                                         <button type="submit" class="btn btn-primary">Filter</button>
                                         <a href="{{ route('transaksi-faktur-outlet.index') }}" class="btn btn-secondary mx-2">Reset</a>
+
+                                        <a href="{{ route('transaksi-faktur-outlet.exportGabungan', request()->query()) }}" class="btn btn-success mx-2">
+                                            Export Excel Gabungan
+                                        </a>
                                     </div>
                                 </form>
                             </div>
