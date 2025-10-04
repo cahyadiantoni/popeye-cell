@@ -98,9 +98,9 @@ class TransaksiBawahController extends Controller
         return view('pages.transaksi-jual-bawah.create',compact('gudangId'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SettingsService $settingsService)
     {
-        // 1. Validasi semua input yang mungkin diterima dari form
+        // 1. Validasi input awal
         $request->validate([
             'pasted_data' => 'required|string',
             'create_conclusion' => 'required|boolean',
@@ -110,14 +110,14 @@ class TransaksiBawahController extends Controller
             'nominals.*'  => 'nullable|numeric|min:1',
         ]);
 
-        // 2. Parsing data mentah dari textarea menjadi baris-baris data
+        // 2. Parsing data mentah
         $pastedData = trim($request->pasted_data);
         $rows = array_filter(explode("\n", $pastedData), 'trim');
         if (empty($rows)) {
             return redirect()->back()->with('error', 'Data yang ditempelkan kosong atau tidak valid.');
         }
 
-        // 3. Ekstrak informasi umum (tanggal, petugas, dll.) dari baris pertama
+        // 3. Ekstrak informasi umum
         $firstRowColumns = str_getcsv(reset($rows), "\t");
         try {
             $dateString = trim($firstRowColumns[0]);
@@ -133,27 +133,53 @@ class TransaksiBawahController extends Controller
             return redirect()->back()->with('error', 'Format tanggal pada baris pertama tidak valid. Gunakan format seperti "14-Mei-2025".');
         }
 
-        // 4. Generate nomor faktur baru yang unik berdasarkan bulan dan tahun
+        // --- PERUBAHAN 2: Blok validasi tanggal yang diperbarui ---
+        try {
+            // Ambil setting batas hari. TIDAK ADA DEFAULT, jadi hasilnya null jika tidak ada.
+            $hariBatas = $settingsService->get('HARI_INPUT_FAKTUR_SEBELUM'); 
+            
+            $tglJualCarbon = Carbon::parse($tglJual)->startOfDay();
+            $hariIni = Carbon::today();
+
+            // Aturan 1 (SELALU AKTIF): Tanggal jual tidak boleh di masa depan
+            if ($tglJualCarbon->isFuture()) {
+                throw new \Exception("Tanggal jual ({$tglJualCarbon->translatedFormat('d F Y')}) tidak boleh melebihi hari ini.");
+            }
+
+            // Aturan 2 (KONDISIONAL): Cek batas hari ke belakang HANYA JIKA settingnya ada dan valid
+            if ($hariBatas !== null && is_numeric($hariBatas) && $hariBatas >= 0) {
+                $hariBatas = (int) $hariBatas; // Konversi ke integer untuk keamanan
+                $tanggalTerlama = $hariIni->copy()->subDays($hariBatas);
+                
+                if ($tglJualCarbon->lt($tanggalTerlama)) {
+                    throw new \Exception("Tanggal jual ({$tglJualCarbon->translatedFormat('d F Y')}) sudah terlalu lama. Batas maksimal adalah {$hariBatas} hari ke belakang (paling awal: {$tanggalTerlama->translatedFormat('d F Y')}).");
+                }
+            }
+            // Jika $hariBatas adalah null atau tidak valid, blok 'if' ini dilewati dan tidak ada validasi batas hari ke belakang.
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage())->withInput();
+        }
+        // --- Akhir dari blok validasi tanggal ---
+
+        // 4. Generate nomor faktur baru
         $kodeFaktur = "BW";
         $currentMonthYear = Carbon::parse($tglJual)->format('my');
         
-        // [PERBAIKAN 1] Ubah SUBSTRING agar dimulai dari posisi 9
         $lastFaktur = FakturBawah::where('nomor_faktur', 'like', "$kodeFaktur-$currentMonthYear-%")
             ->orderByRaw("CAST(SUBSTRING(nomor_faktur, 9) AS UNSIGNED) DESC")
             ->first();
         
         if ($lastFaktur) {
-            // [PERBAIKAN 2] Ambil bagian angka dari posisi ke-9, bukan dari 3 karakter terakhir
-            $lastNumber = (int)substr($lastFaktur->nomor_faktur, 8); // Prefix 'BW-mmyy-' panjangnya 8
+            $lastNumber = (int)substr($lastFaktur->nomor_faktur, 8);
             $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
         } else {
-            // Jika belum ada faktur di bulan ini, mulai dari 001
             $newNumber = '001';
         }
         
         $nomorFakturBaru = "$kodeFaktur-$currentMonthYear-$newNumber";
 
-        // 5. Validasi setiap baris data (cek duplikat, status barang, konsistensi harga, dll.)
+        // 5. Validasi setiap baris data
         $errors = [];
         $totalHargaJual = 0;
         $validLokSpk = [];
@@ -171,33 +197,26 @@ class TransaksiBawahController extends Controller
                 $errors[] = "Baris " . ($index + 1) . ": Data tidak valid (Lok SPK atau harga jual kosong).";
                 continue;
             }
-
             if (in_array($lokSpk, $processedLokSpk)) {
                 $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam data yang ditempel.";
                 continue;
             }
-
             $processedLokSpk[] = $lokSpk;
             $barang = Barang::where('lok_spk', $lokSpk)->first();
-
             if (!$barang) {
                 $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' tidak ditemukan.";
                 continue;
             }
-
             if ($barang->gudang_id != $gudangId) {
                 $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' tidak terdaftar di gudang Anda.";
                 continue;
             }
-
             if (!in_array($barang->status_barang, [1])) {
                 if (!($barang->status_barang == 4 && $grade == 'Pengambilan AM')) {
                     $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' memiliki status_barang yang tidak sesuai.";
                     continue;
                 }
             }
-
-            // Logika baru untuk cek & update tipe barang
             $tipeBaru = trim($row[6] ?? null);
             if (!empty($tipeBaru)) {
                 $tipeBaruNormalisasi = Barang::normalizeString($tipeBaru);
@@ -205,19 +224,15 @@ class TransaksiBawahController extends Controller
                     $tipeLama = $barang->tipe;
                     $barang->tipe = $tipeBaru;
                     $barang->save();
-                    
-                    $pesanHistory = "1. tipe ($tipeLama) menjadi ($tipeBaru)";
                     HistoryEditBarang::create([
                         'lok_spk'   => $barang->lok_spk,
-                        'update'    => $pesanHistory,
+                        'update'    => "1. tipe ($tipeLama) menjadi ($tipeBaru)",
                         'user_id'   => Auth::id(),
                     ]);
                 }
             }
-
             $tipe = $barang->tipe;
             $tipe_normalisasi = $barang->tipe_normalisasi;
-
             $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
                 ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
                 ->whereDate('t_faktur_bawah.tgl_jual', $tglJual)
@@ -225,41 +240,11 @@ class TransaksiBawahController extends Controller
                 ->where('t_faktur_bawah.grade', $grade)
                 ->pluck('t_jual_bawah.harga')
                 ->unique();
-
             if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
                 $hargaList = $hargaSebelumnya->implode(', ');
                 $errors[] = "Baris " . ($index + 1) . ": Harga jual " . ($hargaJual / 1000) . " berbeda dengan transaksi sebelumnya untuk tipe '$tipe', grade '$grade' pada tanggal " . Carbon::parse($tglJual)->format('d-M-Y') . " (harga sebelumnya: ".($hargaList/1000).").";
                 continue;
             }
-            
-
-            // // 1. Dapatkan tipe dan tipe_normalisasi dari barang yang sedang diproses
-            // $tipe = $barang->tipe;
-            // $tipe_normalisasi = $barang->tipe_normalisasi;
-
-            // // 2. Tentukan rentang tanggal (hari ini dan 13 hari sebelumnya, total 14 hari)
-            // $tanggalAkhir = Carbon::parse($tglJual)->endOfDay();
-            // $tanggalMulai = Carbon::parse($tglJual)->subDays(13)->startOfDay();
-
-            // // 3. Cari semua harga unik untuk tipe dan grade yang sama dalam 14 hari terakhir
-            // $hargaSebelumnya = TransaksiJualBawah::join('t_barang', 't_jual_bawah.lok_spk', '=', 't_barang.lok_spk')
-            //     ->join('t_faktur_bawah', 't_faktur_bawah.nomor_faktur', '=', 't_jual_bawah.nomor_faktur')
-            //     ->whereBetween('t_faktur_bawah.tgl_jual', [$tanggalMulai, $tanggalAkhir])
-            //     ->where('t_barang.tipe_normalisasi', $tipe_normalisasi)
-            //     ->where('t_faktur_bawah.grade', $grade)
-            //     ->pluck('t_jual_bawah.harga')
-            //     ->unique();
-
-            // // 4. Jika ada harga sebelumnya dan harga saat ini tidak ada dalam daftar, berikan error
-            // if ($hargaSebelumnya->count() > 0 && !$hargaSebelumnya->contains($hargaJual)) {
-            //     // Format daftar harga sebelumnya untuk pesan error
-            //     $hargaList = $hargaSebelumnya->map(function($harga) {
-            //         return $harga / 1000;
-            //     })->implode(', ');
-
-            //     $errors[] = "Baris " . ($index + 1) . ": Harga jual (" . ($hargaJual / 1000) . ") tidak konsisten. Harga untuk tipe '$tipe' dan grade '$grade' dalam 7 hari terakhir adalah: [$hargaList].";
-            //     continue;
-            // }
             
             $totalHargaJual += $hargaJual;
             $validLokSpk[] = [ 'lok_spk' => $lokSpk, 'harga_jual' => $hargaJual ];
@@ -268,6 +253,7 @@ class TransaksiBawahController extends Controller
             return redirect()->back()->with('errors', $errors)->withInput();
         }
         
+        // 6. Proses penyimpanan ke database
         try {
             DB::beginTransaction();
 
@@ -293,21 +279,17 @@ class TransaksiBawahController extends Controller
             
             $kesimpulan = null;
             if ($request->input('create_conclusion') == '1') {
-                
                 $bulanTahun = date('my', strtotime($tglJual));
                 $prefix = 'K-BW-' . $bulanTahun;
                 $count = KesimpulanBawah::where('nomor_kesimpulan', 'like', "$prefix-%")->count();
                 $nomor_kesimpulan = "$prefix-" . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
 
-                // Ambil nilai dari request
                 $total = (float) $totalHargaJual;
                 $potongan_kondisi = (float) $request->input('potongan_kondisi', 0);
-                $diskon = (float) $request->input('diskon', 0); // persen
-
-                // Hitung grand total
+                $diskon = (float) $request->input('diskon', 0);
                 $setelah_potongan = $total - $potongan_kondisi;
                 $setelah_diskon = $setelah_potongan - ($setelah_potongan * ($diskon / 100));
-                $grand_total = max($setelah_diskon, 0); // antisipasi kalau minus
+                $grand_total = max($setelah_diskon, 0);
 
                 $kesimpulan = KesimpulanBawah::create([
                     'nomor_kesimpulan' => $nomor_kesimpulan,

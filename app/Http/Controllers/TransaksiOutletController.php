@@ -94,7 +94,8 @@ class TransaksiOutletController extends Controller
         return view('pages.transaksi-jual-outlet.create',compact('gudangId'));
     }
 
-    public function store(Request $request)
+    // --- PERUBAHAN 1: Tambahkan SettingsService ke dalam parameter method ---
+    public function store(Request $request, SettingsService $settingsService)
     {
         // TAHAP 1: VALIDASI INPUT & PRASYARAT AWAL
         $request->validate([
@@ -107,6 +108,37 @@ class TransaksiOutletController extends Controller
             'foto' => 'nullable|image',
             'nominal' => 'nullable|numeric',
         ]);
+
+        // --- PERUBAHAN 2: Tambahkan blok validasi tanggal di sini ---
+        try {
+            // Ambil setting batas hari. Hasilnya null jika tidak ada.
+            $hariBatas = $settingsService->get('HARI_INPUT_FAKTUR_SEBELUM');
+
+            // Konversi tanggal jual dari input ke objek Carbon
+            $tglJualCarbon = Carbon::parse($request->input('tgl_jual'))->startOfDay();
+            $hariIni = Carbon::today();
+
+            // Aturan 1 (SELALU AKTIF): Tanggal jual tidak boleh di masa depan
+            if ($tglJualCarbon->isFuture()) {
+                throw new \Exception("Tanggal jual ({$tglJualCarbon->translatedFormat('d F Y')}) tidak boleh melebihi hari ini.");
+            }
+
+            // Aturan 2 (KONDISIONAL): Cek batas hari ke belakang HANYA JIKA settingnya ada dan valid
+            if ($hariBatas !== null && is_numeric($hariBatas) && $hariBatas >= 0) {
+                $hariBatas = (int) $hariBatas; // Konversi ke integer untuk keamanan
+                $tanggalTerlama = $hariIni->copy()->subDays($hariBatas);
+
+                if ($tglJualCarbon->lt($tanggalTerlama)) {
+                    throw new \Exception("Tanggal jual ({$tglJualCarbon->translatedFormat('d F Y')}) sudah terlalu lama. Batas maksimal adalah {$hariBatas} hari ke belakang (paling awal: {$tanggalTerlama->translatedFormat('d F Y')}).");
+                }
+            }
+            // Jika $hariBatas adalah null atau tidak valid, blok 'if' ini dilewati.
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage())->withInput();
+        }
+        // --- Akhir dari blok validasi tanggal ---
+
 
         // Cek duplikat nomor faktur di database (Fail-Fast)
         $existingFaktur = FakturOutlet::where('nomor_faktur', $request->input('nomor_faktur'))->exists();
@@ -122,19 +154,17 @@ class TransaksiOutletController extends Controller
         $dataToProcess = [];
         $processedLokSpkInFile = [];
 
-        // Ambil gudang_id dari user yang sedang login
         $gudangId = optional(Auth::user())->gudang_id;
-
         if (!$gudangId) {
             return redirect()->back()->with('error', 'Gagal memvalidasi data. User tidak terasosiasi dengan gudang manapun.');
         }
 
-        // TAHAP 2: VALIDASI KESELURUHAN ISI FILE EXCEL (TANPA MENYIMPAN KE DB)
+        // TAHAP 2: VALIDASI KESELURUHAN ISI FILE EXCEL
         $file = $request->file('filedata');
         $data = Excel::toArray([], $file);
 
         foreach ($data[0] as $index => $row) {
-            if ($index === 0) continue; // Lewati header
+            if ($index === 0) continue;
 
             if (!isset($row[0]) || !isset($row[1])) {
                 $errors[] = "Baris " . ($index + 1) . ": Data tidak lengkap (Lok SPK atau harga jual kosong).";
@@ -144,14 +174,12 @@ class TransaksiOutletController extends Controller
             $lokSpk = $row[0];
             $hargaJual = $row[1] * 1000;
 
-            // Cek duplikat Lok SPK di dalam file yang sama
             if (in_array($lokSpk, $processedLokSpkInFile)) {
                 $errors[] = "Baris " . ($index + 1) . ": Lok SPK '$lokSpk' duplikat di dalam file Excel.";
                 continue;
             }
             $processedLokSpkInFile[] = $lokSpk;
 
-            // Cari barang di database
             $barang = Barang::where('lok_spk', $lokSpk)->first();
 
             if ($barang) {
@@ -171,20 +199,18 @@ class TransaksiOutletController extends Controller
             }
         }
 
-        // TAHAP 3: GERBANG KEPUTUSAN (ALL OR NOTHING)
-        // Jika ada satu saja error yang terkumpul, hentikan semua proses dan kembali dengan error.
+        // TAHAP 3: GERBANG KEPUTUSAN
         if (!empty($errors)) {
             return redirect()->back()->with('errors', $errors)->withInput();
         }
 
-        // Pastikan ada data untuk diproses (menangani kasus file hanya berisi header atau baris invalid)
         if (empty($dataToProcess)) {
             return redirect()->back()
                 ->with('error', 'Gagal: Tidak ada data valid yang dapat diproses dari file yang diunggah.')
                 ->withInput();
         }
 
-        // TAHAP 4: EKSEKUSI PENYIMPANAN (HANYA JIKA SEMUA DATA SEMPURNA)
+        // TAHAP 4: EKSEKUSI PENYIMPANAN
         DB::beginTransaction();
         try {
             $newFaktur = FakturOutlet::create([
@@ -221,7 +247,6 @@ class TransaksiOutletController extends Controller
                 ]);
             }
 
-            // Proses bukti pembayaran jika ada
             if ($request->hasFile('foto') && $request->filled('nominal')) {
                 $path = $request->file('foto')->store('faktur_bukti', 'public');
 
@@ -233,20 +258,18 @@ class TransaksiOutletController extends Controller
 
                 $totalNominal = FakturBuktiOutlet::where('t_faktur_id', $newFaktur->id)->sum('nominal');
 
-                // Update status lunas pada objek faktur yang sama
                 $newFaktur->is_lunas = ($totalNominal >= $newFaktur->total) ? 1 : 0;
                 $newFaktur->save();
             }
 
-            DB::commit(); // Semua query berhasil, simpan permanen perubahan.
+            DB::commit();
 
             return redirect()->route('transaksi-faktur-outlet.show', ['nomor_faktur' => $request->input('nomor_faktur')])
                 ->with('success', 'FakturOutlet berhasil disimpan. ' . count($dataToProcess) . ' barang diproses.');
 
         } catch (\Exception $e) {
-            DB::rollBack(); // Terjadi kesalahan saat menyimpan, batalkan semua query yang sudah jalan.
+            DB::rollBack();
 
-            // Catat error $e->getMessage() ke log Anda untuk proses debug.
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan pada server saat menyimpan data. Semua perubahan telah dibatalkan.')
                 ->withInput();

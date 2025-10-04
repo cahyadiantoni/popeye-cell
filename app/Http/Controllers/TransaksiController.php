@@ -94,7 +94,8 @@ class TransaksiController extends Controller
         return view('pages.transaksi-jual.create', compact('gudangId'));
     }
 
-    public function store(Request $request)
+    // --- PERUBAHAN 1: Tambahkan SettingsService ke dalam parameter method ---
+    public function store(Request $request, SettingsService $settingsService)
     {
         // 1. Validasi Input Form Awal
         $request->validate([
@@ -110,6 +111,37 @@ class TransaksiController extends Controller
             'nominal' => 'nullable|numeric',
         ]);
 
+        // --- PERUBAHAN 2: Tambahkan blok validasi tanggal di sini ---
+        try {
+            // Ambil setting batas hari. Hasilnya null jika tidak ada.
+            $hariBatas = $settingsService->get('HARI_INPUT_FAKTUR_SEBELUM'); 
+            
+            // Konversi tanggal jual dari input ke objek Carbon
+            $tglJualCarbon = Carbon::parse($request->input('tgl_jual'))->startOfDay();
+            $hariIni = Carbon::today();
+
+            // Aturan 1 (SELALU AKTIF): Tanggal jual tidak boleh di masa depan
+            if ($tglJualCarbon->isFuture()) {
+                throw new \Exception("Tanggal jual ({$tglJualCarbon->translatedFormat('d F Y')}) tidak boleh melebihi hari ini.");
+            }
+
+            // Aturan 2 (KONDISIONAL): Cek batas hari ke belakang HANYA JIKA settingnya ada dan valid
+            if ($hariBatas !== null && is_numeric($hariBatas) && $hariBatas >= 0) {
+                $hariBatas = (int) $hariBatas; // Konversi ke integer untuk keamanan
+                $tanggalTerlama = $hariIni->copy()->subDays($hariBatas);
+                
+                if ($tglJualCarbon->lt($tanggalTerlama)) {
+                    throw new \Exception("Tanggal jual ({$tglJualCarbon->translatedFormat('d F Y')}) sudah terlalu lama. Batas maksimal adalah {$hariBatas} hari ke belakang (paling awal: {$tanggalTerlama->translatedFormat('d F Y')}).");
+                }
+            }
+            // Jika $hariBatas adalah null atau tidak valid, blok 'if' ini dilewati dan tidak ada validasi batas hari ke belakang.
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage())->withInput();
+        }
+        // --- Akhir dari blok validasi tanggal ---
+
+
         // 2. Cek Duplikat Nomor Faktur di Database
         $existingFaktur = Faktur::where('nomor_faktur', $request->input('nomor_faktur'))->exists();
         if ($existingFaktur) {
@@ -121,7 +153,6 @@ class TransaksiController extends Controller
         $totalHargaJual = 0; // Ini akan menjadi subtotal sebelum diskon/potongan
         $dataToProcess = [];
         $processedLokSpkInFile = [];
-
         $gudangId = optional(Auth::user())->gudang_id;
 
         if (!$gudangId) {
@@ -176,13 +207,9 @@ class TransaksiController extends Controller
         // PERHITUNGAN TOTAL AKHIR
         $potonganKondisi = $request->input('potongan_kondisi', 0);
         $diskonPersen = $request->input('diskon', 0);
-
         $hargaSetelahPotongan = $totalHargaJual - $potonganKondisi;
-
         $diskonAmount = ($hargaSetelahPotongan * $diskonPersen) / 100;
-
         $finalTotal = $hargaSetelahPotongan - $diskonAmount;
-
         $finalTotal = ceil(max(0, $finalTotal));
 
         // 6. JIKA SEMUA VALID: Lakukan Operasi Database
