@@ -382,7 +382,7 @@ $(document).ready(function () {
                     
                     // PERUBAHAN: Tampilkan jumlah di SweetAlert dan di bawah input
                     let alertMessage = `${response.message}<br><br><b>Total di lokasi ini: ${response.location_count}</b>`;
-                    Swal.fire({ icon: icon, title: title, html: alertMessage, timer: 1000, showConfirmButton: false });
+                    Swal.fire({ icon: icon, title: title, html: alertMessage, timer: 100, showConfirmButton: false });
                     $('#locationCountDisplay').text(`Total di Lokasi Ini: ${response.location_count}`);
                     // ---------------------------------------------------------------
 

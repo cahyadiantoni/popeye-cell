@@ -270,8 +270,15 @@ class CekSOController extends Controller
             // -- TAMBAHAN BARU --
             // Hitung jumlah barang di lokasi yang sama untuk SO ini
             $locationCount = CekSOBarang::where('t_cek_so_id', $request->t_cek_so_id)
-                                        ->where('lokasi', $request->lokasi)
-                                        ->count();
+                ->where('lokasi', $request->lokasi)
+                ->whereIn('lok_spk', function ($q) use ($cekso) {
+                    $q->select('lok_spk')
+                    ->from('t_barang')
+                    ->where('gudang_id', $cekso->gudang_id)
+                    ->where('status_barang', 1);
+                })
+                ->count();
+
             // ------
             
             return response()->json([
@@ -410,8 +417,15 @@ class CekSOController extends Controller
             $summary = $this->recalculateCekSO($request->t_cek_so_id);
 
             $locationCount = CekSOBarang::where('t_cek_so_id', $request->t_cek_so_id)
-                                        ->where('lokasi', $request->lokasi)
-                                        ->count();
+                ->where('lokasi', $request->lokasi)
+                ->whereIn('lok_spk', function ($q) use ($cekso) {
+                    $q->select('lok_spk')
+                    ->from('t_barang')
+                    ->where('gudang_id', $cekso->gudang_id)
+                    ->where('status_barang', 1);
+                })
+                ->count();
+
             
             return response()->json([
                 'status'          => 'success', 
@@ -464,9 +478,15 @@ class CekSOController extends Controller
         $cekso = CekSO::findOrFail($cek_so_id);
     
         $counts = CekSOBarang::where('t_cek_so_id', $cekso->id)
-            ->select('status', DB::raw('count(*) as total'))
-            ->groupBy('status')
-            ->pluck('total', 'status');
+            ->join('t_barang as b', function ($j) use ($cekso) {
+                $j->on('b.lok_spk', '=', 't_cek_so_barang.lok_spk')
+                ->where('b.gudang_id', $cekso->gudang_id)
+                ->where('b.status_barang', 1);
+            })
+            ->select('t_cek_so_barang.status', DB::raw('count(*) as total'))
+            ->groupBy('t_cek_so_barang.status')
+            ->pluck('total', 't_cek_so_barang.status');
+
 
         $jumlahScanSistem = $counts->get(1, 0);
         $jumlahInputManual = $counts->get(3, 0);

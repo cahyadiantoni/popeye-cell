@@ -69,6 +69,12 @@
                         <span class="pcoded-mtext">Data Pendingan</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('pengambilan-am') ? 'active' : '' }}">
+                    <a href="{{ url('/pengambilan-am') }}">
+                        <span class="pcoded-micon"><i class="fas fa-box"></i></span>
+                        <span class="pcoded-mtext">Pengambilan AM</span>
+                    </a>
+                </li>
                 <li class="{{ Request::is('data-barang/create*') ? 'active' : '' }}">
                     <a href="{{ url('/data-barang/create') }}">
                         <span class="pcoded-micon"><i class="fas fa-upload"></i></span>

@@ -241,6 +241,12 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
 
     Route::resource('/notification', NotificationController::class)->middleware('auth');
 
+    Route::prefix('pengambilan-am')->middleware('auth')->name('pengambilan-am.')->group(function () {
+        Route::get('/', [DataBarangController::class, 'pengambilanAmIndex'])->name('index');
+        Route::post('/', [DataBarangController::class, 'pengambilanAmStore'])->name('store');
+        Route::delete('/{id}', [DataBarangController::class, 'pengambilanAmDestroy'])->name('destroy');
+    });
+
     Route::get('/data-barang-pendingan', [DataBarangController::class, 'pendingan'])->name('data-barang-pendingan.index');
     Route::post('/data-barang-pendingan', [DataBarangController::class, 'storePendingan'])->name('data-barang-pendingan.store');
     Route::delete('/data-barang-pendingan/{id}', [DataBarangController::class, 'deletePendingan'])->name('data-barang-pendingan.delete');
