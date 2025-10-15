@@ -97,9 +97,29 @@ class TransaksiKesimpulanController extends Controller
             $tglJual = $request->input('tgl_jual');
             $bulanTahun = date('my', strtotime($tglJual));
             $prefix = 'K-BW-' . $bulanTahun;
-            $count = KesimpulanBawah::where('nomor_kesimpulan', 'like', "$prefix-%")->count();
-            $noUrut = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
-            $nomor_kesimpulan = "$prefix-$noUrut";
+
+            // --- LOGIKA YANG DISEMPURNAKAN ---
+
+            // 1. Cari data dengan nomor_kesimpulan terbesar, langsung dari kolomnya
+            $latestKesimpulan = KesimpulanBawah::where('nomor_kesimpulan', 'like', "$prefix-%")
+                                            ->lockForUpdate() // Tetap kunci untuk keamanan saat ada request bersamaan
+                                            ->orderBy('nomor_kesimpulan', 'desc') // Diubah: Mengurutkan berdasarkan string nomor itu sendiri
+                                            ->first();
+
+            $noUrut = 1; // Nomor urut default jika belum ada data sama sekali
+
+            if ($latestKesimpulan) {
+                // Jika ada data sebelumnya, ambil nomor urut terakhir dan tambah 1
+                $lastNomor = $latestKesimpulan->nomor_kesimpulan;
+                $lastUrut = (int) substr($lastNomor, -3); // Mengambil 3 digit terakhir dari nomor
+                $noUrut = $lastUrut + 1;
+            }
+
+            // 2. Format nomor urut baru dengan padding nol di depan
+            $nomorUrutBaru = str_pad($noUrut, 3, '0', STR_PAD_LEFT);
+            $nomor_kesimpulan = "$prefix-$nomorUrutBaru";
+
+            // --- AKHIR DARI LOGIKA BARU ---
 
             $kesimpulan = KesimpulanBawah::create([
                 'nomor_kesimpulan' => $nomor_kesimpulan,
