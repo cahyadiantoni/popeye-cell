@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Barang;
 use App\Models\HistoryEditBarang;
+use App\Models\PengambilanAm;
 use App\Http\Controllers\Controller;
 use App\Models\Gudang;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 use App\Exports\DataBarangExport;
+use Illuminate\Validation\Rule;
 
 class DataBarangController extends Controller
 {
@@ -602,6 +604,138 @@ class DataBarangController extends Controller
             $query->whereHas('gudang', function ($q) use ($gudangNama) {
                 $q->where('nama_gudang', $gudangNama);
             });
+        }
+    }
+
+    public function pengambilanAmIndex(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = PengambilanAm::with(['barang.gudang', 'user'])
+                ->orderBy('tgl_ambil', 'desc');
+
+            // Filter gudang untuk non-admin
+            $user = Auth::user();
+            if ($user && $user->role !== 'admin' && $user->gudang_id) {
+                $query->whereHas('barang', function ($q) use ($user) {
+                    $q->where('gudang_id', $user->gudang_id);
+                });
+            }
+
+            return DataTables::of($query->get())
+                // samakan gaya format tanggal seperti pendingan
+                ->editColumn('tgl_ambil', function ($row) {
+                    return Carbon::parse($row->tgl_ambil)->translatedFormat('d F Y');
+                })
+                // tangani kolom relasi secara eksplisit (nested path)
+                ->addColumn('barang.tipe', function ($row) {
+                    return $row->barang->tipe ?? 'N/A';
+                })
+                ->addColumn('user.name', function ($row) {
+                    return $row->user->name ?? 'N/A';
+                })
+                // tombol aksi (hapus) – sama pola dengan pendingan
+                ->addColumn('action', function ($row) {
+                    return '
+                        <form action="' . route('pengambilan-am.destroy', $row->id) . '" method="POST" style="display:inline;">
+                            ' . csrf_field() . '
+                            ' . method_field('DELETE') . '
+                            <button type="submit" class="btn btn-danger btn-round"
+                                onclick="return confirm(\'Yakin hapus data ini? Status barang akan dikembalikan (tersedia).\')">
+                                Hapus
+                            </button>
+                        </form>
+                    ';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+
+        return view('pages.data-barang.pengambilan-am');
+    }
+
+    /**
+     * Menyimpan data Pengambilan AM baru.
+     * (sudah dengan validasi gudang & status_barang=1)
+     */
+    public function pengambilanAmStore(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'tgl_ambil' => 'required|date',
+            'lok_spk'   => [
+                'required','string',
+                Rule::exists('t_barang','lok_spk')->where(function($q) use ($user){
+                    $q->where('status_barang', 1);
+                    if ($user->role !== 'admin' && $user->gudang_id) {
+                        $q->where('gudang_id', $user->gudang_id);
+                    }
+                })
+            ],
+            'nama_am'   => 'required|string|max:255',
+                    'kode_toko' => 'nullable|string|max:255',
+            'nama_toko' => 'nullable|string|max:255',
+            'keterangan'=> 'nullable|string',
+        ],[
+            'lok_spk.exists' => 'LOK SPK tidak ditemukan / tidak tersedia / bukan di gudang Anda.'
+        ]);
+
+        $barangQuery = Barang::where('lok_spk', $request->lok_spk)
+            ->where('status_barang', 1);
+
+        if ($user->role !== 'admin' && $user->gudang_id) {
+            $barangQuery->where('gudang_id', $user->gudang_id);
+        }
+
+        $barang = $barangQuery->first();
+        if (!$barang) {
+            return back()->with('error', 'Barang tidak valid untuk diambil.')->withInput();
+        }
+
+        DB::beginTransaction();
+        try {
+            PengambilanAm::create([
+                'tgl_ambil'  => $request->tgl_ambil,
+                'lok_spk'    => $request->lok_spk,
+                'nama_am'    => $request->nama_am,
+                'kode_toko'  => $request->kode_toko,
+                'nama_toko'  => $request->nama_toko,
+                'user_id'    => Auth::id(),
+                'keterangan' => $request->keterangan,
+            ]);
+
+            // Ubah status barang menjadi 2 (Terjual)
+            $barang->update(['status_barang' => 2]);
+
+            DB::commit();
+            return redirect()->route('pengambilan-am.index')->with('success', 'Data pengambilan AM berhasil disimpan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Menghapus data Pengambilan AM (status barang dikembalikan ke 1).
+     */
+    public function pengambilanAmDestroy($id)
+    {
+        DB::beginTransaction();
+        try {
+            $pengambilan = PengambilanAm::findOrFail($id);
+            $lokSpk = $pengambilan->lok_spk;
+
+            // Kembalikan status barang -> 1
+            Barang::where('lok_spk', $lokSpk)->update(['status_barang' => 1]);
+
+            // Hapus record pengambilan
+            $pengambilan->delete();
+
+            DB::commit();
+            return redirect()->route('pengambilan-am.index')->with('success', 'Data pengambilan AM berhasil dihapus dan status barang dikembalikan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }
