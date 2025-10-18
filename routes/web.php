@@ -44,6 +44,7 @@ use App\Exports\FakturOnlineExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\HistoryTodoTransferController;
 
 
 Auth::routes();
@@ -274,6 +275,10 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
 
     Route::post('/data-setting/{setting}/toggle-active', [SettingController::class, 'toggleActive'])->name('data-setting.toggleActive');
     Route::resource('/data-setting', SettingController::class)->except(['show', 'destroy']);
+
+    Route::get('/history-todo-transfer/export-template', [HistoryTodoTransferController::class, 'exportTemplate'])->name('history-todo-transfer.exportTemplate');
+    Route::post('/history-todo-transfer/batch-paste', [HistoryTodoTransferController::class, 'batchPaste'])->name('history-todo-transfer.batchPaste');
+    Route::resource('/history-todo-transfer', HistoryTodoTransferController::class);
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {
