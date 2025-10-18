@@ -45,6 +45,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\HistoryTodoTransferController;
+use App\Http\Controllers\TokopediaBarangMasukController;
 
 
 Auth::routes();
@@ -279,6 +280,10 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/history-todo-transfer/export-template', [HistoryTodoTransferController::class, 'exportTemplate'])->name('history-todo-transfer.exportTemplate');
     Route::post('/history-todo-transfer/batch-paste', [HistoryTodoTransferController::class, 'batchPaste'])->name('history-todo-transfer.batchPaste');
     Route::resource('/history-todo-transfer', HistoryTodoTransferController::class);
+
+    Route::get('/tokopedia-barang-masuk/export-template', [TokopediaBarangMasukController::class, 'exportTemplate'])->name('tokopedia-barang-masuk.exportTemplate');
+    Route::post('/tokopedia-barang-masuk/batch-paste', [TokopediaBarangMasukController::class, 'batchPaste'])->name('tokopedia-barang-masuk.batchPaste');
+    Route::resource('/tokopedia-barang-masuk', TokopediaBarangMasukController::class);
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {

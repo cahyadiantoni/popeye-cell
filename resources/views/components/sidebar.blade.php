@@ -336,10 +336,10 @@
                         <span class="pcoded-mtext">Todo Transfer</span>
                     </a>
                 </li>
-                <li class="{{ Request::is('req-tokped') ? 'active' : '' }}">
-                    <a href="{{ url('/req-tokped') }}">
+                <li class="{{ Request::is('tokopedia-barang-masuk') ? 'active' : '' }}">
+                    <a href="{{ url('/tokopedia-barang-masuk') }}">
                         <span class="pcoded-micon"><i class="fas fa-shopping-cart"></i></span>
-                        <span class="pcoded-mtext">Request Tokped</span>
+                        <span class="pcoded-mtext">Tokopedia Barang Masuk</span>
                     </a>
                 </li>
                 <li class="{{ Request::is('req-tokped/history') ? 'active' : '' }}">
