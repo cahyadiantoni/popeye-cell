@@ -348,10 +348,10 @@
                         <span class="pcoded-mtext">Tokopedia Barang Keluar</span>
                     </a>
                 </li>
-                <li class="{{ Request::is('req-tokped/history') ? 'active' : '' }}">
-                    <a href="{{ url('/req-tokped/history') }}">
+                <li class="{{ Request::is('stok-tokopedia') ? 'active' : '' }}">
+                    <a href="{{ url('/stok-tokopedia') }}">
                         <span class="pcoded-micon"><i class="fas fa-history"></i></span>
-                        <span class="pcoded-mtext">History Tokped</span>
+                        <span class="pcoded-mtext">Stok Barang Tokped</span>
                     </a>
                 </li>
                 @if(auth()->user()->role=="admin")

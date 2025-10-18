@@ -47,6 +47,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\HistoryTodoTransferController;
 use App\Http\Controllers\TokopediaBarangMasukController;
 use App\Http\Controllers\TokopediaBarangKeluarController;
+use App\Http\Controllers\StokTokopediaController;
 
 
 Auth::routes();
@@ -289,6 +290,8 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/tokopedia-barang-keluar/export-template', [TokopediaBarangKeluarController::class, 'exportTemplate'])->name('tokopedia-barang-keluar.exportTemplate');
     Route::post('/tokopedia-barang-keluar/batch-paste', [TokopediaBarangKeluarController::class, 'batchPaste'])->name('tokopedia-barang-keluar.batchPaste');
     Route::resource('/tokopedia-barang-keluar', TokopediaBarangKeluarController::class);
+
+    Route::get('/stok-tokopedia', [StokTokopediaController::class, 'index'])->name('stok-tokopedia.index');
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {
