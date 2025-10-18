@@ -342,6 +342,12 @@
                         <span class="pcoded-mtext">Tokopedia Barang Masuk</span>
                     </a>
                 </li>
+                <li class="{{ Request::is('tokopedia-barang-keluar') ? 'active' : '' }}">
+                    <a href="{{ url('/tokopedia-barang-keluar') }}">
+                        <span class="pcoded-micon"><i class="fas fa-box"></i></span>
+                        <span class="pcoded-mtext">Tokopedia Barang Keluar</span>
+                    </a>
+                </li>
                 <li class="{{ Request::is('req-tokped/history') ? 'active' : '' }}">
                     <a href="{{ url('/req-tokped/history') }}">
                         <span class="pcoded-micon"><i class="fas fa-history"></i></span>

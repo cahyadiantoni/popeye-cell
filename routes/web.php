@@ -46,6 +46,7 @@ use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\HistoryTodoTransferController;
 use App\Http\Controllers\TokopediaBarangMasukController;
+use App\Http\Controllers\TokopediaBarangKeluarController;
 
 
 Auth::routes();
@@ -284,6 +285,10 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::get('/tokopedia-barang-masuk/export-template', [TokopediaBarangMasukController::class, 'exportTemplate'])->name('tokopedia-barang-masuk.exportTemplate');
     Route::post('/tokopedia-barang-masuk/batch-paste', [TokopediaBarangMasukController::class, 'batchPaste'])->name('tokopedia-barang-masuk.batchPaste');
     Route::resource('/tokopedia-barang-masuk', TokopediaBarangMasukController::class);
+
+    Route::get('/tokopedia-barang-keluar/export-template', [TokopediaBarangKeluarController::class, 'exportTemplate'])->name('tokopedia-barang-keluar.exportTemplate');
+    Route::post('/tokopedia-barang-keluar/batch-paste', [TokopediaBarangKeluarController::class, 'batchPaste'])->name('tokopedia-barang-keluar.batchPaste');
+    Route::resource('/tokopedia-barang-keluar', TokopediaBarangKeluarController::class);
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':adm'])->group(function () {
