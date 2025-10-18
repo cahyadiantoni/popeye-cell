@@ -283,6 +283,11 @@ Route::middleware(['auth', CheckMacAccess::class, RoleMiddleware::class . ':sale
     Route::post('/history-todo-transfer/batch-paste', [HistoryTodoTransferController::class, 'batchPaste'])->name('history-todo-transfer.batchPaste');
     Route::resource('/history-todo-transfer', HistoryTodoTransferController::class);
 
+    Route::post('/history-todo-transfer/{id}/bukti', [HistoryTodoTransferController::class, 'uploadProofs'])->name('history-todo-transfer.uploadProofs');
+    Route::get('/history-todo-transfer/{id}/bukti', [HistoryTodoTransferController::class, 'listProofs'])->name('history-todo-transfer.listProofs');
+    Route::delete('/history-todo-transfer/bukti/{proof}', [HistoryTodoTransferController::class, 'deleteProof'])->name('history-todo-transfer.deleteProof');
+    Route::get('/history-todo-transfer/bukti/{proof}/download', [HistoryTodoTransferController::class, 'downloadProof'])->name('history-todo-transfer.downloadProof');
+
     Route::get('/tokopedia-barang-masuk/export-template', [TokopediaBarangMasukController::class, 'exportTemplate'])->name('tokopedia-barang-masuk.exportTemplate');
     Route::post('/tokopedia-barang-masuk/batch-paste', [TokopediaBarangMasukController::class, 'batchPaste'])->name('tokopedia-barang-masuk.batchPaste');
     Route::resource('/tokopedia-barang-masuk', TokopediaBarangMasukController::class);

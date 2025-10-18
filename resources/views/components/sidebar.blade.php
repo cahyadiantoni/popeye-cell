@@ -354,7 +354,7 @@
                         <span class="pcoded-mtext">Stok Barang Tokped</span>
                     </a>
                 </li>
-                @if(auth()->user()->role=="admin")
+                <!-- @if(auth()->user()->role=="admin")
                 <li class="{{ Request::is('item-tokped') ? 'active' : '' }}">
                     <a href="{{ url('/item-tokped') }}">
                         <span class="pcoded-micon"><i class="fas fa-box"></i></span>
@@ -367,7 +367,7 @@
                         <span class="pcoded-mtext">Setting Administrasi</span>
                     </a>
                 </li>
-                @endif
+                @endif -->
             </ul>
         @endif
     </div>

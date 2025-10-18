@@ -26,4 +26,9 @@ class HistoryTodoTransfer extends Model
         'tgl_transfer' => 'date',
         'nominal' => 'double',
     ];
+
+    public function proofs()
+    {
+        return $this->hasMany(HistoryTodoTransferProof::class, 'history_todo_transfer_id');
+    }
 }

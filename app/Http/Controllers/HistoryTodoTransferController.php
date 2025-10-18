@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Exports\HistoryTodoTransferTemplateExport;
 use App\Models\HistoryTodoTransfer;
+use App\Models\HistoryTodoTransferProof;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +39,10 @@ class HistoryTodoTransferController extends Controller
             });
         }
 
-        $items = $q->orderBy('tgl_transfer', 'desc')->orderBy('id','desc')->get();
+        $items = $q->withCount('proofs')
+           ->orderBy('tgl_transfer','desc')
+           ->orderBy('id','desc')
+           ->get();
 
         return view('pages.history-todo-transfer.index', [
             'items'      => $items,
@@ -285,5 +290,84 @@ class HistoryTodoTransferController extends Controller
         // Normalisasi tanggal (Y-m-d)
         $data['tgl_transfer'] = Carbon::parse($data['tgl_transfer'])->format('Y-m-d');
         return $data;
+    }
+
+    public function uploadProofs(Request $request, $id)
+    {
+        $todo = HistoryTodoTransfer::findOrFail($id);
+
+        $request->validate([
+            'files'   => ['required','array','min:1'],
+            'files.*' => ['file','max:5120', 'mimetypes:image/jpeg,image/png,image/webp,application/pdf']
+            // max 5 MB/berkas; sesuaikan jika perlu
+        ],[
+            'files.*.mimetypes' => 'File harus jpg/jpeg/png/webp atau pdf.',
+            'files.*.max' => 'Maksimal ukuran per file 5 MB.',
+        ]);
+
+        $saved = [];
+        foreach ($request->file('files') as $file) {
+            $path = $file->store('proofs/todo-transfer/'.$todo->id, 'public');
+            $saved[] = HistoryTodoTransferProof::create([
+                'history_todo_transfer_id' => $todo->id,
+                'path'          => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type'     => $file->getClientMimeType(),
+                'size'          => $file->getSize(),
+                'uploaded_by'   => optional($request->user())->id,
+            ]);
+        }
+
+        // Balikan JSON utk AJAX
+        return response()->json([
+            'status' => 'success',
+            'message'=> count($saved).' file berhasil diupload.',
+            'data'   => $saved
+        ]);
+    }
+
+    /** List proofs (JSON) untuk modal "Lihat Bukti" */
+    public function listProofs($id)
+    {
+        $todo = HistoryTodoTransfer::findOrFail($id);
+        $list = $todo->proofs()
+            ->latest()
+            ->get()
+            ->map(function($p) {
+                return [
+                    'id'            => $p->id,
+                    'name'          => $p->original_name,
+                    'url'           => Storage::disk('public')->url($p->path),
+                    'mime'          => $p->mime_type,
+                    'size'          => $p->size,
+                    'download_url'  => route('history-todo-transfer.downloadProof', $p->id),
+                ];
+            });
+
+        return response()->json(['status'=>'success','data'=>$list]);
+    }
+
+    /** Hapus satu bukti */
+    public function deleteProof($proofId)
+    {
+        $proof = HistoryTodoTransferProof::findOrFail($proofId);
+        // Optional: cek policy kepemilikan di sini
+        Storage::disk('public')->delete($proof->path);
+        $proof->delete();
+        return response()->json(['status'=>'success','message'=>'Bukti dihapus.']);
+    }
+
+    /** Download/preview bukti */
+    public function downloadProof($proofId)
+    {
+        $proof = HistoryTodoTransferProof::findOrFail($proofId);
+        if (!Storage::disk('public')->exists($proof->path)) {
+            abort(404);
+        }
+        // Untuk PDF & gambar, biarkan browser preview (inline)
+        return response()->file(
+            Storage::disk('public')->path($proof->path),
+            ['Content-Type' => $proof->mime_type]
+        );
     }
 }

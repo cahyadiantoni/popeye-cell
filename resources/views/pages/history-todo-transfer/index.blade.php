@@ -3,6 +3,7 @@
 @section('title','History Todo Transfer')
 
 @section('content')
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <div class="main-body">
   <div class="page-wrapper">
     <div class="page-header">
@@ -121,6 +122,7 @@
                       <th>Nama Rek</th>
                       <th class="text-end">Nominal</th>
                       <th>Keterangan</th>
+                      <th>Bukti</th>
                       <th>Aksi</th>
                     </tr>
                   </thead>
@@ -136,6 +138,25 @@
                         <td>{{ $it->nama_norek }}</td>
                         <td class="text-end">{{ number_format($it->nominal, 0, ',', '.') }}</td>
                         <td>{{ $it->keterangan }}</td>
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary btn-upload-bukti"
+                                    data-id="{{ $it->id }}"
+                                    data-nama="{{ $it->nama_toko ?? $it->kode_toko }}">
+                              Upload
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary btn-lihat-bukti"
+                                    data-id="{{ $it->id }}">
+                              Lihat
+                              @if($it->proofs_count > 0)
+                                <span class="badge bg-secondary">{{ $it->proofs_count }}</span>
+                              @endif
+                            </button>
+                          </div>
+                        </td>
                         <td>
                           <button class="btn btn-warning btn-sm btn-round btn-edit"
                             data-id="{{ $it->id }}"
@@ -277,9 +298,74 @@
   </div>
 </div>
 
+<div class="modal fade" id="uploadBuktiModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="uploadBuktiForm" enctype="multipart/form-data">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title">Upload Bukti</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label">Pilih File (bisa banyak)</label>
+            <input type="file" class="form-control" name="files[]" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple required>
+            <small class="text-muted">Maks 5MB per file. Format: JPG, PNG, WEBP, PDF.</small>
+          </div>
+          <input type="hidden" id="upload_bukti_todo_id" name="todo_id">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="lihatBuktiModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bukti Transfer</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="buktiList" class="row g-3">
+          {{-- akan diisi via JS --}}
+        </div>
+        <small class="text-muted d-block mt-2">Klik item untuk preview / download.</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 {{-- Scripts --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+$(document).ready(function () {
+  $('table.table').DataTable({
+    pageLength: 25,
+    order: [[0, 'desc']], // urut berdasarkan kolom Tgl Transfer desc
+    columnDefs: [
+      { targets: -1, orderable: false, searchable: false }, // kolom aksi
+      { targets: -2, orderable: false, searchable: false }  // kolom bukti
+    ],
+    language: {
+      search: "Cari:",
+      lengthMenu: "Tampilkan _MENU_ data per halaman",
+      info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+      paginate: {
+        previous: "Sebelumnya",
+        next: "Berikutnya"
+      },
+      zeroRecords: "Tidak ada data yang cocok",
+    }
+  });
+});
+
 document.addEventListener('DOMContentLoaded', function() {
   // EDIT modal populate
   document.querySelectorAll('.btn-edit').forEach(btn => {
@@ -333,6 +419,162 @@ document.addEventListener('DOMContentLoaded', function() {
            });
         }
       });
+    });
+  });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const uploadModalEl = document.getElementById('uploadBuktiModal');
+  const lihatModalEl  = document.getElementById('lihatBuktiModal');
+  const buktiListEl   = document.getElementById('buktiList');
+
+  const uploadModal = uploadModalEl ? new bootstrap.Modal(uploadModalEl) : null;
+  const lihatModal  = lihatModalEl  ? new bootstrap.Modal(lihatModalEl)  : null;
+
+    // OPEN UPLOAD MODAL
+  document.querySelectorAll('.btn-upload-bukti').forEach(btn => {
+    btn.addEventListener('click', function(){
+      if (!uploadModal) return;
+      const id = this.dataset.id;
+      document.getElementById('upload_bukti_todo_id').value = id;
+      document.getElementById('uploadBuktiForm').reset();
+      uploadModal.show();
+    });
+  });
+
+  // SUBMIT UPLOAD
+  document.getElementById('uploadBuktiForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const id = document.getElementById('upload_bukti_todo_id').value;
+    const fd = new FormData(this);
+    // hapus field "todo_id" dari payload, url sudah bawa id
+    fd.delete('todo_id');
+
+    fetch("{{ url('/history-todo-transfer') }}/"+id+"/bukti", {
+      method: 'POST',
+      headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json'},
+      body: fd
+    }).then(r => r.json())
+      .then(resp => {
+        if(resp.status === 'success'){
+          uploadModal.hide();
+          Swal.fire({icon:'success',title:resp.message,timer:1300,showConfirmButton:false})
+            .then(()=>location.reload());
+        } else {
+          throw new Error(resp.message || 'Gagal upload.');
+        }
+      }).catch(err=>{
+        Swal.fire({icon:'error',title:'Error',text:err.message});
+      });
+  });
+
+    // OPEN LIHAT MODAL
+  document.querySelectorAll('.btn-lihat-bukti').forEach(btn => {
+    btn.addEventListener('click', function(){
+      if (!lihatModal || !buktiListEl) return;
+      const id = this.dataset.id;
+      buktiListEl.innerHTML = '<div class="col-12 text-center text-muted">Memuat...</div>';
+      fetch("{{ url('/history-todo-transfer') }}/"+id+"/bukti", { headers: {'Accept':'application/json'} })
+        .then(r=>r.json())
+        .then(resp=>{
+          if(resp.status !== 'success') throw new Error('Gagal memuat.');
+          const items = resp.data || [];
+          if(items.length === 0){
+            buktiListEl.innerHTML = '<div class="col-12 text-center text-muted">Belum ada bukti.</div>';
+          } else {
+            buktiListEl.innerHTML = items.map(it => {
+              const isImage = it.mime.startsWith('image/');
+              const thumb = isImage
+                ? `<img src="${it.url}" class="img-fluid rounded" style="max-height:120px;object-fit:cover;">`
+                : `<div class="p-3 border rounded text-center">PDF<br><small>${it.name}</small></div>`;
+              return `
+                <div class="col-6 col-md-4">
+                  <a href="${it.download_url}" target="_blank" class="text-decoration-none text-dark">
+                    ${thumb}
+                  </a>
+                  <div class="d-flex justify-content-between align-items-center mt-1">
+                    <small class="text-truncate" title="${it.name}">${it.name}</small>
+                    <button class="btn btn-sm btn-outline-danger btn-del-proof" data-id="${it.id}">Hapus</button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+            // bind delete...
+            buktiListEl.querySelectorAll('.btn-del-proof').forEach((dbtn) => {
+              dbtn.addEventListener('click', function (e) {
+                e.preventDefault();
+            
+                const pid  = this.dataset.id;
+                const card = this.closest('.col-6, .col-md-4');            // kartu bukti
+                const lihatModalEl = document.getElementById('lihatBuktiModal');
+                const lihatModal   = bootstrap.Modal.getInstance(lihatModalEl) || new bootstrap.Modal(lihatModalEl);
+            
+                // Tutup modal lihat dulu
+                lihatModal.hide();
+            
+                // Setelah modal benar-benar tertutup, baru munculkan konfirmasi hapus
+                const onHidden = () => {
+                  lihatModalEl.removeEventListener('hidden.bs.modal', onHidden);
+            
+                  Swal.fire({
+                    title: 'Hapus bukti ini?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, hapus',
+                    cancelButtonText: 'Batal'
+                  }).then((res) => {
+                    if (!res.isConfirmed) {
+                      // Kalau batal, boleh tampilkan lagi modal lihatnya (opsional)
+                      lihatModal.show();
+                      return;
+                    }
+            
+                    fetch("{{ url('/history-todo-transfer/bukti') }}/" + pid, {
+                      method: 'POST',
+                      headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                      },
+                      body: new URLSearchParams({ _method: 'DELETE' })
+                    })
+                    .then((r) => r.json())
+                    .then((res2) => {
+                      if (res2.status === 'success') {
+                        // Hapus kartu di DOM (kalau ingin buka lagi modalnya dengan list yang sudah berkurang)
+                        if (card) card.remove();
+                        Swal.fire({ icon: 'success', title: 'Terhapus', timer: 1200, showConfirmButton: false })
+                          .then(() => {
+                            // Opsi 1: buka lagi modal tanpa reload (list sudah ter-update karena card dihapus)
+                            // lihatModal.show();
+            
+                            // Opsi 2: refresh halaman biar pasti sinkron semua badge/jumlah
+                            location.reload();
+                          });
+                      } else {
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: res2.message || 'Terjadi kesalahan' })
+                          .then(() => lihatModal.show());
+                      }
+                    })
+                    .catch(() => {
+                      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan' })
+                        .then(() => lihatModal.show());
+                    });
+                  });
+                };
+            
+                // Pastikan konfirmasi muncul setelah animasi close modal selesai
+                lihatModalEl.addEventListener('hidden.bs.modal', onHidden, { once: true });
+              });
+            });
+          }
+          lihatModal.show();
+        })
+        .catch(()=> {
+          buktiListEl.innerHTML = '<div class="col-12 text-center text-danger">Gagal memuat bukti.</div>';
+          lihatModal.show();
+        });
     });
   });
 });
