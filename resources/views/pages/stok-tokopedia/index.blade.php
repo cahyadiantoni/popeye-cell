@@ -3,6 +3,8 @@
 @section('title','Stok Barang Tokopedia')
 
 @section('content')
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 <div class="main-body">
   <div class="page-wrapper">
     <div class="page-header">
@@ -50,7 +52,7 @@
           <div class="card">
             <div class="card-block">
               <div class="dt-responsive table-responsive">
-                <table class="table table-striped table-bordered nowrap" style="width: 100%;">
+                <table id="stokTable" class="table table-striped table-bordered nowrap" style="width: 100%;">
                   <thead>
                     <tr>
                       <th>Nama Barang</th>
@@ -125,4 +127,27 @@
 
   </div>
 </div>
+<script>
+$(document).ready(function () {
+  $('#stokTable').DataTable({
+    pageLength: 25,
+    order: [[0, 'asc']], // urut berdasarkan nama barang
+    columnDefs: [
+      { targets: 1, orderable: false, searchable: false }, // kolom History
+      { targets: 2, className: 'text-end' }                // kolom stok rata kanan
+    ],
+    language: {
+      search: "Cari:",
+      lengthMenu: "Tampilkan _MENU_ data per halaman",
+      info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+      paginate: {
+        previous: "Sebelumnya",
+        next: "Berikutnya"
+      },
+      zeroRecords: "Tidak ada data yang cocok",
+    }
+  });
+});
+</script>
+
 @endsection

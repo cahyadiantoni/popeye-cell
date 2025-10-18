@@ -3,6 +3,8 @@
 @section('title','Tokopedia Barang Keluar')
 
 @section('content')
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 <div class="main-body">
   <div class="page-wrapper">
     <div class="page-header">
@@ -93,7 +95,7 @@
               <button class="btn btn-info btn-round" data-bs-toggle="modal" data-bs-target="#batchModal">Upload (Copy-Paste)</button>
               <hr>
               <div class="dt-responsive table-responsive">
-                <table class="table table-striped table-bordered nowrap" style="width:100%">
+                <table id="bkTable" class="table table-striped table-bordered nowrap" style="width:100%">
                   <thead>
                     <tr>
                       <th>Tgl Keluar</th>
@@ -249,6 +251,29 @@
 
 {{-- Scripts --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function () {
+  $('#bkTable').DataTable({
+    pageLength: 25,
+    order: [[0, 'desc']], // urut Tgl Keluar terbaru
+    columnDefs: [
+      { targets: -1, orderable: false, searchable: false }, // kolom aksi
+      { targets: 5, className: 'text-end' }                 // kolom qty rata kanan
+    ],
+    language: {
+      search: "Cari:",
+      lengthMenu: "Tampilkan _MENU_ data per halaman",
+      info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+      paginate: {
+        previous: "Sebelumnya",
+        next: "Berikutnya"
+      },
+      zeroRecords: "Tidak ada data yang cocok",
+    }
+  });
+});
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // EDIT populate
