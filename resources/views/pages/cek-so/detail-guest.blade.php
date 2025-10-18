@@ -33,7 +33,7 @@
             
             <div class="card">
                 <div class="card-block table-responsive">
-                    <table class="table table-bordered text-center">
+                    <table class="table table-bordered text-center mb-0">
                         <thead class="table-dark">
                             <tr>
                                 <th>Kode SO</th>
@@ -67,26 +67,54 @@
                                     @endswitch
                                 </td>
                                 <td>
-                                    @if($cekso->is_finished) <span class="badge bg-success">Selesai</span>
-                                    @else <span class="badge bg-warning text-dark">Belum Selesai</span> @endif
+                                    @if($cekso->is_finished)
+                                        <span class="badge bg-success">Selesai</span>
+                                    @else
+                                        <span class="badge bg-warning text-dark">Belum Selesai</span>
+                                    @endif
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+
+                    {{-- Tambahkan ringkasan jumlah BOX / BTG / OTHER di bawah tabel --}}
+                    <div class="p-3 border-top bg-light text-center">
+                        <span class="badge bg-dark fs-6 me-2 px-3 py-2">
+                            BOX: <strong>{{ $jumlah_box }}</strong>
+                        </span>
+                        <span class="badge bg-secondary fs-6 me-2 px-3 py-2">
+                            BTG: <strong>{{ $jumlah_btg }}</strong>
+                        </span>
+                        <span class="badge bg-info text-dark fs-6 px-3 py-2">
+                            OTHER: <strong>{{ $jumlah_other }}</strong>
+                        </span>
+                    </div>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-body">
                     <div class="row g-3 align-items-end">
-                        <div class="col-md-6">
-                            <label for="petugas_scan_input" class="form-label fw-bold">Petugas Scan (Anda)</label>
+                        <div class="col-md-4">
+                            <label for="petugas_scan_input" class="form-label fw-bold">Petugas Scan (Anda) <span class="text-danger">*</span></label>
                             <input type="text" id="petugas_scan_input" class="form-control form-control-lg" placeholder="Masukkan nama Anda" required>
                             <div class="form-text">Nama ini akan dicatat untuk setiap item yang Anda input/scan.</div>
                         </div>
-                        <div class="col-md-6">
-                            <label for="lokasi_input" class="form-label fw-bold">Lokasi Pengecekan</label>
+
+                        <div class="col-md-4">
+                            <label for="lokasi_input" class="form-label fw-bold">Lokasi Pengecekan <span class="text-danger">*</span></label>
                             <input type="text" id="lokasi_input" class="form-control form-control-lg" placeholder="Contoh: Rak A-01">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="kelengkapan_update_input" class="form-label fw-bold">Kelengkapan Update <span class="text-danger">*</span></label>
+                            <select id="kelengkapan_update_input" class="form-select form-select-lg" required>
+                            <option value="">-- Pilih Kelengkapan Update --</option>
+                            <option value="BOX">BOX</option>
+                            <option value="BTG">BTG</option>
+                            <option value="OTHER">OTHER</option>
+                            </select>
+                            <div class="form-text">Wajib pilih sebelum scan / input / upload.</div>
                         </div>
                     </div>
                 </div>
@@ -142,6 +170,7 @@
                                 <th>Status Scan</th>
                                 <th>Petugas Scan</th>
                                 <th>Lokasi</th>
+                                <th>Kelengkapan Update</th>
                             </tr>
                         </thead>
                     </table>
@@ -179,6 +208,7 @@
                                 <th>Status Input</th>
                                 <th>Petugas Scan</th>
                                 <th>Lokasi</th>
+                                <th>Kelengkapan Update</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -201,6 +231,7 @@
                 <div class="modal-body">
                     <input type="hidden" id="upload_petugas_scan" name="petugas_scan">
                     <input type="hidden" id="upload_lokasi" name="lokasi">
+                    <input type="hidden" id="upload_kelengkapan_update" name="kelengkapan_update">
                     <div class="mb-3"><a href="{{ asset('files/template cek so.xlsx') }}" class="btn btn-primary btn-round" download>Download Template Excel</a></div>
                     <div class="mb-3">
                         <label for="filedata" class="form-label">Upload File Excel</label>
@@ -224,6 +255,7 @@
                     <input type="hidden" name="t_cek_so_id" value="{{ $cekso->id }}">
                     <input type="hidden" id="manual_petugas_scan" name="petugas_scan">
                     <input type="hidden" id="manual_lokasi" name="lokasi">
+                    <input type="hidden" id="manual_kelengkapan_update" name="kelengkapan_update">
                     <div class="mb-3">
                         <label for="lok_spk" class="form-label">LOK_SPK</label>
                         <input type="text" class="form-control" id="lok_spk" name="lok_spk" placeholder="Masukkan LOK_SPK" required>
@@ -247,7 +279,9 @@ $(document).ready(function () {
         ajax: { url: "{{ route('get-cekso.barangs', $cekso->id) }}", data: function (d) { d.scan_status = $('#filterScan').val(); d.petugas_scan = $('#filterPetugas').val(); d.lokasi = $('#filterLokasi').val(); } },
         columns: [
             { data: null, name: 'nomor', orderable: false, searchable: false, render: (data, type, row, meta) => meta.row + 1 },
-            { data: 'lok_spk', name: 'lok_spk' }, { data: 'jenis', name: 'jenis', defaultContent: '-' }, { data: 'tipe', name: 'tipe', defaultContent: '-' }, { data: 'kelengkapan', name: 'kelengkapan', defaultContent: '-' },
+            { data: 'lok_spk', name: 'lok_spk' }, { data: 'jenis', name: 'jenis', defaultContent: '-' },
+            { data: 'tipe', name: 'tipe', defaultContent: '-' },
+            { data: 'kelengkapan', name: 'kelengkapan', defaultContent: '-' },
             {
                 data: 'scan_status_val', name: 'scan_status_val', orderable: false, searchable: false,
                 render: function(data) {
@@ -257,7 +291,9 @@ $(document).ready(function () {
                     return '<span class="badge bg-danger">Belum Discan</span>';
                 }
             },
-            { data: 'petugas_scan', name: 'petugas_scan', defaultContent: '-' }, { data: 'lokasi', name: 'lokasi', defaultContent: '-' }
+            { data: 'petugas_scan', name: 'petugas_scan', defaultContent: '-' },
+            { data: 'lokasi', name: 'lokasi', defaultContent: '-' },
+            { data: 'kelengkapan_update', name: 'kelengkapan_update', defaultContent: '-' }
         ]
     });
 
@@ -278,7 +314,7 @@ $(document).ready(function () {
             { data: 'status_badge', name: 'status_badge', orderable: false, searchable: false },
             { data: 'petugas_scan', name: 'petugas_scan', defaultContent: '-' },
             { data: 'lokasi', name: 'lokasi', defaultContent: '-' },
-
+            { data: 'kelengkapan_update', name: 'kelengkapan_update', defaultContent: '-' },
             // === Kolom Aksi (baru) ===
             { data: null, name: 'aksi', orderable: false, searchable: false,
             render: function (data, type, row) {
@@ -295,7 +331,7 @@ $(document).ready(function () {
     // Event handler untuk semua filter
     $('#filterScan, #filterPetugas, #filterLokasi').change(() => table.ajax.reload());
     $('#filterPetugasNa, #filterLokasiNa').change(() => tableNa.ajax.reload());
-
+    
     // Sinkronkan "Lokasi Pengecekan" -> filter lokasi tabel
     function applyLokasiToFilters(val) {
         const v = (val || '').trim();
@@ -365,6 +401,17 @@ $(document).ready(function () {
             $('#petugas_scan_input').focus();
             return false;
         }
+        if (!$('#kelengkapan_update_input').val()) {
+            Swal.fire('Error', 'Pilih "Kelengkapan Update" terlebih dahulu!', 'error');
+            $('#kelengkapan_update_input').focus();
+            return false;
+        }
+        if ($('#lokasi_input').val().trim() === '') {
+          Swal.fire('Error', 'Isi "Lokasi Pengecekan" dulu, ya!', 'error');
+          $('#lokasi_input').focus();
+          return false;
+        }
+
         return true;
     }
 
@@ -372,7 +419,14 @@ $(document).ready(function () {
     function submitScan(lok_spk) {
         $.ajax({
             url: "{{ route('cekso.scan') }}", method: "POST",
-            data: { _token: "{{ csrf_token() }}", t_cek_so_id: "{{ $cekso->id }}", lok_spk: lok_spk, petugas_scan: $('#petugas_scan_input').val().trim(), lokasi: $('#lokasi_input').val().trim() },
+            data: {                                  // ← perbaiki baris ini
+                _token: "{{ csrf_token() }}",
+                t_cek_so_id: "{{ $cekso->id }}",
+                lok_spk: lok_spk,
+                petugas_scan: $('#petugas_scan_input').val().trim(),
+                lokasi: $('#lokasi_input').val().trim(),
+                kelengkapan_update: $('#kelengkapan_update_input').val()
+            },
             success: function (response) {
                 $('#loading').addClass('d-none');
                 $('#scanInput').focus();
@@ -405,6 +459,7 @@ $(document).ready(function () {
         if(isPetugasLokasiValid()){
             $('#upload_petugas_scan').val($('#petugas_scan_input').val().trim());
             $('#upload_lokasi').val($('#lokasi_input').val().trim());
+            $('#upload_kelengkapan_update').val($('#kelengkapan_update_input').val());
             new bootstrap.Modal(document.getElementById('addBarangModal')).show();
         }
     });
@@ -413,6 +468,7 @@ $(document).ready(function () {
         if(isPetugasLokasiValid()){
             $('#manual_petugas_scan').val($('#petugas_scan_input').val().trim());
             $('#manual_lokasi').val($('#lokasi_input').val().trim());
+            $('#manual_kelengkapan_update').val($('#kelengkapan_update_input').val());
             $('#formManualLokSpk').find("input[name='lok_spk']").val('');
             $('#manualAlert').html('');
             new bootstrap.Modal(document.getElementById('addManualModal')).show();
@@ -464,7 +520,7 @@ $(document).ready(function () {
             }
         });
     });
-
+    
     // Handler delete baris NA
     $('#barangNaTable').on('click', '.btn-del-na', function () {
         const $btn = $(this);

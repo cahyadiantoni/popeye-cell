@@ -69,79 +69,132 @@ class CekSOController extends Controller
         return response()->json(['next_number' => $nextNumber]);
     }
     
+    // public function show($id)
+    // {
+    //     $cekso = CekSO::findOrFail($id);
+    //     if ($cekso->is_finished) {
+    //         // Jika sudah selesai, langsung tampilkan view pesan dan hentikan eksekusi
+    //         return view('pages.cek-so.finished-message');
+    //     }
+    //     if ($cekso->is_finished == 0) {
+    //         $this->recalculateCekSO($id);
+    //         $cekso->refresh();
+    //         $cekso->waktu_selesai = "-";
+    //         $cekso->durasi = "-";
+    //     } else {
+    //         $mulai = Carbon::parse($cekso->waktu_mulai);
+    //         $selesai = Carbon::parse($cekso->waktu_selesai);
+    //         $cekso->durasi = $mulai->diff($selesai)->format('%H:%I:%S');
+    //         $cekso->waktu_selesai = Carbon::parse($cekso->waktu_selesai)->format('H:i (d M y)');
+    //     }
+        
+    //     $cekso->waktu_mulai = Carbon::parse($cekso->waktu_mulai)->format('H:i (d M y)');
+    //     $cekso->nama_gudang = $cekso->gudang->nama_gudang ?? '-';
+    //     $ceksoBarangnas = CekSOBarang::where('t_cek_so_id', $id)->whereNotIn('lok_spk', function ($query) use ($cekso) { $query->select('lok_spk')->from('t_barang')->where('gudang_id', $cekso->gudang_id)->where('status_barang', 1); })->get();
+        
+    //     $petugasScans = CekSOBarang::where('t_cek_so_id', $id)->whereNotNull('petugas_scan')->distinct()->pluck('petugas_scan');
+    //     $lokasis = CekSOBarang::where('t_cek_so_id', $id)->whereNotNull('lokasi')->distinct()->pluck('lokasi');
+
+    //     return view('pages.cek-so.detail', compact('cekso', 'ceksoBarangnas', 'petugasScans', 'lokasis'));
+    // }
+    
     public function show($id)
     {
-        $cekso = CekSO::findOrFail($id);
-        if ($cekso->is_finished) {
-            // Jika sudah selesai, langsung tampilkan view pesan dan hentikan eksekusi
-            return view('pages.cek-so.finished-message');
-        }
-        if ($cekso->is_finished == 0) {
-            $this->recalculateCekSO($id);
-            $cekso->refresh();
-            $cekso->waktu_selesai = "-";
-            $cekso->durasi = "-";
-        } else {
-            $mulai = Carbon::parse($cekso->waktu_mulai);
-            $selesai = Carbon::parse($cekso->waktu_selesai);
-            $cekso->durasi = $mulai->diff($selesai)->format('%H:%I:%S');
-            $cekso->waktu_selesai = Carbon::parse($cekso->waktu_selesai)->format('H:i (d M y)');
-        }
-        
-        $cekso->waktu_mulai = Carbon::parse($cekso->waktu_mulai)->format('H:i (d M y)');
-        $cekso->nama_gudang = $cekso->gudang->nama_gudang ?? '-';
-        $ceksoBarangnas = CekSOBarang::where('t_cek_so_id', $id)->whereNotIn('lok_spk', function ($query) use ($cekso) { $query->select('lok_spk')->from('t_barang')->where('gudang_id', $cekso->gudang_id)->where('status_barang', 1); })->get();
-        
-        $petugasScans = CekSOBarang::where('t_cek_so_id', $id)->whereNotNull('petugas_scan')->distinct()->pluck('petugas_scan');
-        $lokasis = CekSOBarang::where('t_cek_so_id', $id)->whereNotNull('lokasi')->distinct()->pluck('lokasi');
-
-        return view('pages.cek-so.detail', compact('cekso', 'ceksoBarangnas', 'petugasScans', 'lokasis'));
+        return redirect()->route('cek-so.show-guest', $id);
     }
     
     public function showGuest($id)
     {
         // Logikanya sama persis dengan method show()
         $cekso = CekSO::findOrFail($id);
+
         if ($cekso->is_finished) {
             // Jika sudah selesai, langsung tampilkan view pesan dan hentikan eksekusi
             return view('pages.cek-so.finished-message');
         }
+
         if ($cekso->is_finished == 0) {
             $this->recalculateCekSO($id);
             $cekso->refresh();
             $cekso->waktu_selesai = "-";
             $cekso->durasi = "-";
         } else {
-            $mulai = Carbon::parse($cekso->waktu_mulai);
+            $mulai   = Carbon::parse($cekso->waktu_mulai);
             $selesai = Carbon::parse($cekso->waktu_selesai);
-            $cekso->durasi = $mulai->diff($selesai)->format('%H:%I:%S');
+            $cekso->durasi        = $mulai->diff($selesai)->format('%H:%I:%S');
             $cekso->waktu_selesai = Carbon::parse($cekso->waktu_selesai)->format('H:i (d M y)');
         }
-        
+
         $cekso->waktu_mulai = Carbon::parse($cekso->waktu_mulai)->format('H:i (d M y)');
         $cekso->nama_gudang = $cekso->gudang->nama_gudang ?? '-';
-        
-        $petugasScans = CekSOBarang::where('t_cek_so_id', $id)->whereNotNull('petugas_scan')->distinct()->pluck('petugas_scan');
-        $lokasis = CekSOBarang::where('t_cek_so_id', $id)->whereNotNull('lokasi')->distinct()->pluck('lokasi');
+
+        // === RINGKASAN KELENGKAPAN UPDATE (BOX/BTG/OTHER) ===
+        // Menghitung dari data yang tercatat (status 1=Scan Sistem, 3=Input Manual, 4=Upload Excel)
+        $kelengkapanCounts = CekSOBarang::where('t_cek_so_id', $id)
+            ->whereIn('status', [1, 3, 4])
+            ->select('kelengkapan_update', DB::raw('COUNT(*) as total'))
+            ->groupBy('kelengkapan_update')
+            ->pluck('total', 'kelengkapan_update');
+
+        $jumlah_box   = (int) ($kelengkapanCounts['BOX']   ?? 0);
+        $jumlah_btg   = (int) ($kelengkapanCounts['BTG']   ?? 0);
+        $jumlah_other = (int) ($kelengkapanCounts['OTHER'] ?? 0);
+
+        // Dropdown filter (tetap)
+        $petugasScans = CekSOBarang::where('t_cek_so_id', $id)
+            ->whereNotNull('petugas_scan')
+            ->distinct()
+            ->pluck('petugas_scan');
+
+        $lokasis = CekSOBarang::where('t_cek_so_id', $id)
+            ->whereNotNull('lokasi')
+            ->distinct()
+            ->pluck('lokasi');
 
         // Perbedaannya hanya di sini: me-return view yang berbeda
-        return view('pages.cek-so.detail-guest', compact('cekso', 'petugasScans', 'lokasis'));
+        return view('pages.cek-so.detail-guest', compact(
+            'cekso', 'petugasScans', 'lokasis',
+            'jumlah_box', 'jumlah_btg', 'jumlah_other' // ← kirim ke view
+        ));
     }
 
     public function showFinish($id)
     {
         $cekso = CekSO::findOrFail($id);
-        $mulai = Carbon::parse($cekso->waktu_mulai);
+    
+        $mulai   = Carbon::parse($cekso->waktu_mulai);
         $selesai = Carbon::parse($cekso->waktu_selesai);
-        $cekso->durasi = $mulai->diff($selesai)->format('%H:%I:%S');
+    
+        $cekso->durasi        = $mulai->diff($selesai)->format('%H:%I:%S');
         $cekso->waktu_selesai = Carbon::parse($cekso->waktu_selesai)->format('H:i (d M y)');
-        $cekso->waktu_mulai = Carbon::parse($cekso->waktu_mulai)->format('H:i (d M y)');
-        $cekso->nama_gudang = $cekso->gudang->nama_gudang ?? '-';
-        
-        $petugasScans = CekSOFinished::where('t_cek_so_id', $id)->whereNotNull('petugas_scan')->distinct()->pluck('petugas_scan');
-        $lokasis = CekSOFinished::where('t_cek_so_id', $id)->whereNotNull('lokasi')->distinct()->pluck('lokasi');
-
-        return view('pages.cek-so.finished', compact('cekso', 'petugasScans', 'lokasis'));
+        $cekso->waktu_mulai   = Carbon::parse($cekso->waktu_mulai)->format('H:i (d M y)');
+        $cekso->nama_gudang   = $cekso->gudang->nama_gudang ?? '-';
+    
+        // === RINGKASAN KELENGKAPAN UPDATE (BOX/BTG/OTHER) ===
+        // Hitung dari tabel t_cek_so_finished (final snapshot)
+        $kelengkapanCounts = CekSOFinished::where('t_cek_so_id', $id)
+            ->whereIn('status', [1, 3, 4])
+            ->select('kelengkapan_update', DB::raw('COUNT(*) as total'))
+            ->groupBy('kelengkapan_update')
+            ->pluck('total', 'kelengkapan_update');
+    
+        $jumlah_box   = (int) ($kelengkapanCounts['BOX']   ?? 0);
+        $jumlah_btg   = (int) ($kelengkapanCounts['BTG']   ?? 0);
+        $jumlah_other = (int) ($kelengkapanCounts['OTHER'] ?? 0);
+    
+        // Dropdown filter untuk tabel detail
+        $petugasScans = CekSOFinished::where('t_cek_so_id', $id)
+            ->whereNotNull('petugas_scan')
+            ->distinct()->pluck('petugas_scan');
+    
+        $lokasis = CekSOFinished::where('t_cek_so_id', $id)
+            ->whereNotNull('lokasi')
+            ->distinct()->pluck('lokasi');
+    
+        return view('pages.cek-so.finished', compact(
+            'cekso', 'petugasScans', 'lokasis',
+            'jumlah_box', 'jumlah_btg', 'jumlah_other'
+        ));
     }
 
     public function getCekSOBarangs(Request $request, $id)
@@ -162,6 +215,7 @@ class CekSOController extends Controller
                 't_cek_so_barang.updated_at as scan_time',
                 't_cek_so_barang.petugas_scan',
                 't_cek_so_barang.lokasi',
+                't_cek_so_barang.kelengkapan_update',
                 't_cek_so_barang.status as scan_status_val'
             );
         
@@ -203,23 +257,45 @@ class CekSOController extends Controller
     public function getCekSOFinish(Request $request, $id)
     {
         $cekso = CekSO::findOrFail($id);
+    
         $query = CekSOFinished::where('t_cek_so_finished.t_cek_so_id', $id)
-            ->leftJoin('t_barang', function ($join) use ($cekso) { $join->on('t_barang.lok_spk', '=', 't_cek_so_finished.lok_spk')->where('t_barang.gudang_id', '=', $cekso->gudang_id)->where('t_barang.status_barang', '=', 1); })
-            ->select('t_cek_so_finished.*', 't_barang.jenis', 't_barang.tipe', 't_barang.kelengkapan');
-        
-        if ($request->filled('scan_status')) { $query->where('t_cek_so_finished.status', $request->scan_status); }
-        if ($request->filled('petugas_scan')) { $query->where('t_cek_so_finished.petugas_scan', $request->petugas_scan); }
-        if ($request->filled('lokasi')) { $query->where('t_cek_so_finished.lokasi', $request->lokasi); }
-        
+            ->leftJoin('t_barang', function ($join) use ($cekso) {
+                $join->on('t_barang.lok_spk', '=', 't_cek_so_finished.lok_spk')
+                     ->where('t_barang.gudang_id', '=', $cekso->gudang_id)
+                     ->where('t_barang.status_barang', '=', 1);
+            })
+            ->select(
+                't_cek_so_finished.*',   // sudah termasuk kelengkapan_update
+                't_barang.jenis',
+                't_barang.tipe',
+                't_barang.kelengkapan'
+            );
+    
+        // Filter dropdown
+        if ($request->filled('scan_status')) {
+            $query->where('t_cek_so_finished.status', $request->scan_status);
+        }
+        if ($request->filled('petugas_scan')) {
+            $query->where('t_cek_so_finished.petugas_scan', $request->petugas_scan);
+        }
+        if ($request->filled('lokasi')) {
+            $query->where('t_cek_so_finished.lokasi', $request->lokasi);
+        }
+    
         $query->orderByDesc('t_cek_so_finished.updated_at');
     
         return DataTables::of($query)
+            // kolom dari t_barang (fallback '-')
             ->addColumn('jenis', fn($row) => $row->jenis ?? '-')
             ->addColumn('tipe', fn($row) => $row->tipe ?? '-')
             ->addColumn('kelengkapan', fn($row) => $row->kelengkapan ?? '-')
-            // DIUBAH: Logika status badge
+    
+            // kolom kelengkapan_update (fallback '-')
+            ->addColumn('kelengkapan_update', fn($row) => $row->kelengkapan_update ?? '-')
+    
+            // badge status
             ->addColumn('status_badge', function ($row) {
-                switch ($row->status) {
+                switch ((int) $row->status) {
                     case 0: return '<span class="badge bg-warning text-dark">Belum Discan</span>';
                     case 1: return '<span class="badge bg-success">Scan Sistem</span>';
                     case 2: return '<span class="badge bg-danger">Tidak Ada di DB</span>';
@@ -228,6 +304,25 @@ class CekSOController extends Controller
                     default: return '<span class="badge bg-secondary">Tidak Diketahui</span>';
                 }
             })
+    
+            // pencarian global (kolom penting)
+            ->filter(function ($query) use ($request) {
+                if ($request->has('search') && ($keyword = $request->input('search.value'))) {
+                    $keyword = trim($keyword);
+                    if ($keyword !== '') {
+                        $query->where(function ($q) use ($keyword) {
+                            $q->where('t_cek_so_finished.lok_spk', 'like', "%{$keyword}%")
+                              ->orWhere('t_cek_so_finished.petugas_scan', 'like', "%{$keyword}%")
+                              ->orWhere('t_cek_so_finished.lokasi', 'like', "%{$keyword}%")
+                              ->orWhere('t_cek_so_finished.kelengkapan_update', 'like', "%{$keyword}%")
+                              ->orWhere('t_barang.jenis', 'like', "%{$keyword}%")
+                              ->orWhere('t_barang.tipe', 'like', "%{$keyword}%")
+                              ->orWhere('t_barang.kelengkapan', 'like', "%{$keyword}%");
+                        });
+                    }
+                }
+            })
+    
             ->rawColumns(['status_badge'])
             ->make(true);
     }
@@ -238,7 +333,8 @@ class CekSOController extends Controller
             't_cek_so_id' => 'required|integer',
             'lok_spk' => 'required|string',
             'petugas_scan' => 'required|string',
-            'lokasi' => 'nullable|string'
+            'lokasi' => 'nullable|string',
+            'kelengkapan_update' => 'required|in:BOX,BTG,OTHER'
         ]);
         
         $cekso = CekSO::findOrFail($request->t_cek_so_id);
@@ -253,7 +349,8 @@ class CekSOController extends Controller
                 'lok_spk' => $request->lok_spk,
                 'status' => 1,
                 'petugas_scan' => $request->petugas_scan,
-                'lokasi' => $request->lokasi
+                'lokasi' => $request->lokasi,
+                'kelengkapan_update' => $request->kelengkapan_update
             ]);
             
             $foundInMaster = Barang::where('gudang_id', $cekso->gudang_id)
@@ -278,7 +375,6 @@ class CekSOController extends Controller
                     ->where('status_barang', 1);
                 })
                 ->count();
-
             // ------
             
             return response()->json([
@@ -323,7 +419,18 @@ class CekSOController extends Controller
                     $status = 0;
                 }
     
-                $dataToInsert[] = ['t_cek_so_id' => $cekso->id, 'lok_spk' => $originalLokSpk, 'status' => $status, 'petugas_scan' => $petugas_scan, 'lokasi' => $lokasi, 'created_at' => now(), 'updated_at' => now() ];
+                $kelengkapan_update = $scannedItem->kelengkapan_update ?? null;
+    
+                $dataToInsert[] = [
+                    't_cek_so_id' => $cekso->id,
+                    'lok_spk' => $originalLokSpk,
+                    'status' => $status,
+                    'petugas_scan' => $petugas_scan,
+                    'lokasi' => $lokasi,
+                    'kelengkapan_update' => $kelengkapan_update, // ← ikut dibawa
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ];
             }
             
             if (!empty($dataToInsert)) { CekSOFinished::insert($dataToInsert); }
@@ -347,7 +454,13 @@ class CekSOController extends Controller
     
     public function upload(Request $request)
     {
-        $request->validate(['filedata' => 'required|mimes:xlsx,csv', 't_cek_so_id' => 'required|integer', 'petugas_scan' => 'required|string', 'lokasi' => 'nullable|string' ]);
+        $request->validate([
+            'filedata' => 'required|mimes:xlsx,csv',
+            't_cek_so_id' => 'required|integer',
+            'petugas_scan' => 'required|string',
+            'lokasi' => 'nullable|string',
+            'kelengkapan_update' => 'required|in:BOX,BTG,OTHER'
+        ]);
         try {
             $t_cek_so_id = $request->t_cek_so_id;
             $data = Excel::toArray([], $request->file('filedata'));
@@ -362,6 +475,7 @@ class CekSOController extends Controller
                 't_cek_so_id' => $t_cek_so_id, 'lok_spk' => $lok_spk,
                 'status' => 4, // DIUBAH: Status untuk Excel Upload
                 'petugas_scan' => $request->petugas_scan, 'lokasi' => $request->lokasi,
+                'kelengkapan_update' => $request->kelengkapan_update,
                 'created_at' => now(), 'updated_at' => now(),
             ])->all();
             
@@ -379,7 +493,8 @@ class CekSOController extends Controller
             't_cek_so_id' => 'required|integer',
             'lok_spk' => 'required|string',
             'petugas_scan' => 'required|string',
-            'lokasi' => 'nullable|string'
+            'lokasi' => 'nullable|string',
+            'kelengkapan_update' => 'required|in:BOX,BTG,OTHER'
         ]);
         
         try {
@@ -407,6 +522,7 @@ class CekSOController extends Controller
                     'status'        => 3,
                     'petugas_scan'  => $request->petugas_scan, 
                     'lokasi'        => $request->lokasi, 
+                    'kelengkapan_update' => $request->kelengkapan_update
                 ]);
             }
 
@@ -425,7 +541,6 @@ class CekSOController extends Controller
                     ->where('status_barang', 1);
                 })
                 ->count();
-
             
             return response()->json([
                 'status'          => 'success', 
@@ -487,7 +602,6 @@ class CekSOController extends Controller
             ->groupBy('t_cek_so_barang.status')
             ->pluck('total', 't_cek_so_barang.status');
 
-
         $jumlahScanSistem = $counts->get(1, 0);
         $jumlahInputManual = $counts->get(3, 0);
         $jumlahUploadExcel = $counts->get(4, 0);
@@ -526,7 +640,7 @@ class CekSOController extends Controller
         // Panggil class CekSoExport dan unduh filenya
         return Excel::download(new CekSoExport($cekso), $fileName);
     }
-
+    
     public function destroyNotInMaster(Request $request, $ceksoId, $id)
     {
         // pastikan user login diproteksi via middleware('auth') di route

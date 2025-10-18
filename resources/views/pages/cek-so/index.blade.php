@@ -90,15 +90,26 @@
                                                     @if ($cekso->is_finished)
                                                         <a href="{{ route('cekso.showFinish', $cekso->id) }}" class="btn btn-info btn-sm">View</a>
                                                     @else
-                                                        <a href="{{ route('cek-so.show', $cekso->id) }}" class="btn btn-primary btn-sm">Proses</a>
+                                                        {{-- PROSES pindah ke halaman guest --}}
+                                                        <a href="{{ route('cek-so.show-guest', $cekso->id) }}" class="btn btn-primary btn-sm">Proses</a>
+                                                
+                                                        {{-- Tombol Akhiri Scan SO --}}
+                                                        <button type="button"
+                                                                class="btn btn-danger btn-sm btn-end-scan"
+                                                                data-id="{{ $cekso->id }}"
+                                                                data-kode="{{ $cekso->kode }}">
+                                                            Akhiri Scan
+                                                        </button>
                                                     @endif
-
+                                                
+                                                    {{-- Copy link guest --}}
                                                     <button type="button" class="btn btn-secondary btn-sm copy-link-btn" 
                                                             data-url="{{ route('cek-so.show-guest', $cekso->id) }}"
                                                             title="Salin Link Guest">
                                                         <i class="fas fa-link"></i>
                                                     </button>
-
+                                                
+                                                    {{-- Export Excel --}}
                                                     <a href="{{ route('cek-so.export', $cekso->id) }}" class="btn btn-success btn-sm" title="Export ke Excel">
                                                         <i class="fas fa-file-excel"></i>
                                                     </a>
@@ -234,4 +245,73 @@
         });
     });
     </script>
+    
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Handler tombol "Akhiri Scan"
+        document.querySelectorAll('.btn-end-scan').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const ceksoId  = this.dataset.id;
+                const kodeSO   = this.dataset.kode;
+    
+                Swal.fire({
+                    title: `Akhiri Scan SO ${kodeSO}?`,
+                    html: `
+                        <div class="text-start">
+                            <label class="form-label">Catatan (opsional):</label>
+                            <textarea id="swal-catatan" class="form-control" rows="3" placeholder="Tambahkan catatan..."></textarea>
+                            <div class="form-text mt-2">Proses ini akan mengunci hasil scan dan memindahkan data ke hasil akhir.</div>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Akhiri',
+                    cancelButtonText: 'Batal',
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        const catatan = document.getElementById('swal-catatan').value || '';
+                        return { catatan };
+                    }
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+    
+                    // Kirim ke route finish
+                    $.ajax({
+                        url: "{{ route('cekso.finish') }}",
+                        method: "POST",
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                            t_cek_so_id: ceksoId,
+                            catatan: result.value.catatan
+                        },
+                        beforeSend: () => {
+                            Swal.fire({
+                                title: "Memproses...",
+                                allowOutsideClick: false,
+                                didOpen: () => Swal.showLoading()
+                            });
+                        },
+                        success: function(res) {
+                            // Sukses → arahkan ke halaman hasil (showFinish) sesuai response
+                            Swal.fire({ icon: 'success', title: res.message || 'Berhasil', timer: 1200, showConfirmButton: false })
+                                .then(() => {
+                                    if (res.redirect_url) {
+                                        window.location.href = res.redirect_url;
+                                    } else {
+                                        // fallback reload index
+                                        window.location.reload();
+                                    }
+                                });
+                        },
+                        error: function(xhr) {
+                            const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Terjadi kesalahan!';
+                            Swal.fire({ icon: 'error', title: 'Gagal', text: msg });
+                        }
+                    });
+                });
+            });
+        });
+    });
+    </script>
+
 @endsection()
